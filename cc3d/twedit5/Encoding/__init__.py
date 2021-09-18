@@ -32,7 +32,7 @@ import random
 
 import base64
 
-from Messaging import stdMsg, dbgMsg, errMsg, setDebugging
+from cc3d.twedit5.Messaging import stdMsg, dbgMsg, errMsg, setDebugging
 
 
 

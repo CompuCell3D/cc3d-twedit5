@@ -1,0 +1,41 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: cc3d-twedit5
+  version: {{ data.get('version') }}
+
+about:
+  home: https://compucell3d.org
+  license: LGPL
+  license_file: ../LICENSE.txt
+
+extra:
+  maintainers: T.J. Sego, Maciek Swat
+
+source:
+  # url: https://github.com/CompuCell3D/cc3d-twedit5/archive/master.tar.gz
+  path: ../
+
+build:
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - python=3.7
+    - setuptools
+
+  run:
+    - python=3.7
+    - cc3d
+    - chardet
+    - psutil
+    - pyqt
+    - pyqtwebkit
+    - qscintilla2
+    - sphinx
+    - pywin32 # [win]
+
+test:
+  imports:
+    - cc3d.twedit5

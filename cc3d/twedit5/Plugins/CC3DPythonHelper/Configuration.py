@@ -1,4 +1,4 @@
-from twedit.utils.global_imports import *
+from cc3d.twedit5.twedit.utils.global_imports import *
 
 
 class Configuration:
@@ -11,7 +11,7 @@ class Configuration:
 
         self.defaultConfigs = {}
 
-        self.defaultConfigs["SkipCommentsInXMLSnippets"] = False
+        self.defaultConfigs["SkipCommentsInPythonSnippets"] = False
 
         # dictionary actionName->shortcut for modified keyboard shortcuts - only reassinged shortcuts are stored
         self.modifiedKeyboardShortcuts = {}
@@ -20,7 +20,7 @@ class Configuration:
 
     def setting(self, _key):
 
-        if _key in ["SkipCommentsInXMLSnippets"]:  # Boolean values
+        if _key in ["SkipCommentsInPythonSnippets"]:  # Boolean values
 
             val = self.check_bool(self.settings.value(_key))
 
@@ -34,7 +34,7 @@ class Configuration:
 
     def setSetting(self, _key, _value):
 
-        if _key in ["SkipCommentsInXMLSnippets"]:  # Boolean values
+        if _key in ["SkipCommentsInPythonSnippets"]:  # Boolean values
 
             self.settings.setValue(_key, QVariant(_value))
 
@@ -45,11 +45,9 @@ class Configuration:
             val = self.check_bool(self.settings.value(key))
 
             if val is None:
-
                 self.setSetting(key, self.defaultConfigs[key])
 
-    @staticmethod
-    def check_bool(_val):
+    def check_bool(self, _val):
         """
         Deals with a possible bug in Qt (occurs surprisingly often) and converts value read by QSettings
         object to boolean. The value read could be unicode or boolean

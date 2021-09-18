@@ -1,5 +1,5 @@
 from cc3d.twedit5.twedit.utils.global_imports import *
-import ui_configurationdlg
+from cc3d.twedit5 import ui_configurationdlg
 import sys
 
 MAC = "qt_mac_set_native_menubar" in dir()

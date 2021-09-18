@@ -1,3 +1,7 @@
+"""
+Twedit5 CLI
+"""
+
 from os import environ
 import platform
 import getopt
@@ -144,11 +148,10 @@ def except_hook(cls, exception, traceback):
     sys.exit(1)
 
 
-if __name__ == '__main__':
+def main(argv=None):
 
-    if __name__ == '__main__':
-        # enable it during debugging in pycharm
-        sys.excepthook = except_hook
+    if argv is None:
+        argv = []
 
     try:
 
@@ -186,4 +189,12 @@ if __name__ == '__main__':
 
             dbgMsg("NON-WINDOWS PLATFORM - TRY TO ACTIVATE WINDOW")
 
-    twedit.main(sys.argv[1:])
+    twedit.main(argv)
+
+
+if __name__ == '__main__':
+
+    # enable it during debugging in pycharm
+    sys.excepthook = except_hook
+
+    main(sys.argv[1:])
