@@ -45,13 +45,6 @@ class Socket(QTcpSocket):
 
         self.errorLine = -1
 
-        self.bringupTweditPath = None
-
-        if sys.platform.startswith('win'):
-            self.bringupTweditPath = os.path.join(environ['PREFIX_CC3D'], 'Twedit++5/bringupTwedit.py')
-
-            self.bringupTweditPath = os.path.abspath(self.bringupTweditPath)
-
     def disconnectDisconnectedSignal(self):
 
         self.disconnected.disconnect(self.listener.maybeCloseEditor)
@@ -452,22 +445,6 @@ class CC3DListener(QTcpServer):
 
         self.nextBlockSize = 0
 
-        self.cc3dPath = getCC3DPlayerRunScriptPath()
-
-        # # # if sys.platform.startswith('win'):
-
-        # # # self.cc3dPath=os.path.join(environ['PREFIX_CC3D'],'compucell3d.bat')
-
-        # # # elif sys.platform.startswith('darwin'):
-
-        # # # self.cc3dPath=os.path.join(environ['PREFIX_CC3D'],'compucell3d.command')
-
-        # # # else : # linux/unix
-
-        # # # self.cc3dPath=os.path.join(environ['PREFIX_CC3D'],'compucell3d.sh')
-
-        # # # self.cc3dPath=os.path.abspath(self.cc3dPath)
-
         self.pluginObj = None
 
         self.cc3dProcess = None
@@ -576,26 +553,16 @@ class CC3DListener(QTcpServer):
 
         from subprocess import Popen
 
-        print("self.cc3dPath=", self.cc3dPath)
-
-        popenArgs = [self.cc3dPath, "--port=%s" % self.port]
+        popenArgs = ["cc3d-player5", "--port=%s" % self.port]
 
         if _simulationName != "":
             popenArgs.append("-i")
 
             popenArgs.append(_simulationName)
 
-        # popenArgs.append("-i")
-
-        # popenArgs.append("D:\\Program Files\\COMPUCELL3D_3.5.1_install2\\examples_PythonTutorial\\infoPrinterDemo\\infoPrinterDemo.cc3d" )
-
         print('Executing Popen command with following arguments=', popenArgs)
 
         self.cc3dProcess = Popen(popenArgs)
-
-        # self.cc3dProcess = Popen([self.cc3dPath,"--port=%s"%self.port])
-
-        # ,"--tweditPID=%s"%self.editorWindow.getProcessId()
 
     def getPortFromCommandLine(self):
 
