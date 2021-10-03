@@ -38,4 +38,5 @@ requirements:
 
 test:
   imports:
-    - cc3d.twedit5
+    - sys
+#    - cc3d.twedit5
