@@ -1,8 +1,12 @@
 {% set data = load_setup_py_data() %}
 
+{% set version = data.get('version') %}
+{% set python_version = "3.7" %}
+
+
 package:
   name: cc3d-twedit5
-  version: {{ data.get('version') }}
+  version: {{ version }}
 
 about:
   home: https://compucell3d.org
@@ -17,25 +21,23 @@ source:
   path: ../
 
 build:
-  number: 0
+  number: 3
   script: python setup.py install --single-version-externally-managed --record=record.txt
 
 requirements:
   build:
-    - python=3.7
+    - python={{ python_version }}
     - setuptools
 
   run:
-    - python=3.7
-    - cc3d
+    - python={{ python_version }}
+    - cc3d-player5={{ version }}
     - chardet
-    - psutil
-    - pyqt
-    - pyqtwebkit
-    - qscintilla2
+    - pyqtwebkit # [not osx]
     - sphinx
     - pywin32 # [win]
 
 test:
   imports:
+    - sys
     - cc3d.twedit5
