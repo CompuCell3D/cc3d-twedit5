@@ -12,16 +12,27 @@ longDescription = """This plugin provides provides users with CC3D C++ code gene
  making CC3D C++ plugin and steppable development  more convenient."""
 
 # End-Of-Header
+cc3d_core_conda_utils_installed = True
+
+try:
+    from cc3d.core.utils import find_conda, find_current_conda_env
+    from cc3d.core.developer_zone.developer_zone_config import configure_developer_zone
+except ImportError:
+    cc3d_core_conda_utils_installed = False
 
 from cc3d.twedit5.Plugins.TweditPluginBase import TweditPluginBase
 from cc3d.twedit5.twedit.utils.global_imports import *
 from cc3d.twedit5.Plugins.CC3DCPPHelper.Configuration import Configuration
 from cc3d.twedit5.Plugins.PluginUtils.SnippetMenuParser import SnippetMenuParser
 from cc3d.twedit5.Plugins.CC3DCPPHelper.CPPModuleGeneratorDialog import CPPModuleGeneratorDialog
+from cc3d.twedit5.Plugins.CC3DCPPHelper.DevZoneDialog import DevZoneDialog
 from cc3d.twedit5.Plugins.CC3DCPPHelper.CppTemplates import CppTemplates
 from distutils.dir_util import mkpath
 import os.path
 import re
+
+
+
 
 error = ''
 
@@ -184,6 +195,13 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         """
 
+        self.actions["DeveloperZone..."] = QAction("DeveloperZone...", self, shortcut="",
+
+                                                    statusTip="Developer Zone",
+                                                           triggered=self.configure_developer_zone_project)
+
+
+
         self.actions['Generate New Module...'] = QAction(QtGui.QIcon(':/icons/document-new.png'),
 
                                                          "&Generate New Module...",
@@ -202,6 +220,14 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                                              statusTip="Deactivate C++ CC3D plugin", triggered=self.deactivate)
 
+
+
+        self.cc3dcppMenu.addAction(self.actions["DeveloperZone..."])
+        # ----------------------------
+
+        self.cc3dcppMenu.addSeparator()
+
+
         self.cc3dcppMenu.addAction(self.actions['Generate New Module...'])
 
         self.cc3dcppMenu.addAction(self.actions['Deactivate'])
@@ -210,15 +236,18 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         self.cc3dcppMenu.addSeparator()
 
+
+
+
         self.snippetDictionary = {}
 
         psmp = SnippetMenuParser()
 
-        snippetFilePath = os.path.abspath(
+        snippet_file_path = os.path.abspath(
 
             os.path.join(os.path.dirname(__file__), 'CC3DCPPHelper/Snippets.cpp.template'))
 
-        psmp.readSnippetMenu(snippetFilePath)
+        psmp.readSnippetMenu(snippet_file_path)
 
         snippetMenuDict = psmp.getSnippetMenuDict()
 
@@ -242,6 +271,18 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
                 action.triggered.connect(self.snippetMapper.map)
 
                 self.snippetMapper.setMapping(action, actionKey)
+
+    def configure_developer_zone_project(self):
+        if not cc3d_core_conda_utils_installed:
+
+            print('Can not configure Developer Zone - cc3d conda utils are not installed')
+            return
+
+        print('Configuring developer zone')
+
+        dlg = DevZoneDialog(self.__ui)
+        dlg.exec()
+
 
     def generateNewModule(self):
 
