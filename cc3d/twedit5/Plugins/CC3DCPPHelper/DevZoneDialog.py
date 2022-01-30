@@ -6,6 +6,7 @@ try:
 except ImportError:
     cc3d_core_conda_utils_installed = False
 
+from multiprocessing.pool import ThreadPool
 from cc3d.twedit5.twedit.utils.global_imports import *
 from pathlib import Path
 import re
@@ -60,7 +61,17 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
 
                 self.dev_zone_status_TE.setText('Please Wait While I Configure Developer Zone For Compilation')
                 try:
-                    output = configure_developer_zone(cc3d_git_dir=cc3d_git_dir, build_dir=build_dir)
+
+                    pool = ThreadPool(processes=1)
+
+                    # tuple of args for configure_developer_zone
+                    async_result = pool.apply_async(configure_developer_zone, (cc3d_git_dir, build_dir))
+
+                    # do some other stuff in the main process
+                    # TODO: fix blocking here. Introduce callback to process the rest of the signal handler
+                    output = async_result.get()
+
+                    # output = configure_developer_zone(cc3d_git_dir=cc3d_git_dir, build_dir=build_dir)
                     if sys.platform.startswith('win'):
                         msg = f'\n\n Now open a terminal and do the following:\n' \
                               f'cd {build_dir}\n' \
@@ -71,7 +82,6 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
                               f'cd {build_dir}\n' \
                               f'make\n' \
                               f'make install'
-
 
                     self.dev_zone_status_TE.setText(output + msg)
                 except FileExistsError as e:
