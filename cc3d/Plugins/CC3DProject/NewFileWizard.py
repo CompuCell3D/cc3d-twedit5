@@ -55,15 +55,14 @@ class NewFileWizard(QWizard, ui_newfilewizard.Ui_NewFileWizard):
     @pyqtSlot()  # signature of the signal emited by the button
     def on_locationBrowsePB_clicked(self):
 
-        dir_name, _ = QFileDialog.getExistingDirectory(self,
+        dir_name = QFileDialog.getExistingDirectory(self,
 
-                                                       "Directory (within current project) for the new file...",
+                                                    "Directory (within current project) for the new file...",
 
-                                                       self.projectPath)
+                                                    self.projectPath)
 
-        dir_name = str(dir_name)
-
-        dir_name = os.path.abspath(dir_name)  # normalizing path
+        if not dir_name:
+            return
 
         relative_path = self.findRelativePath(self.projectPath, dir_name)
 
