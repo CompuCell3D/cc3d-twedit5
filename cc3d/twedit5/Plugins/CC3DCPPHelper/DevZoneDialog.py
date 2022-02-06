@@ -62,28 +62,12 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
                 self.dev_zone_status_TE.setText('Please Wait While I Configure Developer Zone For Compilation')
                 try:
 
-                    pool = ThreadPool(processes=1)
+                    self.worker = Worker(cc3d_git_dir=cc3d_git_dir, build_dir=build_dir)
+                    self.worker.started_config.connect(self.update_status)
+                    self.worker.completed.connect(self.update_status)
+                    self.worker.start()
 
-                    # tuple of args for configure_developer_zone
-                    async_result = pool.apply_async(configure_developer_zone, (cc3d_git_dir, build_dir))
 
-                    # do some other stuff in the main process
-                    # TODO: fix blocking here. Introduce callback to process the rest of the signal handler
-                    output = async_result.get()
-
-                    # output = configure_developer_zone(cc3d_git_dir=cc3d_git_dir, build_dir=build_dir)
-                    if sys.platform.startswith('win'):
-                        msg = f'\n\n Now open a terminal and do the following:\n' \
-                              f'cd {build_dir}\n' \
-                              f'nmake\n' \
-                              f'nmake install'
-                    else:
-                        msg = f'\n\n Now open a terminal and do the following:\n' \
-                              f'cd {build_dir}\n' \
-                              f'make\n' \
-                              f'make install'
-
-                    self.dev_zone_status_TE.setText(output + msg)
                 except FileExistsError as e:
                     self.dev_zone_status_TE.setText(f'{e}')
                     return
@@ -98,3 +82,38 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
         if not error_flag:
             self.accept()
 
+    def update_status(self, msg:str=''):
+        self.dev_zone_status_TE.setText(msg)
+
+
+class Worker(QThread, QObject):
+    # started = pyqtSignal()
+    started_config = pyqtSignal(str)
+    completed = pyqtSignal(str)
+
+    def __init__(self, cc3d_git_dir, build_dir):
+        super().__init__()
+        self.cc3d_git_dir = cc3d_git_dir
+        self.build_dir = build_dir
+
+    def run(self):
+        """Long-running task."""
+        self.started_config.emit('Developer Configuration Started - Please wait...')
+        output = configure_developer_zone(self.cc3d_git_dir, self.build_dir)
+        output += self.how_to_compile_msg(build_dir=self.build_dir)
+        self.completed.emit(output)
+
+    def how_to_compile_msg(self, build_dir: str) -> str:
+
+        if sys.platform.startswith('win'):
+            msg = f'\n\n Now open a terminal and do the following:\n' \
+                  f'cd {build_dir}\n' \
+                  f'nmake\n' \
+                  f'nmake install'
+        else:
+            msg = f'\n\n Now open a terminal and do the following:\n' \
+                  f'cd {build_dir}\n' \
+                  f'make\n' \
+                  f'make install'
+
+        return msg
