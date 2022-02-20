@@ -100,7 +100,11 @@ class Worker(QThread, QObject):
         """Long-running task."""
         self.started_config.emit('Developer Configuration Started - Please wait...')
         output = configure_developer_zone(self.cc3d_git_dir, self.build_dir)
-        output += self.how_to_compile_msg(build_dir=self.build_dir)
+        output = self.how_to_compile_msg(build_dir=self.build_dir) + \
+                 '\n\nCmake Configuration Details' \
+                 '\n==========================\n\n' \
+                 + output
+
         self.completed.emit(output)
 
     def how_to_compile_msg(self, build_dir: str) -> str:
