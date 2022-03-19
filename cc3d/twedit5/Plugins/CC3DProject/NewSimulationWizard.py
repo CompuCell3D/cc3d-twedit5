@@ -777,7 +777,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         print("projDir=", str(proj_dir))
 
         if str(proj_dir) == "":
-            proj_dir = os.environ["PREFIX_CC3D"]
+            proj_dir = cc3d.cc3d_install_prefix
 
         self.dirLE.setText(proj_dir)
 
