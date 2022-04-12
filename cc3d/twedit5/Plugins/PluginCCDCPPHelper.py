@@ -419,8 +419,8 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                 message = "Could not create directory %s. <br> Please make sure you have necessary permissions" % fullModuleDir
 
-                QtGui.QMessageBox.information(self.__ui, "Could not create directory", message,
-                                              QtWidgets.QMessageBox.Ok)
+                QMessageBox.information(self.__ui, "Could not create directory", message,
+                                        QMessageBox.Ok)
 
                 return
 
@@ -704,7 +704,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             message = "Could not find file %s. <br> Please make sure you have necessary permissions and that file exists. You will need to add newly generated module to CMakeFile.txt manually" % cmakePath
 
-            QtGui.QMessageBox.information(self.__ui, "Could not write to file", message, QtGui.QMessageBox.Ok)
+            QMessageBox.information(self.__ui, "Could not write to file", message, QMessageBox.Ok)
 
             return
 
@@ -762,9 +762,11 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
                 fileLocalizationError = True
 
         if fileLocalizationError:
-            message = "Could not succesfully locate SWIG files. <br> Please make sure you have necessary permissions and that file exist. You will need to add newly generated module to SWIG filesmanually"
+            message = "Could not succesfully locate SWIG files. " \
+                      "<br> Please make sure you have necessary permissions and that file exist. " \
+                      "You will need to add newly generated module to SWIG filesmanually"
 
-            QtGui.QMessageBox.information(self.__ui, "Problem with SWIG files", message, QtGui.QMessageBox.Ok)
+            QMessageBox.information(self.__ui, "Problem with SWIG files", message, QMessageBox.Ok)
 
             return
 
@@ -972,9 +974,11 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         if _features['mainSwigFile'] == '' or _features['declarationsSwigFile'] == '' or _features[
 
             'declarationsSwigFile'] == '' or _features['cmakeSwigFile'] == '':
-            message = "Could not succesfully locate SWIG files. <br> Please make sure you have necessary permissions and that file exist. You will need to add newly generated module to SWIG filesmanually"
+            message = "Could not succesfully locate SWIG files. " \
+                      "<br> Please make sure you have necessary permissions and that file exist. " \
+                      "You will need to add newly generated module to SWIG filesmanually"
 
-            QtGui.QMessageBox.information(self.__ui, "Problem with SWIG files", message, QtGui.QMessageBox.Ok)
+            QMessageBox.information(self.__ui, "Problem with SWIG files", message, QMessageBox.Ok)
 
             return
 
@@ -1250,7 +1254,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             message = "Could not write to file %s. <br> Please make sure you have necessary permissions" % _fileName
 
-            QtGui.QMessageBox.information(self.__ui, "Could not write to file", message, QtGui.QMessageBox.Ok)
+            QMessageBox.information(self.__ui, "Could not write to file", message, QMessageBox.Ok)
 
     def makeDirectory(self, fullDirPath):
 
