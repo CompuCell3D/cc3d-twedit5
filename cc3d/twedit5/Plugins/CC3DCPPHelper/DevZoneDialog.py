@@ -110,7 +110,8 @@ class Worker(QThread, QObject):
     def how_to_compile_msg(self, build_dir: str) -> str:
 
         if sys.platform.startswith('win'):
-            msg = f'\n\n Now open a terminal and do the following:\n' \
+            msg = f'\n\n Now open a terminal (ideally Visual Studio 2015 shell) and do the following:\n\n' \
+                  f'c:\CompuCell3D\conda-shell.bat\n\n' \
                   f'cd {build_dir}\n' \
                   f'nmake\n' \
                   f'nmake install'

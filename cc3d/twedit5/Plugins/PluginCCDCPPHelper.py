@@ -31,9 +31,6 @@ from distutils.dir_util import mkpath
 import os.path
 import re
 
-
-
-
 error = ''
 
 
@@ -50,7 +47,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         Constructor
 
-        
+
 
         @param ui reference to the user interface object (UI.UserInterface)
 
@@ -87,7 +84,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
     def initialize(self):
 
-        '''  
+        '''
 
             initializes containers used in the plugin
 
@@ -115,7 +112,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         Public method to activate this plugin.
 
-        
+
 
         @return tuple of None and activation status (boolean)
 
@@ -191,16 +188,14 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         """
 
-        Private method to initialize the actions.        
+        Private method to initialize the actions.
 
         """
 
         self.actions["DeveloperZone..."] = QAction("DeveloperZone...", self, shortcut="",
 
-                                                    statusTip="Developer Zone",
-                                                           triggered=self.configure_developer_zone_project)
-
-
+                                                   statusTip="Developer Zone",
+                                                   triggered=self.configure_developer_zone_project)
 
         self.actions['Generate New Module...'] = QAction(QtGui.QIcon(':/icons/document-new.png'),
 
@@ -220,13 +215,10 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                                              statusTip="Deactivate C++ CC3D plugin", triggered=self.deactivate)
 
-
-
         self.cc3dcppMenu.addAction(self.actions["DeveloperZone..."])
         # ----------------------------
 
         self.cc3dcppMenu.addSeparator()
-
 
         self.cc3dcppMenu.addAction(self.actions['Generate New Module...'])
 
@@ -235,9 +227,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         # ----------------------------
 
         self.cc3dcppMenu.addSeparator()
-
-
-
 
         self.snippetDictionary = {}
 
@@ -274,7 +263,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
     def configure_developer_zone_project(self):
         if not cc3d_core_conda_utils_installed:
-
             print('Can not configure Developer Zone - cc3d conda utils are not installed')
             return
 
@@ -282,7 +270,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         dlg = DevZoneDialog(self.__ui)
         dlg.exec()
-
 
     def generateNewModule(self):
 
@@ -299,7 +286,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         capitalFirst = lambda s: s[:1].upper() + s[1:] if s else ''
 
-        # first check if directory exists and if it is writeable. If the module directory  already exists ask if user wants to overwrite files there with new, generated ones    
+        # first check if directory exists and if it is writeable. If the module directory  already exists ask if user wants to overwrite files there with new, generated ones
 
         dirName = str(cmgd.moduleDirLE.text()).rstrip()
 
@@ -879,8 +866,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
 %include <PLUGIN_NAME_CORE/PLUGIN_NAME_COREPlugin.h>
 
-
-
 %inline %{
 
  PLUGIN_NAME_COREPlugin * getPLUGIN_NAME_COREPlugin(){
@@ -888,8 +873,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
       return (PLUGIN_NAME_COREPlugin *)Simulator::pluginManager.get("PLUGIN_NAME_CORE");
 
    }
-
-
 
 %}
 
@@ -899,8 +882,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
 %include <STEPPABLE_NAME_CORE/STEPPABLE_NAME_CORE.h>
 
-
-
 %inline %{
 
  STEPPABLE_NAME_CORE * getSTEPPABLE_NAME_CORE(){
@@ -908,14 +889,11 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
       return (STEPPABLE_NAME_CORE *)Simulator::steppableManager.get("STEPPABLE_NAME_CORE");
 
    }
-
-
-
 %}
 
 '''
 
-        #  Module declaration code 
+        #  Module declaration code
 
         if 'Plugin' in list(_features.keys()):
 
@@ -929,17 +907,13 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                 EXTRA_ATTRIB_DECLARE = '''%include <PLUGIN_NAME_CORE/PLUGIN_NAME_COREData.h>
 
-%template (PLUGIN_NAME_COREDataAccessorTemplate) BasicClassAccessor<PLUGIN_NAME_COREData>; //necessary to get PLUGIN_NAME_COREData accessor working in Python
+%template (PLUGIN_NAME_COREDataAccessorTemplate) ExtraMembersGroupAccessor<PLUGIN_NAME_COREData>; //necessary to get PLUGIN_NAME_COREData accessor working in Python
 
 '''
 
                 EXTRA_ATTRIB_DECLARE = re.sub('PLUGIN_NAME_CORE', PLUGIN_NAME_CORE, EXTRA_ATTRIB_DECLARE)
 
                 pluginDeclarationCode = re.sub('EXTRA_ATTRIB_DECLARE', EXTRA_ATTRIB_DECLARE, pluginDeclarationCode)
-
-
-
-
 
             else:
 
@@ -959,7 +933,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                 EXTRA_ATTRIB_DECLARE = '''%include <STEPPABLE_NAME_CORE/STEPPABLE_NAME_COREData.h>
 
-%template (STEPPABLE_NAME_COREDataAccessorTemplate) BasicClassAccessor<STEPPABLE_NAME_COREData>; //necessary to get STEPPABLE_NAME_COREData accessor working in Python
+%template (STEPPABLE_NAME_COREDataAccessorTemplate) ExtraMembersGroupAccessor<STEPPABLE_NAME_COREData>; //necessary to get STEPPABLE_NAME_COREData accessor working in Python
 
 '''
 
@@ -1052,8 +1026,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
    }
 
-
-
 %}
 
 '''
@@ -1062,8 +1034,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
 %include <CompuCell3D/steppables/STEPPABLE_NAME_CORE/STEPPABLE_NAME_CORE.h>
 
-
-
 %inline %{
 
  STEPPABLE_NAME_CORE * getSTEPPABLE_NAME_CORE(){
@@ -1071,8 +1041,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
       return (STEPPABLE_NAME_CORE *)Simulator::steppableManager.get("STEPPABLE_NAME_CORE");
 
    }
-
-
 
 %}
 
@@ -1088,7 +1056,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                 EXTRA_ATTRIB_DECLARE = '''%include <CompuCell3D/plugins/PLUGIN_NAME_CORE/PLUGIN_NAME_COREData.h>
 
-%template (PLUGIN_NAME_COREDataAccessorTemplate) BasicClassAccessor<PLUGIN_NAME_COREData>; //necessary to get PLUGIN_NAME_COREData accessor working in Python
+%template (PLUGIN_NAME_COREDataAccessorTemplate) ExtraMembersGroupAccessorr<PLUGIN_NAME_COREData>; //necessary to get PLUGIN_NAME_COREData accessor working in Python
 
 '''
 
@@ -1097,7 +1065,6 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
                 pluginDeclarationCode = re.sub('EXTRA_ATTRIB_DECLARE', EXTRA_ATTRIB_DECLARE, pluginDeclarationCode)
 
                 print('replacing EXTRA_ATTRIB_DECLARE with', EXTRA_ATTRIB_DECLARE)
-
 
 
             else:
@@ -1118,7 +1085,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                 EXTRA_ATTRIB_DECLARE = '''%include <CompuCell3D/steppables/STEPPABLE_NAME_CORE/STEPPABLE_NAME_COREData.h>
 
-%template (STEPPABLE_NAME_COREDataAccessorTemplate) BasicClassAccessor<STEPPABLE_NAME_COREData>; //necessary to get STEPPABLE_NAME_COREData accessor working in Python
+%template (STEPPABLE_NAME_COREDataAccessorTemplate) ExtraMembersGroupAccessor<STEPPABLE_NAME_COREData>; //necessary to get STEPPABLE_NAME_COREData accessor working in Python
 
 '''
 
