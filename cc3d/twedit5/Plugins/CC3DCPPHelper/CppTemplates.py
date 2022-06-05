@@ -179,13 +179,13 @@ double PLUGIN_NAME_COREPlugin::changeEnergy(const Point3D &pt,const CellG *newCe
     }else{
         //PUT YOUR CODE HERE
     }
-    
+
     if(newCell){
         //PUT YOUR CODE HERE
     }else{
         //PUT YOUR CODE HERE
     }
-    
+
     return energy;    
 }            
 
@@ -216,7 +216,7 @@ void PLUGIN_NAME_COREPlugin::field3DChange(const Point3D &pt, CellG *newCell, Ce
 
 {
 
-    
+
     //This function will be called after each succesful pixel copy - field3DChange does usuall ohusekeeping tasks to make sure state of cells, and state of the lattice is uptdate
     if (newCell){
         //PUT YOUR CODE HERE
@@ -230,7 +230,7 @@ void PLUGIN_NAME_COREPlugin::field3DChange(const Point3D &pt, CellG *newCell, Ce
         //PUT YOUR CODE HERE
     }
 
-		
+
 
 }
 
@@ -259,7 +259,7 @@ void PLUGIN_NAME_COREPlugin::field3DChange(const Point3D &pt, CellG *newCell, Ce
 
 void PLUGIN_NAME_COREPlugin::step() {
     //Put your code here - it will be invoked after every succesful pixel copy and after all lattice monitor finished running
-    	
+
 }
 
 """
@@ -317,9 +317,9 @@ void PLUGIN_NAME_COREPlugin::step() {
 
             # # # """
 
-            EXTRA_ATTRIB_ACCESSOR_DEFINE = 'BasicClassAccessor<' + pluginName + 'Data> ' + pluginNameVar + 'DataAccessor;'
+            EXTRA_ATTRIB_ACCESSOR_DEFINE = 'ExtraMembersGroupAccessor<' + pluginName + 'Data> ' + pluginNameVar + 'DataAccessor;'
 
-            EXTRA_ATTRIB_ACCESSOR_GET_PTR = 'BasicClassAccessor<' + pluginName + 'Data> * ' + 'get' + pluginName + 'DataAccessorPtr(){return & ' + pluginNameVar + 'DataAccessor;}'
+            EXTRA_ATTRIB_ACCESSOR_GET_PTR = 'ExtraMembersGroupAccessor<' + pluginName + 'Data> * ' + 'get' + pluginName + 'DataAccessorPtr(){return & ' + pluginNameVar + 'DataAccessor;}'
 
 
 
@@ -584,9 +584,9 @@ void PLUGIN_NAME_COREPlugin::step() {
 
             # # # """
 
-            EXTRA_ATTRIB_ACCESSOR_DEFINE = 'BasicClassAccessor<' + steppableName + 'Data> ' + steppableNameVar + 'DataAccessor;'
+            EXTRA_ATTRIB_ACCESSOR_DEFINE = 'ExtraMembersGroupAccessor<' + steppableName + 'Data> ' + steppableNameVar + 'DataAccessor;'
 
-            EXTRA_ATTRIB_ACCESSOR_GET_PTR = 'BasicClassAccessor<' + steppableName + 'Data> * ' + 'get' + steppableName + 'DataAccessorPtr(){return & ' + steppableNameVar + 'DataAccessor;}'
+            EXTRA_ATTRIB_ACCESSOR_GET_PTR = 'ExtraMembersGroupAccessor<' + steppableName + 'Data> * ' + 'get' + steppableName + 'DataAccessorPtr(){return & ' + steppableNameVar + 'DataAccessor;}'
 
 
 
@@ -664,38 +664,6 @@ void PLUGIN_NAME_COREPlugin::step() {
 
         return steppableImplementationText
 
-    # # # def  generateSteppableRegistrationCode(self,_steppableName="GenericSteppable",_frequency=1,_steppableFile="",_indentationLevel=0,_indentationWidth=4):
-
-    # # # try:
-
-    # # # text=self.steppableTemplatesDict["SteppableRegistrationCode"]
-
-    # # # except LookupError,e:
-
-    # # # return ""
-
-    # # # text=re.sub("STEPPABLENAME",_steppableName,text)
-
-    # # # text=re.sub("STEPPABLEFILE",_steppableFile,text)
-
-    # # # text=re.sub("FREQUENCY",str(_frequency),text)
-
-    # # # # possible indentation of registration code - quite unlikely it wiil be needed
-
-    # # # if _indentationLevel<0:
-
-    # # # _indentationLevel=0
-
-    # # # textLines=text.splitlines(True)
-
-    # # # for i in range(len(textLines)):
-
-    # # # textLines[i]=' '*_indentationWidth*_indentationLevel+textLines[i]
-
-    # # # text=''.join(textLines)
-
-    # # # return text
-
     def generateSteppableExtraAttributeFile(self, _features={}):
 
         replaceLabelList = []
@@ -746,205 +714,104 @@ ADD_COMPUCELL3D_PLUGIN(PLUGIN_CORE_NAME LINK_LIBRARIES ${PLUGIN_DEPENDENCIES} EX
         self.cppTemplatesDict["PluginHeader"] = """
 
 #ifndef IFDEFLABEL
-
 #define IFDEFLABEL
-
-
 
 #include <CompuCell3D/CC3D.h>
 
 EXTRA_ATTRIB_INCLUDES
-
-
-
 DLL_SPECIFIER_INCLUDE
 
-
-
 class CC3DXMLElement;
-
-
 
 namespace CompuCell3D {
 
     class Simulator;
-
-
-
     class Potts3D;
-
     class Automaton;
-
-    //class AdhesionFlexData;
-
     class BoundaryStrategy;
-
     class ParallelUtilsOpenMP;
 
-    
-
     template <class T> class Field3D;
-
     template <class T> class WatchableField3D;
 
-
-
     class DLL_SPECIFIER_EXPORT  PLUGIN_NAME_COREPlugin : public Plugin ENERGY_FUNCTION_BASE LATTICE_MONITOR_BASE STEPPER_BASE{
-
-        
 
     private:    
 
         EXTRA_ATTRIB_ACCESSOR_DEFINE                
-
         CC3DXMLElement *xmlData;        
-
-        
-
         Potts3D *potts;
-
-        
-
         Simulator *sim;
-
-        
-
         ParallelUtilsOpenMP *pUtils;            
-
-        
-
         ParallelUtilsOpenMP::OpenMPLock_t *lockPtr;        
-
-
-
         Automaton *automaton;
-
-
-
         BoundaryStrategy *boundaryStrategy;
-
         WatchableField3D<CellG *> *cellFieldG;
 
-        
-
     public:
-
-
-
         PLUGIN_NAME_COREPlugin();
-
         virtual ~PLUGIN_NAME_COREPlugin();
-
-        
-
         EXTRA_ATTRIB_ACCESSOR_GET_PTR                
-
-
-
-        
-
         ENERGY_FUNCTION_INTERFACE        
-
         LATTICE_MONITOR_INTERFACE
-
         STEPPER_INTERFACE        
 
-        
-
         virtual void init(Simulator *simulator, CC3DXMLElement *_xmlData=0);
-
-
-
         virtual void extraInit(Simulator *simulator);
-
-
-
         //Steerrable interface
 
         virtual void update(CC3DXMLElement *_xmlData, bool _fullInitFlag=false);
-
         virtual std::string steerableName();
 
         virtual std::string toString();
-
-
 
     };
 
 };
 
 #endif
-
-        
-
 """
 
         self.cppTemplatesDict["PluginProxy"] = """        
 
 #include "PLUGIN_NAME_COREPlugin.h"
 
-
-
 #include <CompuCell3D/Simulator.h>
+#include <CompuCell3D/PluginManager.h>
 
 using namespace CompuCell3D;
 
 
+auto PLUGIN_NAME_VARProxy = registerPlugin<Plugin,PLUGIN_NAME_COREPlugin>(
+	"PLUGIN_NAME_CORE", 
+	"Autogenerated plugin - the author of the plugin should provide brief description here", 
+	&Simulator::pluginManager
+);
 
-#include <BasicUtils/BasicPluginProxy.h>
-
-
-
-BasicPluginProxy<Plugin, PLUGIN_NAME_COREPlugin>
-
-PLUGIN_NAME_VARProxy("PLUGIN_NAME_CORE", "Autogenerated plugin - the author of the plugin should provide brief description here",
-
-         &Simulator::pluginManager);
 
 """
 
         self.cppTemplatesDict["PluginExtraAttributeData"] = """
 
 #ifndef IFDEFLABEL
-
 #define IFDEFLABEL
 
-
-
-
-
 #include <vector>
-
 #include "PLUGIN_NAME_COREDLLSpecifier.h"
 
 
-
 namespace CompuCell3D {
-
-
-
-   
 
    class DLL_SPECIFIER_EXPORT PLUGIN_NAME_COREData{
 
       public:
 
          PLUGIN_NAME_COREData(){};
-
-         
-
          ~PLUGIN_NAME_COREData(){};
-
          std::vector<float> array;
-
          int x;
 
-         
-
-         
-
    };
-
 };
 
 #endif
@@ -956,8 +823,6 @@ namespace CompuCell3D {
 #ifndef PLUGIN_NAME_CAPITALS_EXPORT_H
 
 #define PLUGIN_NAME_CAPITALS_EXPORT_H
-
-
 
     #if defined(_WIN32)
 
@@ -983,8 +848,6 @@ namespace CompuCell3D {
 
     #endif
 
-
-
 #endif
 
 """
@@ -995,29 +858,15 @@ namespace CompuCell3D {
 
 using namespace CompuCell3D;
 
-
-
 #include "PLUGIN_NAME_COREPlugin.h"
 
-
-
-
-
 PLUGIN_NAME_COREPlugin::PLUGIN_NAME_COREPlugin():
-
 pUtils(0),
-
 lockPtr(0),
-
 xmlData(0) ,
-
 cellFieldG(0),
-
 boundaryStrategy(0)
-
 {}
-
-
 
 PLUGIN_NAME_COREPlugin::~PLUGIN_NAME_COREPlugin() {
 
@@ -1029,19 +878,12 @@ PLUGIN_NAME_COREPlugin::~PLUGIN_NAME_COREPlugin() {
 
 }
 
-
-
 void PLUGIN_NAME_COREPlugin::init(Simulator *simulator, CC3DXMLElement *_xmlData) {
 
     xmlData=_xmlData;
-
     sim=simulator;
-
     potts=simulator->getPotts();
-
     cellFieldG = (WatchableField3D<CellG *> *)potts->getCellFieldG();
-
-    
 
     pUtils=sim->getParallelUtils();
 
@@ -1049,11 +891,7 @@ void PLUGIN_NAME_COREPlugin::init(Simulator *simulator, CC3DXMLElement *_xmlData
 
     pUtils->initLock(lockPtr); 
 
-   
-
-   update(xmlData,true);
-
-   
+    update(xmlData,true);
 
     REGISTER_EXTRA_ATTRIBUTE
 
@@ -1063,18 +901,11 @@ void PLUGIN_NAME_COREPlugin::init(Simulator *simulator, CC3DXMLElement *_xmlData
 
     REGISTER_STEPPER
 
-    
-
     simulator->registerSteerableObject(this);
 
 }
 
-
-
 void PLUGIN_NAME_COREPlugin::extraInit(Simulator *simulator){
-
-    
-
 }
 
 
@@ -1084,8 +915,6 @@ LATTICE_MONITOR_IMPLEMENTATION
 STEPPER_IMPLEMENTATION
 
 ENERGY_FUNCTION_IMPLEMENTATION
-
-
 
 void PLUGIN_NAME_COREPlugin::update(CC3DXMLElement *_xmlData, bool _fullInitFlag){
 
@@ -1098,8 +927,6 @@ void PLUGIN_NAME_COREPlugin::update(CC3DXMLElement *_xmlData, bool _fullInitFlag
     ASSERT_OR_THROW("CELL TYPE PLUGIN WAS NOT PROPERLY INITIALIZED YET. MAKE SURE THIS IS THE FIRST PLUGIN THAT YOU SET", automaton)
 
    set<unsigned char> cellTypesSet;
-
-
 
     CC3DXMLElement * exampleXMLElem=_xmlData->getFirstElement("Example");
 
@@ -1121,34 +948,18 @@ void PLUGIN_NAME_COREPlugin::update(CC3DXMLElement *_xmlData, bool _fullInitFlag
 
     }
 
-    
-
     //boundaryStrategy has information aobut pixel neighbors 
 
     boundaryStrategy=BoundaryStrategy::getInstance();
 
-
-
 }
-
-
-
-
 
 std::string PLUGIN_NAME_COREPlugin::toString(){
-
     return "PLUGIN_NAME_CORE";
-
 }
 
-
-
-
-
 std::string PLUGIN_NAME_COREPlugin::steerableName(){
-
     return toString();
-
 }
 
 """
@@ -1169,33 +980,24 @@ ADD_COMPUCELL3D_STEPPABLE(STEPPABLE_NAME_CORE   LINK_LIBRARIES ${STEPPABLE_DEPEN
 
 #include "STEPPABLE_NAME_CORE.h"
 
-
-
 #include <CompuCell3D/Simulator.h>
+#include <CompuCell3D/PluginManager.h>
 
 using namespace CompuCell3D;
 
 
-
-#include <BasicUtils/BasicPluginProxy.h>
-
-
-
-BasicPluginProxy<Steppable, STEPPABLE_NAME_CORE> 
-
-STEPPABLE_NAME_VARProxy("STEPPABLE_NAME_CORE", "Autogenerated steppeble - the author of the plugin should provide brief description here",
-
-	    &Simulator::steppableManager);        
+auto STEPPABLE_NAME_VARProxy = registerPlugin<Steppable,STEPPABLE_NAME_CORE>(
+	"STEPPABLE_NAME_CORE", 
+	"Autogenerated steppeble - the author of the steppeble should provide brief description here", 
+	&Simulator::steppableManager
+);
 
 """
 
         self.cppTemplatesDict["SteppableDLLSpecifier"] = """
 
 #ifndef STEPPABLE_NAME_CAPITALS_EXPORT_H
-
 #define STEPPABLE_NAME_CAPITALS_EXPORT_H
-
-
 
     #if defined(_WIN32)
 
@@ -1221,8 +1023,6 @@ STEPPABLE_NAME_VARProxy("STEPPABLE_NAME_CORE", "Autogenerated steppeble - the au
 
     #endif
 
-
-
 #endif
 
 """
@@ -1230,114 +1030,57 @@ STEPPABLE_NAME_VARProxy("STEPPABLE_NAME_CORE", "Autogenerated steppeble - the au
         self.cppTemplatesDict["SteppableHeader"] = """
 
 #ifndef IFDEFLABEL
-
 #define IFDEFLABEL
-
-
 
 #include <CompuCell3D/CC3D.h>
 
-
-
 EXTRA_ATTRIB_INCLUDES
-
-
 
 #include "STEPPABLE_NAME_COREDLLSpecifier.h"
 
-
-
-
-
 namespace CompuCell3D {
-
-    
-
-  template <class T> class Field3D;
-
-  template <class T> class WatchableField3D;
-
-
+    template <class T> class Field3D;
+    template <class T> class WatchableField3D;
 
     class Potts3D;
-
     class Automaton;
-
     class BoundaryStrategy;
-
     class CellInventory;
-
     class CellG;
 
-  
-
   class DLL_SPECIFIER_EXPORT STEPPABLE_NAME_CORE : public Steppable {
-
-
 
     EXTRA_ATTRIB_ACCESSOR_DEFINE                
 
     WatchableField3D<CellG *> *cellFieldG;
 
     Simulator * sim;
-
     Potts3D *potts;
-
     CC3DXMLElement *xmlData;
-
     Automaton *automaton;
-
     BoundaryStrategy *boundaryStrategy;
-
     CellInventory * cellInventoryPtr;
-
-    
-
     Dim3D fieldDim;
-
-
-
-    
 
   public:
 
     STEPPABLE_NAME_CORE ();
-
     virtual ~STEPPABLE_NAME_CORE ();
 
     // SimObject interface
-
     virtual void init(Simulator *simulator, CC3DXMLElement *_xmlData=0);
-
     virtual void extraInit(Simulator *simulator);
-
-
-
     EXTRA_ATTRIB_ACCESSOR_GET_PTR
 
-    
-
     //steppable interface
-
     virtual void start();
-
     virtual void step(const unsigned int currentStep);
-
     virtual void finish() {}
 
-
-
-
-
     //SteerableObject interface
-
     virtual void update(CC3DXMLElement *_xmlData, bool _fullInitFlag=false);
-
     virtual std::string steerableName();
-
-	 virtual std::string toString();
-
-
+	virtual std::string toString();
 
   };
 
@@ -1349,101 +1092,53 @@ namespace CompuCell3D {
 
         self.cppTemplatesDict["SteppableImplementation"] = """
 
-
-
 #include <CompuCell3D/CC3D.h>
 
-
-
 using namespace CompuCell3D;
-
-
-
 using namespace std;
-
-
 
 #include "STEPPABLE_NAME_CORE.h"
 
 
-
-STEPPABLE_NAME_CORE::STEPPABLE_NAME_CORE() : cellFieldG(0),sim(0),potts(0),xmlData(0),boundaryStrategy(0),automaton(0),cellInventoryPtr(0){}
-
-
+STEPPABLE_NAME_CORE::STEPPABLE_NAME_CORE(): 
+cellFieldG(0), sim(0), potts(0), 
+xmlData(0), boundaryStrategy(0), automaton(0), cellInventoryPtr(0)
+{}
 
 STEPPABLE_NAME_CORE::~STEPPABLE_NAME_CORE() {
-
 }
-
-
-
-
 
 void STEPPABLE_NAME_CORE::init(Simulator *simulator, CC3DXMLElement *_xmlData) {
 
-  xmlData=_xmlData;
+    xmlData=_xmlData;
+    potts = simulator->getPotts();
+    cellInventoryPtr=& potts->getCellInventory();
+    sim=simulator;
+    cellFieldG = (WatchableField3D<CellG *> *)potts->getCellFieldG();
+    fieldDim=cellFieldG->getDim();
 
-  
+    REGISTER_EXTRA_ATTRIBUTE
 
-  potts = simulator->getPotts();
+    simulator->registerSteerableObject(this);
 
-  cellInventoryPtr=& potts->getCellInventory();
-
-  sim=simulator;
-
-  cellFieldG = (WatchableField3D<CellG *> *)potts->getCellFieldG();
-
-  fieldDim=cellFieldG->getDim();
-
-
-
-  REGISTER_EXTRA_ATTRIBUTE
-
-  simulator->registerSteerableObject(this);
-
-
-
-  update(_xmlData,true);
-
-
+    update(_xmlData,true);
 
 }
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 void STEPPABLE_NAME_CORE::extraInit(Simulator *simulator){
 
     //PUT YOUR CODE HERE
-
 }
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void STEPPABLE_NAME_CORE::start(){
 
-
-
   //PUT YOUR CODE HERE
-
-
-
 }
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 void STEPPABLE_NAME_CORE::step(const unsigned int currentStep){
 
@@ -1453,31 +1148,18 @@ void STEPPABLE_NAME_CORE::step(const unsigned int currentStep){
 
 	CellG * cell=0;
 
-    
-
     cerr<<"currentStep="<<currentStep<<endl;
 
 	for(cInvItr=cellInventoryPtr->cellInventoryBegin() ; cInvItr !=cellInventoryPtr->cellInventoryEnd() ;++cInvItr )
 
 	{
-
 		cell=cellInventoryPtr->getCell(cInvItr);
-
         cerr<<"cell.id="<<cell->id<<" vol="<<cell->volume<<endl;
-
     }
-
-
 
 }
 
-
-
-
-
 void STEPPABLE_NAME_CORE::update(CC3DXMLElement *_xmlData, bool _fullInitFlag){
-
-
 
     //PARSE XML IN THIS FUNCTION
 
@@ -1487,9 +1169,7 @@ void STEPPABLE_NAME_CORE::update(CC3DXMLElement *_xmlData, bool _fullInitFlag){
 
     ASSERT_OR_THROW("CELL TYPE PLUGIN WAS NOT PROPERLY INITIALIZED YET. MAKE SURE THIS IS THE FIRST PLUGIN THAT YOU SET", automaton)
 
-   set<unsigned char> cellTypesSet;
-
-
+    set<unsigned char> cellTypesSet;
 
     CC3DXMLElement * exampleXMLElem=_xmlData->getFirstElement("Example");
 
@@ -1508,28 +1188,18 @@ void STEPPABLE_NAME_CORE::update(CC3DXMLElement *_xmlData, bool _fullInitFlag){
             cerr<<"attrib="<<attrib<<endl;
 
         }
-
     }
-
-    
 
     //boundaryStrategy has information aobut pixel neighbors 
 
     boundaryStrategy=BoundaryStrategy::getInstance();
 
-
-
 }
-
-
 
 std::string STEPPABLE_NAME_CORE::toString(){
 
    return "STEPPABLE_NAME_CORE";
-
 }
-
-
 
 std::string STEPPABLE_NAME_CORE::steerableName(){
 
@@ -1537,52 +1207,28 @@ std::string STEPPABLE_NAME_CORE::steerableName(){
 
 }
 
-        
-
 """
 
         self.cppTemplatesDict["SteppableExtraAttributeData"] = """
 
 #ifndef IFDEFLABEL
-
 #define IFDEFLABEL
-
-
-
-
 
 #include <vector>
 
 #include "STEPPABLE_NAME_COREDLLSpecifier.h"
 
-
-
 namespace CompuCell3D {
-
-
-
-   
 
    class DLL_SPECIFIER_EXPORT STEPPABLE_NAME_COREData{
 
       public:
 
          STEPPABLE_NAME_COREData(){};
-
-         
-
          ~STEPPABLE_NAME_COREData(){};
-
          std::vector<float> array;
-
          int x;
-
-         
-
-         
-
    };
-
 };
 
 #endif
