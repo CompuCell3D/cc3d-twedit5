@@ -120,7 +120,7 @@ class Worker(QThread, QObject):
 
     def run(self):
         """Long-running task."""
-        self.started_config.emit('Developer Configuration Started - Please wait...')
+        self.started_config.emit('Developer Zone Configuration Started - Please wait...')
         try:
             output = configure_developer_zone(self.cc3d_git_dir, self.build_dir)
         except (RuntimeError, FileExistsError, Exception) as e:
