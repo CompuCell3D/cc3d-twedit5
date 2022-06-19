@@ -39,7 +39,7 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
         cc3d_git_dir = QFileDialog.getExistingDirectory(parent=self, caption="CC3D GIT Dir")
         if cc3d_git_dir:
             self.cc3d_git_dir_LE.setText(cc3d_git_dir)
-            self.build_dir_LE.setText(cc3d_git_dir+'_dev_zone_build')
+            self.build_dir_LE.setText(cc3d_git_dir + '_dev_zone_build')
 
     @pyqtSlot()
     def on_build_dir_browse_PB_clicked(self):
@@ -56,7 +56,7 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
         if not self.prep_build_dir(build_dir=build_dir):
             return
 
-        if not all ((cc3d_git_dir, build_dir)):
+        if not all((cc3d_git_dir, build_dir)):
             self.dev_zone_status_TE.setText(
                 "Both CC3D_GIT and build directory (compiler working dir) must be set"
             )
@@ -104,8 +104,7 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
             build_dir.mkdir(exist_ok=True, parents=True)
         return True
 
-
-    def update_status(self, msg:str=''):
+    def update_status(self, msg: str = ''):
         self.dev_zone_status_TE.setText(msg)
 
 
@@ -130,7 +129,8 @@ class Worker(QThread, QObject):
             return
 
         errors, missing_lines = self.process_cmake_config_output(output=output)
-        msg = self.build_post_config_message(errors=errors, missing_lines=missing_lines, output=output)
+        msg = self.build_post_config_message(errors=errors, missing_lines=missing_lines, output=output,
+                                             build_dir=self.build_dir)
 
         self.completed.emit(msg)
         # output = self.how_to_compile_msg(build_dir=self.build_dir) + \
@@ -177,7 +177,6 @@ class Worker(QThread, QObject):
         msg = ''
         compile_msg = self.how_to_compile_msg(build_dir=build_dir)
 
-
         if errors:
             msg += '<b>Errors have occurred during Cmake configuration</b>.<br> ' \
                    'Please see the output of cmake config below and fix the issues<br>'
@@ -190,5 +189,10 @@ class Worker(QThread, QObject):
                    f'You may also try running <b>CompuCell3D/conda-shell.sh</b> ' \
                    f'in the terminal before launching Twedit<br>' \
                    f'<br><b>Steps to compile:</b><br>{compile_msg}' \
-                   '<br>Please see the output of cmake config below <br>'
+                   '<br><br>Please see the output of cmake config below <br>'
             msg += '<br><br><b><u>Cmake Configuration Details:</u></b><br><br>' + output.replace('\n', '<br>')
+        else:
+            msg = f'<br><b>Steps to compile:</b><br>{compile_msg}' \
+                  f'<br><br><b><u>Cmake Configuration Details:</u></b><br><br>' + output.replace('\n', '<br>')
+
+        return msg
