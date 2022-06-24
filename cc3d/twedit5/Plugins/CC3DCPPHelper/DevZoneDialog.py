@@ -11,6 +11,7 @@ from cc3d.twedit5.twedit.utils.global_imports import *
 from pathlib import Path
 import re
 from . import ui_dev_zone
+import shutil
 
 MAC = "qt_mac_set_native_menubar" in dir()
 
@@ -38,6 +39,7 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
         cc3d_git_dir = QFileDialog.getExistingDirectory(parent=self, caption="CC3D GIT Dir")
         if cc3d_git_dir:
             self.cc3d_git_dir_LE.setText(cc3d_git_dir)
+            self.build_dir_LE.setText(cc3d_git_dir + '_dev_zone_build')
 
     @pyqtSlot()
     def on_build_dir_browse_PB_clicked(self):
@@ -45,17 +47,19 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
         if build_dir:
             self.build_dir_LE.setText(build_dir)
 
-    @pyqtSlot()  # signature of the signal emited by the button
+    @pyqtSlot()  # signature of the signal emitted by the button
     def on_configurePB_clicked(self):
 
-        error_flag = False
         cc3d_git_dir = Path(self.cc3d_git_dir_LE.text())
         build_dir = Path(self.build_dir_LE.text())
-        if not all ((cc3d_git_dir, build_dir)):
+
+        if not self.prep_build_dir(build_dir=build_dir):
+            return
+
+        if not all((cc3d_git_dir, build_dir)):
             self.dev_zone_status_TE.setText(
                 "Both CC3D_GIT and build directory (compiler working dir) must be set"
             )
-            return
         else:
             if cc3d_git_dir.exists() and build_dir.exists():
 
@@ -77,12 +81,30 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
                     "point to existing directories"
                 )
 
-            return
+    def prep_build_dir(self, build_dir: Path) -> bool:
+        """
+        checks if build dir is empty . Then lets user decide if the content should be removed or
+        whether the used should select different directory
+        :param build_dir:
+        :return:
+        """
+        build_dir.mkdir(exist_ok=True, parents=True)
+        build_dir_content = os.listdir(build_dir)
+        if len(build_dir_content):
+            ret = QMessageBox.question(self.__ui, 'Directory not empty',
+                                       f'The build directory you selected '
+                                       f'<br> <i>{build_dir}</i> <br>'
+                                       f'is not empty.<br>Should I remove the content of this directory?',
+                                       QMessageBox.Yes | QMessageBox.No
+                                       )
+            if ret == QMessageBox.No:
+                self.update_status(msg='Please select an <b>empty</b> build directory')
+                return False
+            shutil.rmtree(build_dir)
+            build_dir.mkdir(exist_ok=True, parents=True)
+        return True
 
-        if not error_flag:
-            self.accept()
-
-    def update_status(self, msg:str=''):
+    def update_status(self, msg: str = ''):
         self.dev_zone_status_TE.setText(msg)
 
 
@@ -98,27 +120,79 @@ class Worker(QThread, QObject):
 
     def run(self):
         """Long-running task."""
-        self.started_config.emit('Developer Configuration Started - Please wait...')
-        output = configure_developer_zone(self.cc3d_git_dir, self.build_dir)
-        output = self.how_to_compile_msg(build_dir=self.build_dir) + \
-                 '\n\nCmake Configuration Details' \
-                 '\n==========================\n\n' \
-                 + output
+        self.started_config.emit('Developer Zone Configuration Started - Please wait...')
+        try:
+            output = configure_developer_zone(self.cc3d_git_dir, self.build_dir)
+        except (RuntimeError, FileExistsError, Exception) as e:
+            output = f'{e}'
+            self.completed.emit(output)
+            return
 
-        self.completed.emit(output)
+        errors, missing_lines = self.process_cmake_config_output(output=output)
+        msg = self.build_post_config_message(errors=errors, missing_lines=missing_lines, output=output,
+                                             build_dir=self.build_dir)
+
+        self.completed.emit(msg)
+        # output = self.how_to_compile_msg(build_dir=self.build_dir) + \
+        #          '\n\nCmake Configuration Details' \
+        #          '\n==========================\n\n' \
+        #          + output
+        #
+        # self.completed.emit(output)
 
     def how_to_compile_msg(self, build_dir: str) -> str:
 
         if sys.platform.startswith('win'):
-            msg = f'\n\n Now open a terminal (ideally Visual Studio 2015 shell) and do the following:\n\n' \
-                  f'c:\CompuCell3D\conda-shell.bat\n\n' \
-                  f'cd {build_dir}\n' \
-                  f'nmake\n' \
+            msg = f'<br><br>Now open a terminal (ideally Visual Studio 2015 shell) and do the following:<br><br>' \
+                  f'c:\CompuCell3D\conda-shell.bat<br><br>' \
+                  f'cd {build_dir}<br>' \
+                  f'nmake<br>' \
                   f'nmake install'
         else:
-            msg = f'\n\n Now open a terminal and do the following:\n' \
-                  f'cd {build_dir}\n' \
-                  f'make\n' \
+            msg = f'<br><br>Now open a terminal and do the following:<br><br>' \
+                  f'cd {build_dir}<br>' \
+                  f'make<br>' \
                   f'make install'
+
+        return msg
+
+    def process_cmake_config_output(self, output):
+        """
+        parses output of cmake config and checks if errors have occurred.
+        :param output:
+        :return:
+        """
+        split_output = output.split('\n')
+        errors = False
+        missing_lines = []
+        for line in split_output:
+            if line.find('errors occurred') > -1:
+                errors = True
+            if line.lower().find('missing') > -1:
+                missing_lines.append(line)
+
+        return errors, missing_lines
+
+    def build_post_config_message(self, errors, missing_lines, output, build_dir):
+        msg = ''
+        compile_msg = self.how_to_compile_msg(build_dir=build_dir)
+
+        if errors:
+            msg += '<b>Errors have occurred during Cmake configuration</b>.<br> ' \
+                   'Please see the output of cmake config below and fix the issues<br>'
+            msg += '<br><br><b><u>Cmake Configuration Details:</u></b><br><br>' + output.replace('\n', '<br>')
+            return msg
+        elif len(missing_lines):
+            msg += f'<b>Missing libraries/headers detected during Cmake configuration</b>.<br> ' \
+                   f'THe compilation may or may not work depending on which package is missing:<br><br>' \
+                   f'{"<br>".join(missing_lines)}<br><br>' \
+                   f'You may also try running <b>CompuCell3D/conda-shell.sh</b> ' \
+                   f'in the terminal before launching Twedit<br>' \
+                   f'<br><b>Steps to compile:</b><br>{compile_msg}' \
+                   '<br><br>Please see the output of cmake config below <br>'
+            msg += '<br><br><b><u>Cmake Configuration Details:</u></b><br><br>' + output.replace('\n', '<br>')
+        else:
+            msg = f'<br><b>Steps to compile:</b><br>{compile_msg}' \
+                  f'<br><br><b><u>Cmake Configuration Details:</u></b><br><br>' + output.replace('\n', '<br>')
 
         return msg
