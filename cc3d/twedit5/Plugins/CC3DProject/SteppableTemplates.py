@@ -32,6 +32,7 @@ class SteppableTemplates:
         return """
 from cc3d.core.PySteppables import *
 import numpy as np
+
 """
 
     def generate_steppable_code(self, steppable_name="GenericSteppable", frequency=1, steppable_type="Generic",
@@ -117,43 +118,70 @@ CompuCellSetup.register_steppable(steppable=STEPPABLENAME(frequency=FREQUENCY))
         self.steppableTemplatesDict["Generic"] = """        
 class STEPPABLENAME(SteppableBasePy):
     def __init__(self, frequency=FREQUENCY):
+        '''
+        constructor
+        '''
         SteppableBasePy.__init__(self, frequency)
+        # PLACE YOUR CODE BELOW THIS LINE
         EXTRAFIELDS
 
     def start(self):
-
+        '''
+        called once before first MCS
+        '''
+        # PLACE YOUR CODE BELOW THIS LINE
+        
         print("STEPPABLENAME: This function is called once before simulation")
 
-
     def step(self, mcs):
-        print("STEPPABLENAME: This function is called every FREQUENCY MCS")
-
+        '''
+        called every MCS or every "frequency" MCS (depending how it was instantiated in the main Python file)
+        '''
+        # PLACE YOUR CODE BELOW THIS LINE
+                
         for cell in self.cell_list:
             print("CELL ID=",cell.id, " CELL TYPE=",cell.type," volume=",cell.volume)
 
-
     def finish(self):
-        # this function may be called at the end of simulation - used very infrequently though
+        '''
+        this function may be called at the end of simulation - used very infrequently though
+        '''        
+        # PLACE YOUR CODE BELOW THIS LINE
+        
         return
 
     def on_stop(self):
-        # this gets called each time user stops simulation
+        '''
+        this gets called each time user stops simulation
+        '''        
+        # PLACE YOUR CODE BELOW THIS LINE
+        
         return
-
-
 """
 
         self.steppableTemplatesDict["RunBeforeMCS"] = """
 class STEPPABLENAME(RunBeforeMCSSteppableBasePy):
     def __init__(self, frequency=FREQUENCY):
+        '''
+        constructor
+        '''    
         SteppableBasePy.__init__(self, frequency)
         EXTRAFIELDS
 
     def start(self):
+        '''
+        called once before first MCS
+        '''
+        # PLACE YOUR CODE BELOW THIS LINE
 
         print("STEPPABLENAME: This function is called once before simulation")
 
     def step(self, mcs):
+        '''
+        called every MCS or every "frequency" MCS (depending how it was instantiated in the main Python file)
+        '''
+        # PLACE YOUR CODE BELOW THIS LINE
+    
         print("STEPPABLENAME: This function is called every FREQUENCY MCS")
         print("STEPPABLENAME: This function is called before MCS i.e. pixel-copies take place for that MCS ")
 
@@ -175,11 +203,19 @@ class STEPPABLENAME(RunBeforeMCSSteppableBasePy):
                 # attr_secretor.secreteInsideCellAtCOM(cell,300)             
 
     def finish(self):
-        # this function may be called at the end of simulation - used very infrequently though
+        '''
+        this function may be called at the end of simulation - used very infrequently though
+        '''        
+        # PLACE YOUR CODE BELOW THIS LINE
+        
         return
 
     def on_stop(self):
-        # this gets called each time user stops simulation
+        '''
+        this gets called each time user stops simulation
+        '''        
+        # PLACE YOUR CODE BELOW THIS LINE
+
         return
 
 
