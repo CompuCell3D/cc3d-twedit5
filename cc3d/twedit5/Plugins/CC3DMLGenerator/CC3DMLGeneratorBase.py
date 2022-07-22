@@ -1207,10 +1207,10 @@ class CC3DMLGeneratorBase:
                 conc_field_name_elem.commentOutElement()
 
                 for type_name in cell_type_names:
-                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': cell_type_data[id1][0]}, 0.1)
+                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': type_name}, 0.1)
 
                 for type_name in cell_type_names:
-                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': cell_type_data[id1][0]}, 0.0001)
+                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': type_name}, 0.0001)
 
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
                 secr_data.addComment(
@@ -1221,12 +1221,8 @@ class CC3DMLGeneratorBase:
                 secr_data.addComment('newline')
                 secr_data.addComment('Uniform secretion Definition')
 
-                max_id = max(cell_type_data.keys())
-                for id1 in range(0, max_id + 1):
-                    if cell_type_data[id1][0] == "Medium":
-                        continue
-
-                    secr_data.ElementCC3D("Secretion", {"Type": cell_type_data[id1][0]}, 0.1)
+                for type_name in cell_type_names:
+                    secr_data.ElementCC3D("Secretion", {"Type": type_name}, 0.1)
 
                 secrete_on_contact_with = ''
 
