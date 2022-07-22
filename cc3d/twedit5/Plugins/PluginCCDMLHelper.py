@@ -418,8 +418,6 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
         for element in cellTypeElementVec:
 
-            typeName = ''
-
             typeId = -1
 
             typeFreeze = False
@@ -436,22 +434,16 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
                 typeId = element.getAttributeAsInt('TypeId')
 
-            else:
-
-                continue
-
             if element.findAttribute('Freeze'):
                 typeFreeze = True
 
-            cellTypeDict[typeId] = [typeName, typeFreeze]
-
-        return cellTypeDict
+            cellTypeDict[typeName] = [typeId, typeFreeze]
 
         print('cellTypeElementVec=', cellTypeElementVec)
 
         print('cellTypeElement=', dir(cellTypeElement))
 
-        # print 'cellTypeElement=',cellTypeElement
+        return cellTypeDict
 
     def __insertSnippet(self, _snippetName):
 
@@ -529,10 +521,8 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
             # read freshly inseerted cell type plugin
 
-        else:
-
-            self.handlerDict[snippetNameStr](data=cellTypeData, editor=editor, generalPropertiesData=gpd,
-                                             hiding_comments=hiding_comments)
+        self.handlerDict[snippetNameStr](data=cellTypeData, editor=editor, generalPropertiesData=gpd,
+                                         hiding_comments=hiding_comments)
 
         return
 
