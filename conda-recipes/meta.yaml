@@ -1,6 +1,6 @@
 # when building as standalone package uncomment line below and set version and build_number to proper values
 # {% set version = "4.3.1" %}
-# {% set build_number = "1" %}
+# {% set build_number = "0" %}
 
 #{% set version = "4.3.2" %}
 #{% set build_number = "2" %}
@@ -34,6 +34,8 @@ requirements:
 
   run:
     - python={{ python_version }}
+    # - numpy=1.18 # only when using conda mambabuild
+    # - cc3d={{ version }}  # only when using conda mambabuild
     - cc3d-player5={{ version }}
     - chardet
     - pyqtwebkit # [not osx]
