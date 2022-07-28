@@ -1151,6 +1151,11 @@ self.build_wall(self.YOUR_WALL_CELL_TYPE)
 ----------  # @Submenu@ Destroy Wall
 self.destroy_wall()
 
+----------  # @Submenu@ Get Lattice Dimensions
+dim_x = self.dim.x  # Lattice dimension along x (first dimension)
+dim_y = self.dim.y  # Lattice dimension along y (second dimension)
+dim_z = self.dim.z  # Lattice dimension along z (third dimension)
+
 ----------  # @Submenu@ Resize And Shift Lattice
 self.resize_and_shift_lattice(new_size=(X, Y, Z), shift_vec=(VX, VY, VZ))
 
