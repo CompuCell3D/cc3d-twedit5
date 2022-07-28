@@ -14,7 +14,7 @@ also available via conda as an extension package of the CompuCell3D conda packag
 
 .. code-block:: console
 
-    conda install -c compucell3d cc3d-twedit5
+    conda install -c compucell3d -c conda-forge cc3d-twedit5
 
 For conda packages, Twedit++ can be launched from a terminal by activating the conda
 environment in which Twedit++ is installed and then issuing the command ``cc3d-twedit5``.
