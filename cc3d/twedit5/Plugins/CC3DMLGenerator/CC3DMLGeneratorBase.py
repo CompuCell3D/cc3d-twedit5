@@ -220,11 +220,13 @@ class CC3DMLGeneratorBase:
         m_element.addComment("newline")
         m_element.addComment("Listing all cell types in the simulation")
 
-        for type_id, typeTuple in cell_type_data.items():
+        for type_name, typeTuple in cell_type_data.items():
 
-            cell_type_dict = {}
-            cell_type_dict["TypeName"] = typeTuple[0]
-            cell_type_dict["TypeId"] = str(type_id)
+            cell_type_dict = {"TypeName": type_name}
+
+            type_id = typeTuple[0]
+            if type_id >= 0:
+                cell_type_dict["TypeId"] = str(type_id)
 
             if typeTuple[1]:
                 cell_type_dict["Freeze"] = ""
@@ -288,18 +290,16 @@ class CC3DMLGeneratorBase:
         m_element.addComment("Comment out the constrains for cell types which don't need them")
 
         sim_3d_flag = self.checkIfSim3D(gpd)
-        max_id = max(cell_type_data.keys())
 
-        for id1 in range(0, max_id + 1):
-            if cell_type_data[id1][0] == "Medium":
-                continue
+        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
 
+        for type_name in cell_type_names:
             target_length = 25.0
             minor_target_length = 5.0
             lambda_val = 2.0
 
             try:
-                data_list = constraint_data_dict[cell_type_data[id1][0]]
+                data_list = constraint_data_dict[type_name]
             except LookupError:
 
                 data_list = [25, 5.0, 2.0]
@@ -312,7 +312,7 @@ class CC3DMLGeneratorBase:
             except LookupError:
                 pass
 
-            attr = {"CellType": cell_type_data[id1][0], "TargetLength": target_length, "LambdaLength": lambda_val}
+            attr = {"CellType": type_name, "TargetLength": target_length, "LambdaLength": lambda_val}
 
             if sim_3d_flag:
                 attr["MinorTargetLength"] = minor_target_length
@@ -434,13 +434,10 @@ class CC3DMLGeneratorBase:
 
         m_element.ElementCC3D("Algorithm", {}, "PixelBased")
 
-        max_id = max(cell_type_data.keys())
+        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
 
-        for id1 in range(0, max_id + 1):
-            if cell_type_data[id1][0] == "Medium":
-                continue
-
-            cell_type_dict = {"CellType": cell_type_data[id1][0], "x": -0.5, "y": 0.0, "z": 0.0}
+        for type_name in cell_type_names:
+            cell_type_dict = {"CellType": type_name, "x": -0.5, "y": 0.0, "z": 0.0}
 
             m_element.ElementCC3D("ExternalPotentialParameters", cell_type_dict)
 
@@ -545,12 +542,10 @@ class CC3DMLGeneratorBase:
 
         precheck_elem.commentOutElement()
 
-        max_id = max(cell_type_data.keys())
-        for id1 in range(0, max_id + 1):
-            if cell_type_data[id1][0] == "Medium":
-                continue
+        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
 
-            attr = {"Type": cell_type_data[id1][0]}
+        for type_name in cell_type_names:
+            attr = {"Type": type_name}
             m_element.ElementCC3D("Penalty", attr, 1000000)
 
     @GenerateDecorator('Plugin', ['Name', 'ConnectivityGlobal'])
@@ -616,25 +611,23 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Specification of adhesion energies")
 
-        max_id = max(cell_type_data.keys())
-
-        for id1 in range(0, max_id + 1):
-            for id2 in range(id1, max_id + 1):
+        for type_name1 in cell_type_data.keys():
+            for type_name2 in cell_type_data.keys():
                 try:
-                    attrDict = {"Type1": cell_type_data[id1][0], "Type2": cell_type_data[id2][0]}
+                    attrDict = {"Type1": type_name1, "Type2": type_name2}
                 except LookupError:
                     continue
 
                 try:
                     # first see if energy exists
 
-                    energy = contact_matrix[cell_type_data[id1][0]][cell_type_data[id2][0]][0]
+                    energy = contact_matrix[type_name1][type_name2][0]
 
                 except LookupError:
 
                     try:  # try reverse order
 
-                        energy = contact_matrix[cell_type_data[id2][0]][cell_type_data[id1][0]][0]
+                        energy = contact_matrix[type_name2][type_name1][0]
 
                     except LookupError:
                         # use default value
@@ -655,11 +648,9 @@ class CC3DMLGeneratorBase:
         except KeyError:
             juliano_lambda = 10.0
 
-
-        max_id = max(cell_type_data.keys())
-        for id1 in range(1, max_id + 1):
+        for type_name in cell_type_data.keys():
             try:
-                attr_dict = {"Type": cell_type_data[id1][0]}
+                attr_dict = {"Type": type_name}
             except LookupError:
                 continue
 
@@ -683,22 +674,20 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Specification of internal adhesion energies")
 
-        max_id = max(cell_type_data.keys())
-
-        for id1 in range(1, max_id + 1):
-            for id2 in range(id1, max_id + 1):
+        for type_name1 in cell_type_data.keys():
+            for type_name2 in cell_type_data.keys():
                 try:
-                    attr_dict = {"Type1": cell_type_data[id1][0], "Type2": cell_type_data[id2][0]}
+                    attr_dict = {"Type1": type_name1, "Type2": type_name2}
                 except LookupError:
                     continue
 
                 try:
                     # first see if energy exists
-                    energy = contact_matrix[cell_type_data[id1][0]][cell_type_data[id2][0]][0]
+                    energy = contact_matrix[type_name1][type_name2][0]
                 except LookupError:
                     try:
                         # try reverse order
-                        energy = contact_matrix[cell_type_data[id2][0]][cell_type_data[id1][0]][0]
+                        energy = contact_matrix[type_name2][type_name1][0]
                     except LookupError:
                         # use default value
                         energy = 10.0
@@ -737,23 +726,21 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("to specify adhesions bewtween members of same cluster")
 
-        max_id = max(cell_type_data.keys())
-
-        for id1 in range(0, max_id + 1):
-            for id2 in range(id1, max_id + 1):
+        for type_name1 in cell_type_data.keys():
+            for type_name2 in cell_type_data.keys():
                 try:
-                    attr_dict = {"Type1": cell_type_data[id1][0], "Type2": cell_type_data[id2][0]}
+                    attr_dict = {"Type1": type_name1, "Type2": type_name2}
                 except LookupError:
                     continue
 
                 try:
                     # first see if energy exists
-                    energy = contact_matrix[cell_type_data[id1][0]][cell_type_data[id2][0]][0]
+                    energy = contact_matrix[type_name1][type_name2][0]
                 except LookupError:
 
                     try:
                         # try reverse order
-                        energy = contact_matrix[cell_type_data[id2][0]][cell_type_data[id1][0]][0]
+                        energy = contact_matrix[type_name2][type_name1][0]
                     except LookupError:
                         # use default value
                         energy = 10.0
@@ -762,21 +749,21 @@ class CC3DMLGeneratorBase:
 
         # energy between members of same clusters
 
-        for id1 in range(1, max_id + 1):
-            for id2 in range(id1, max_id + 1):
+        for type_name1 in cell_type_data.keys():
+            for type_name2 in cell_type_data.keys():
 
                 try:
-                    attr_dict = {"Type1": cell_type_data[id1][0], "Type2": cell_type_data[id2][0]}
+                    attr_dict = {"Type1": type_name1, "Type2": type_name2}
                 except LookupError:
                     continue
 
                     # first see if energy exists
                 try:
-                    internal_energy = internal_contact_matrix[cell_type_data[id1][0]][cell_type_data[id2][0]][0]
+                    internal_energy = internal_contact_matrix[type_name1][type_name2][0]
                 except LookupError:
 
                     try:  # try reverse order
-                        internal_energy = internal_contact_matrix[cell_type_data[id2][0]][cell_type_data[id1][0]][0]
+                        internal_energy = internal_contact_matrix[type_name2][type_name1][0]
                     except LookupError:
                         # use default value
                         internal_energy = 5.0
@@ -810,18 +797,16 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Please consider using more flexible version of this plugin - AdhesionFlex")
 
-        max_id = max(cell_type_data.keys())
-
-        for id1 in range(0, max_id + 1):
-            for id2 in range(id1, max_id + 1):
-                attr = {"Type1": cell_type_data[id1][0], "Type2": cell_type_data[id2][0]}
+        for type_name1 in cell_type_data.keys():
+            for type_name2 in cell_type_data.keys():
+                attr = {"Type1": type_name1, "Type2": type_name2}
 
                 try:
-                    specificity = specificity_matrix[cell_type_data[id1][0]][cell_type_data[id2][0]][0]
+                    specificity = specificity_matrix[type_name1][type_name2][0]
                 except LookupError:
                     try:
                         # try reverse order
-                        specificity = specificity_matrix[cell_type_data[id2][0]][cell_type_data[id1][0]][0]
+                        specificity = specificity_matrix[type_name2][type_name1][0]
                     except LookupError:
                         # use default value
                         specificity = -1.0
@@ -862,12 +847,10 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("See CC3D manual for details on FPP plugin ")
 
-        max_id = max(cell_type_data.keys())
-
-        for id1 in range(1, max_id + 1):
-            for id2 in range(id1, max_id + 1):
+        for type_name1 in cell_type_data.keys():
+            for type_name2 in cell_type_data.keys():
                 m_element.addComment("newline")
-                attr = {"Type1": cell_type_data[id1][0], "Type2": cell_type_data[id2][0]}
+                attr = {"Type1": type_name1, "Type2": type_name2}
 
                 param_element = m_element.ElementCC3D("Parameters", attr)
                 param_element.ElementCC3D("Lambda", {}, 10)
@@ -876,11 +859,11 @@ class CC3DMLGeneratorBase:
                 param_element.ElementCC3D("MaxDistance", {}, 20)
                 param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
 
-        for id1 in range(1, max_id + 1):
-            for id2 in range(id1, max_id + 1):
+        for type_name1 in cell_type_data.keys():
+            for type_name2 in cell_type_data.keys():
                 m_element.addComment("newline")
 
-                attr = {"Type1": cell_type_data[id1][0], "Type2": cell_type_data[id2][0]}
+                attr = {"Type1": type_name1, "Type2": type_name2}
 
                 param_element = m_element.ElementCC3D("InternalParameters", attr)
                 param_element.ElementCC3D("Lambda", {}, 10)
@@ -911,13 +894,10 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Comment out cell types which should be unaffected by the constraint")
 
-        max_id = max(cell_type_data.keys())
+        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
 
-        for id1 in range(0, max_id + 1):
-            if cell_type_data[id1][0] == "Medium":
-                continue
-
-            m_element.ElementCC3D("IncludeType", {}, cell_type_data[id1][0])
+        for type_name in cell_type_names:
+            m_element.ElementCC3D("IncludeType", {}, type_name)
 
     @GenerateDecorator('Plugin', ['Name', 'Elasticity'])
     def generateElasticityPlugin(self, *args, **kwds):
@@ -967,10 +947,10 @@ class CC3DMLGeneratorBase:
             m_element.ElementCC3D("AdhesionMolecule", attr_dict)
 
         # writing AdhesionMoleculeDensity elements
-        for type_id, props in cell_type_data.items():
+        for type_name in cell_type_data.keys():
 
             for idx, afprops in af_data.items():
-                attr_dict = {"CellType": props[0], "Molecule": afprops, "Density": 1.1}
+                attr_dict = {"CellType": type_name, "Molecule": afprops, "Density": 1.1}
                 m_element.ElementCC3D("AdhesionMoleculeDensity", attr_dict)
 
         # writing binding formula
@@ -1114,20 +1094,7 @@ class CC3DMLGeneratorBase:
 
         region.ElementCC3D("Width", {}, 7)
 
-        types_string = ""
-
-        max_id = max(cell_type_data.keys())
-
-        for id1 in range(0, max_id + 1):
-            if cell_type_data[id1][0] == "Medium":
-                continue
-
-            types_string += cell_type_data[id1][0]
-
-            if id1 < max_id:
-                types_string += ","
-
-        region.ElementCC3D("Types", {}, types_string)
+        region.ElementCC3D("Types", {}, ",".join([n for n in cell_type_data.keys() if n != "Medium"]))
 
     @GenerateDecorator('Steppable', ['Type', 'BlobInitializer'])
     def generateBlobInitializerSteppable(self, *args, **kwds):
@@ -1152,20 +1119,7 @@ class CC3DMLGeneratorBase:
         region.ElementCC3D("Gap", {}, 0)
         region.ElementCC3D("Width", {}, 7)
 
-        types_string = ""
-
-        max_id = max(cell_type_data.keys())
-
-        for id1 in range(0, max_id + 1):
-            if cell_type_data[id1][0] == "Medium":
-                continue
-
-            types_string += cell_type_data[id1][0]
-
-            if id1 < max_id:
-                types_string += ","
-
-        region.ElementCC3D("Types", {}, types_string)
+        region.ElementCC3D("Types", {}, ",".join([n for n in cell_type_data.keys() if n != "Medium"]))
 
     @GenerateDecorator('Steppable', ['Type', 'PIFInitializer'])
     def generatePIFInitializerSteppable(self, *args, **kwds):
@@ -1230,6 +1184,8 @@ class CC3DMLGeneratorBase:
         m_element.addComment("newline")
         m_element.addComment("Specification of PDE solvers")
 
+        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
+
         for field_name, solver in pde_field_data.items():
 
             if solver == 'DiffusionSolverFE':
@@ -1250,19 +1206,11 @@ class CC3DMLGeneratorBase:
 
                 conc_field_name_elem.commentOutElement()
 
-                max_id = max(cell_type_data.keys())
+                for type_name in cell_type_names:
+                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': type_name}, 0.1)
 
-                for id1 in range(0, max_id + 1):
-                    if cell_type_data[id1][0] == "Medium":
-                        continue
-
-                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': cell_type_data[id1][0]}, 0.1)
-
-                for id1 in range(0, max_id + 1):
-                    if cell_type_data[id1][0] == "Medium":
-                        continue
-
-                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': cell_type_data[id1][0]}, 0.0001)
+                for type_name in cell_type_names:
+                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': type_name}, 0.0001)
 
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
                 secr_data.addComment(
@@ -1273,25 +1221,18 @@ class CC3DMLGeneratorBase:
                 secr_data.addComment('newline')
                 secr_data.addComment('Uniform secretion Definition')
 
-                max_id = max(cell_type_data.keys())
-                for id1 in range(0, max_id + 1):
-                    if cell_type_data[id1][0] == "Medium":
-                        continue
-
-                    secr_data.ElementCC3D("Secretion", {"Type": cell_type_data[id1][0]}, 0.1)
+                for type_name in cell_type_names:
+                    secr_data.ElementCC3D("Secretion", {"Type": type_name}, 0.1)
 
                 secrete_on_contact_with = ''
 
                 example_type = ''
-                for id1 in range(0, max_id + 1):
-                    if cell_type_data[id1][0] == "Medium":
-                        continue
-
+                for type_name in cell_type_names:
                     if secrete_on_contact_with != '':
                         secrete_on_contact_with += ','
 
-                    secrete_on_contact_with += cell_type_data[id1][0]
-                    example_type = cell_type_data[id1][0]
+                    secrete_on_contact_with += type_name
+                    example_type = type_name
 
                 secr_on_contact_elem = secr_data.ElementCC3D("SecretionOnContact", {'Type': example_type,
                     "SecreteOnContactWith": secrete_on_contact_with}, 0.2)
