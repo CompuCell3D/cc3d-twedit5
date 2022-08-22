@@ -1171,7 +1171,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                 freeze = True
 
-            self.cellTypeData[row] = [cell_type, freeze]
+            self.cellTypeData[cell_type] = [row, freeze]
 
         self.af_data = {}
 

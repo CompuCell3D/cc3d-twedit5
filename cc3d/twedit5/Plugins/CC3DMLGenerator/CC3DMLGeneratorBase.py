@@ -366,8 +366,8 @@ class CC3DMLGeneratorBase:
         if key_type == 'LocalFlex':
             return m_element
 
-        max_id = max(cell_type_data.keys())
-        for type_id in range(0, max_id + 1):
+        for type_name, type_data in cell_type_data.items():
+            type_id = type_data[0]
             target_val = 50.0
             lambda_val = 2.0
 
@@ -377,7 +377,7 @@ class CC3DMLGeneratorBase:
 
             # first see if entry for this type exists
             try:
-                data_list = constraint_data_dict[cell_type_data[type_id][0]]
+                data_list = constraint_data_dict[type_name]
             except LookupError:
 
                 data_list = [50, 2.0]
@@ -390,9 +390,9 @@ class CC3DMLGeneratorBase:
             except LookupError:
                 pass
 
-            attr_dict = {'CellType': cell_type_data[type_id][0], 'Target' + key_string: target_val,
-
-                        'Lambda' + key_string: lambda_val}
+            attr_dict = {'CellType': type_name,
+                         'Target' + key_string: target_val,
+                         'Lambda' + key_string: lambda_val}
 
             m_element.ElementCC3D(key_string + "EnergyParameters", attr_dict)
 
