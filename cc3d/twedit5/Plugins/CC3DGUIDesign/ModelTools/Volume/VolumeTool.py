@@ -25,28 +25,30 @@ from itertools import product
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-
+from typing import Dict
 from cc3d.cpp.CC3DXML import *
 from cc3d.core.XMLUtils import ElementCC3D, CC3DXMLListPy
 from cc3d.core.XMLUtils import dictionaryToMapStrStr as d2mss
 
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3DModelToolBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.volumedlg import VolumeGUI
+from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.VolumePluginData import VolumePluginData, VolumeByTypePluginData
 
 
 class VolumeTool(CC3DModelToolBase):
     def __init__(self, sim_dicts=None, root_element=None, parent_ui: QObject = None):
         self._dict_keys_to = ['data']
         self._dict_keys_from = []
-        self._requisite_modules = ['Potts']
+        self._requisite_modules = []
 
-        self.cell_type_names = None
-        self.cell_type_ids = None
-        self.cell_types_frozen = None
+
+        self.volume_plugin_data = None
+        self.updated_volume_plugin_data = None
 
         super(VolumeTool, self).__init__(dict_keys_to=self._dict_keys_to, dict_keys_from=self._dict_keys_from,
-                                           requisite_modules=self._requisite_modules, sim_dicts=sim_dicts,
-                                           root_element=root_element, parent_ui=parent_ui)
+                                         requisite_modules=self._requisite_modules, sim_dicts=sim_dicts,
+                                         root_element=root_element, parent_ui=parent_ui,
+                                         modules_to_react_to=['CellType'])
 
         self._user_decision = True
 
@@ -63,7 +65,7 @@ class VolumeTool(CC3DModelToolBase):
         Returns base tool CC3D element
         :return:
         """
-        return ElementCC3D('Plugin', {'Name': 'CellType'})
+        return ElementCC3D('Plugin', {'Name': 'Volume'})
 
     def generate(self):
         """
@@ -72,12 +74,14 @@ class VolumeTool(CC3DModelToolBase):
         """
         element = self.get_tool_element()
 
-        for index in range(self.cell_type_ids.__len__()):
-            attr = {'TypeId': self.cell_type_ids[index], 'TypeName': self.cell_type_names[index]}
-            if self.cell_types_frozen[index]:
-                attr['Freeze'] = ""
-
-            element.ElementCC3D('CellType', attr)
+        if self.updated_volume_plugin_data is not None:
+            gp = self.updated_volume_plugin_data.global_params
+            btp = self.updated_volume_plugin_data.by_type_params
+            if gp is not None:
+                element.ElementCC3D('TargetVolume', {}, gp.target_volume)
+                element.ElementCC3D('LambdaVolume', {}, gp.lambda_volume)
+            elif btp is not None:
+                raise NotImplementedError('Volume By type not implemented')
 
         return element
 
@@ -91,22 +95,10 @@ class VolumeTool(CC3DModelToolBase):
         if self._sim_dicts is None or not self._sim_dicts:
             return
 
-        self.cell_type_ids = []
-        self.cell_type_names = []
-        self.cell_types_frozen = []
-
-        cell_type_data = self._sim_dicts['data']
-        if cell_type_data is None:
+        volume_plugin_data = self._sim_dicts['data']
+        if volume_plugin_data is None:
             return
-        type_ids = list(cell_type_data.keys())
-        type_ids.sort()
-
-        type_id = 0
-        for tid in type_ids:
-            self.cell_type_ids.append(type_id)
-            self.cell_type_names.append(cell_type_data[tid][0])
-            self.cell_types_frozen.append(cell_type_data[tid][1])
-            type_id += 1
+        self.volume_plugin_data = volume_plugin_data
 
     def validate_dicts(self, sim_dicts=None) -> bool:
         """
@@ -160,7 +152,7 @@ class VolumeTool(CC3DModelToolBase):
         Returns UI widget
         :return:
         """
-        return VolumeGUI(cell_types=self.cell_type_names, is_frozen=self.cell_types_frozen)
+        return VolumeGUI(volume_plugin_data=self.volume_plugin_data)
 
     def _process_ui_finish(self, gui: VolumeGUI):
         """
@@ -170,55 +162,21 @@ class VolumeTool(CC3DModelToolBase):
         """
         if not gui.user_decision:
             return
-
-        cell_types = gui.cell_types
-        is_frozen = gui.is_frozen
-
-        num_old = self.cell_type_names.__len__()
-        num_new = cell_types.__len__()
-
-        if not self.cell_type_names:
-            if not cell_types:
-                self.cell_type_ids = []
-                self.cell_type_names = []
-                self.cell_types_frozen = []
-            else:
-                self.cell_type_names = cell_types
-                self.cell_types_frozen = is_frozen
-                self.cell_type_ids = [i for i in range(num_old)]
-            return
-
-        for i in range(num_old):
-            if self.cell_type_names[i] not in cell_types:
-                self.cell_type_names[i] = None
-
-        for i in range(num_new):
-            if cell_types[i] in self.cell_type_names:
-                cell_types[i] = None
-            else:
-                for j in range(num_old):
-                    if self.cell_type_names[j] is None:
-                        self.cell_type_names[j] = cell_types[i]
-                        self.cell_types_frozen[j] = is_frozen[i]
-                        cell_types[i] = None
-                        break
-
-        idx_keep = [i for i in range(num_old) if self.cell_type_names[i] is not None]
-        self.cell_type_names = [self.cell_type_names[i] for i in idx_keep]
-        self.cell_types_frozen = [self.cell_types_frozen[i] for i in idx_keep]
-
-        idx_append = [i for i in range(num_new) if cell_types[i] is not None]
-        [self.cell_type_names.append(cell_types[i]) for i in idx_append]
-        [self.cell_types_frozen.append(is_frozen[i]) for i in idx_append]
-        self.cell_type_ids = [i for i in range(self.cell_type_names.__len__())]
+        new_volume_plugin_data = VolumePluginData()
+        if gui.global_RB:
+            new_volume_plugin_data.global_params = VolumeByTypePluginData(
+                target_volume=gui.target_vol_LE.text(), lambda_volume=gui.lambda_vol_LE.text()
+            )
+            if new_volume_plugin_data != self.volume_plugin_data:
+                self.updated_volume_plugin_data = new_volume_plugin_data
 
     def update_dicts(self):
         """
         Public method to update sim dictionaries from internal data
         :return: None
         """
-        self._sim_dicts['data'] = {self.cell_type_ids[i]: (self.cell_type_names[i], self.cell_types_frozen[i])
-                                   for i in range(self.cell_type_ids.__len__())}
+        # self._sim_dicts['data'] = {self.cell_type_ids[i]: (self.cell_type_names[i], self.cell_types_frozen[i])
+        #                            for i in range(self.cell_type_ids.__len__())}
         return None
 
 
@@ -227,19 +185,48 @@ def load_xml(root_element) -> {}:
     for key in VolumeTool().dict_keys_from() + VolumeTool().dict_keys_to():
         sim_dicts[key] = None
 
-    plugin_element = root_element.getFirstElement('Plugin', d2mss({'Name': 'CellType'}))
+    plugin_element = root_element.getFirstElement('Plugin', d2mss({'Name': 'Volume'}))
 
     if plugin_element is None:
         return sim_dicts
 
-    type_table = {}
-    plugin_elements = CC3DXMLListPy(plugin_element.getElements('CellType'))
-    for plugin_element in plugin_elements:
-        type_id = int(plugin_element.getAttribute('TypeId'))
-        type_name = plugin_element.getAttribute('TypeName')
-        is_freeze = plugin_element.findAttribute('Freeze')
-        type_table[type_id] = (type_name, is_freeze)
+    global_settings = False
+    by_type_settings = False
+    by_cell_settings = False
+    target_volume = None
+    lambda_volume = None
 
-    sim_dicts['data'] = type_table
+    if plugin_element.findElement('TargetVolume'):
+        target_volume = plugin_element.getFirstElement('TargetVolume').getDouble()
+        # if sim_dicts['data'] is None:
+        #     sim_dicts['data'] = {}
+        #
+        # sim_dicts['data']['TargetVolume'] = plugin_element.getFirstElement('TargetVolume').getDouble()
+        # global_settings = True
+
+    if plugin_element.findElement('LambdaVolume'):
+        lambda_volume = plugin_element.getFirstElement('LambdaVolume').getDouble()
+        # if sim_dicts['data'] is None:
+        #     sim_dicts['data'] = {}
+        #
+        # sim_dicts['data']['LambdaVolume'] = plugin_element.getFirstElement('LambdaVolume').getDouble()
+        # global_settings = True
+
+    if lambda_volume is not None and target_volume is not None:
+        sim_dicts['data'] = VolumePluginData(
+            global_params=VolumeByTypePluginData(lambda_volume=lambda_volume, target_volume=target_volume))
+
+    # sim_dicts['global_settings'] = global_settings
+    # sim_dicts['by_type_settings'] = by_type_settings
+    # sim_dicts['by_cell_settings'] = by_cell_settings
+    # type_table = {}
+    # plugin_elements = CC3DXMLListPy(plugin_element.getElements('CellType'))
+    # for plugin_element in plugin_elements:
+    #     type_id = int(plugin_element.getAttribute('TypeId'))
+    #     type_name = plugin_element.getAttribute('TypeName')
+    #     is_freeze = plugin_element.findAttribute('Freeze')
+    #     type_table[type_id] = (type_name, is_freeze)
+    #
+    # sim_dicts['data'] = type_table
 
     return sim_dicts

@@ -32,6 +32,8 @@ from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3D
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypeTool import CellTypeTool
 
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Potts.pottsdlg import PottsGUI
+import traceback
+import sys
 
 
 class PottsTool(CC3DModelToolBase):
@@ -110,7 +112,11 @@ class PottsTool(CC3DModelToolBase):
 
     def _process_imports(self) -> None:
         if 'data' in self._sim_dicts.keys() and self._sim_dicts['data'] is not None:
-            self.cell_types = [val[0] for val in self._sim_dicts['data'].values()]
+            try:
+                self.cell_types = [val[0] for val in self._sim_dicts['data'].values()]
+            except AttributeError:
+                traceback.print_exc(file=sys.stdout)
+                return
         else:
             self.cell_types = []
 

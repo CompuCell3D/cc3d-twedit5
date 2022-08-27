@@ -504,9 +504,11 @@ class PluginManager(QObject):
                 print("WILL TRY TO ACTIVATE ", plugin_object)
                 obj, ok = plugin_object.activate()
                 print("ACTIVATED")
-            except TypeError:
+            except TypeError as err:
 
-                module.error = "Incompatible plugin activation method."
+                module.error = "Incompatible plugin activation method: " + str(err)
+                traceback.print_exc(file=sys.stdout)
+
                 obj = None
                 ok = True
 

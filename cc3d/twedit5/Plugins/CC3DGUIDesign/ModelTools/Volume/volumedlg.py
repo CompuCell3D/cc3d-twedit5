@@ -6,15 +6,15 @@ from PyQt5.QtGui import *
 
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolGUIBase import CC3DModelToolGUIBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.ui_volumedlg import Ui_VolumePluginGUI
+# from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.VolumeTool import VolumePluginData
 
 
 class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
-    def __init__(self, parent=None, cell_types=None, is_frozen=None):
+    def __init__(self, parent=None, volume_plugin_data=None):
         super(VolumeGUI, self).__init__(parent)
         self.setupUi(self)
 
-        self.cell_types = deepcopy(cell_types)
-        self.is_frozen = deepcopy(is_frozen)
+        self.volume_plugin_data = volume_plugin_data
 
         self.user_decision = None
 
@@ -29,14 +29,25 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         self.showNormal()
 
     def init_data(self):
-        if self.cell_types is None or not self.cell_types:
-            self.cell_types = ["Medium"]
-
-        if self.is_frozen is None or not self.is_frozen:
-            self.is_frozen = [False]
+        return
 
     def draw_ui(self):
         print('Inside draw_ui')
+        self.target_vol_LE.setValidator(QDoubleValidator())
+        self.lambda_vol_LE.setValidator(QDoubleValidator())
+
+        if self.volume_plugin_data is None:
+            return
+
+        if self.volume_plugin_data.global_params:
+            if self.global_RB.isChecked():
+                self.by_type_RB.toggle()
+                self.global_RB.toggle()
+            else:
+                self.global_RB.toggle()
+            # self.global_RB.toggled.emit(True)
+            self.target_vol_LE.setText(str(self.volume_plugin_data.global_params.target_volume))
+            self.lambda_vol_LE.setText(str(self.volume_plugin_data.global_params.lambda_volume))
         # if self.cellTypeTable.currentRow() > 0:
         #     self.selected_row = self.cellTypeTable.currentRow()
         # else:
@@ -119,13 +130,17 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
     #     self.init_data()
     #     self.draw_ui()
 
-    def on_accept(self):
+    def accept(self):
         self.user_decision = True
         self.close()
 
-    def on_reject(self):
+    def reject(self):
         self.user_decision = False
         self.close()
+
+    # def on_reject(self):
+    #     self.user_decision = False
+    #     self.close()
 
     # def name_change(self, old_name: str, new_name: str):
     #     if self.validate_name(name=new_name):

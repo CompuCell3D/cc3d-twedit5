@@ -34,7 +34,7 @@ class CC3DModelToolBase:
     Template superclass for CC3DML editor tools
     """
     def __init__(self, dict_keys_to: [] = None, dict_keys_from: [] = None, requisite_modules: [] = None, sim_dicts=None,
-                 root_element: CC3DXMLElement = None, parent_ui: QObject = None):
+                 root_element: CC3DXMLElement = None, parent_ui: QObject = None, modules_to_react_to: [] = None):
         self._xml_element = None
         self._element_cc3d = None
         self._dict_keys_to = dict_keys_to
@@ -42,6 +42,9 @@ class CC3DModelToolBase:
         self._requisite_modules = requisite_modules
         self.__parent_ui = parent_ui
         self._user_decision = False
+        # if any of the modules is changed current module must react to it. E.g. if CellType changes Volume must handle
+        # such change
+        self._modules_to_react_to = modules_to_react_to
 
         self.__flag_no_ui = False
 
@@ -158,7 +161,7 @@ class CC3DModelToolBase:
             element = self.tool_element
 
         if element is None:
-            raise RuntimeError
+            raise RuntimeError(" generate XML element is None - check module plugin")
 
         element: ElementCC3D
         element_x = ElementCC3DX(cc3d_xml_element=element.CC3DXMLElement)

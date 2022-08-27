@@ -811,6 +811,7 @@ class CC3DGUIDesign(QObject):
         # Assemble list of model tool objects, beginning with starting tool
         xml_tools = OrderedDict()
         xml_tools[model_tool] = starting_tool
+        # xml_model_tools contains tools for XML sections present in current XML (plugins, steppables, Potts)
         for xml_model_tool in xml_model_tools.values():
             if xml_model_tool is not model_tool:
                 tool = xml_model_tool(root_element=root_element, parent_ui=self.get_ui())
@@ -829,32 +830,122 @@ class CC3DGUIDesign(QObject):
             sim_dicts = starting_tool.append_to_global_dict(global_sim_dict=sim_dicts)
             tools_wrote[model_tool] = starting_tool
 
-        tool: CC3DModelToolBase
-        while active_design_chain:
-
-            for tool_key, tool in xml_tools.items():
-
-                if not tool.handle_external_changes(sim_dicts=sim_dicts):
-
-                    tool.launch_ui()
-
-                if tool.get_user_decision() is not None and not tool.get_user_decision():
-
-                    active_design_chain = False
-
-                    break
-
-                if not tool.validate_dicts(sim_dicts=sim_dicts):
-
-                    tool.update_dicts()
-                    sim_dicts = tool.append_to_global_dict(global_sim_dict=sim_dicts)
-
-                    tools_wrote[tool_key] = tool
-
-            active_design_chain = active_design_chain and any([not tool.validate_dicts(sim_dicts=sim_dicts)
-                                                               for tool in xml_tools.values()])
+        # tool: CC3DModelToolBase
+        # while active_design_chain:
+        #
+        #     for tool_key, tool in xml_tools.items():
+        #
+        #         if not tool.handle_external_changes(sim_dicts=sim_dicts):
+        #
+        #             tool.launch_ui()
+        #
+        #         if tool.get_user_decision() is not None and not tool.get_user_decision():
+        #
+        #             active_design_chain = False
+        #
+        #             break
+        #
+        #         if not tool.validate_dicts(sim_dicts=sim_dicts):
+        #
+        #             tool.update_dicts()
+        #             sim_dicts = tool.append_to_global_dict(global_sim_dict=sim_dicts)
+        #
+        #             tools_wrote[tool_key] = tool
+        #
+        #     active_design_chain = active_design_chain and any([not tool.validate_dicts(sim_dicts=sim_dicts)
+        #                                                        for tool in xml_tools.values()])
 
         return sim_dicts, tools_wrote
+
+
+    # def design_chain(self, model_tool, root_element):
+    #
+    #     tools_wrote = {}
+    #
+    #     # Get active tools in this xml
+    #     xml_model_tools = self.get_current_xml_tools()
+    #
+    #     # Append starting tool if necessary
+    #     add_starting_tool = False
+    #     if model_tool not in xml_model_tools.values():
+    #         xml_model_tools[self.get_tool_key(model_tool)] = model_tool
+    #         add_starting_tool = True
+    #
+    #     # Append any necessary requisites
+    #     requisites_loaded = False
+    #     requisites_appended = []
+    #     while not requisites_loaded:
+    #         model_tools_appended = {}
+    #         for requisite_modules in [xml_model_tool().get_requisite_modules()
+    #                                   for xml_model_tool in xml_model_tools.values()]:
+    #             for requisite_module in [requisite_module for requisite_module in requisite_modules
+    #                                      if requisite_module not in model_tools_appended.keys()]:
+    #                 if requisite_module in self.active_tools_dict.keys() - xml_model_tools.keys():
+    #                     model_tools_appended[requisite_module] = self.active_tools_dict[requisite_module]
+    #
+    #         for key, val in model_tools_appended.items():
+    #             xml_model_tools[key] = val
+    #             requisites_appended.append(val)
+    #
+    #         requisites_loaded = not any(model_tools_appended)
+    #
+    #     # Assemble sim dictionary from xml according to starting tool
+    #     starting_tool = model_tool(root_element=root_element, parent_ui=self.get_ui())
+    #     starting_tool.update_dicts()
+    #     sim_dicts = starting_tool.get_sim_dicts()
+    #
+    #     # If adding new tool to xml, make sure it goes in list of tools writing blocks
+    #     if add_starting_tool:
+    #         tools_wrote[model_tool] = starting_tool
+    #
+    #     # Assemble list of model tool objects, beginning with starting tool
+    #     xml_tools = OrderedDict()
+    #     xml_tools[model_tool] = starting_tool
+    #     # xml_model_tools contains tools for XML sections present in current XML (plugins, steppables, Potts)
+    #     for xml_model_tool in xml_model_tools.values():
+    #         if xml_model_tool is not model_tool:
+    #             tool = xml_model_tool(root_element=root_element, parent_ui=self.get_ui())
+    #             tool.update_dicts()
+    #             sim_dicts = tool.append_to_global_dict(global_sim_dict=sim_dicts)
+    #             xml_tools[xml_model_tool] = tool
+    #
+    #             if xml_model_tool in requisites_appended:
+    #                 tools_wrote[xml_model_tool] = tool
+    #
+    #     starting_tool.launch_ui()
+    #     starting_tool.update_dicts()
+    #     active_design_chain = not starting_tool.validate_dicts(sim_dicts=sim_dicts)
+    #
+    #     if active_design_chain:
+    #         sim_dicts = starting_tool.append_to_global_dict(global_sim_dict=sim_dicts)
+    #         tools_wrote[model_tool] = starting_tool
+    #
+    #     tool: CC3DModelToolBase
+    #     while active_design_chain:
+    #
+    #         for tool_key, tool in xml_tools.items():
+    #
+    #             if not tool.handle_external_changes(sim_dicts=sim_dicts):
+    #
+    #                 tool.launch_ui()
+    #
+    #             if tool.get_user_decision() is not None and not tool.get_user_decision():
+    #
+    #                 active_design_chain = False
+    #
+    #                 break
+    #
+    #             if not tool.validate_dicts(sim_dicts=sim_dicts):
+    #
+    #                 tool.update_dicts()
+    #                 sim_dicts = tool.append_to_global_dict(global_sim_dict=sim_dicts)
+    #
+    #                 tools_wrote[tool_key] = tool
+    #
+    #         active_design_chain = active_design_chain and any([not tool.validate_dicts(sim_dicts=sim_dicts)
+    #                                                            for tool in xml_tools.values()])
+    #
+    #     return sim_dicts, tools_wrote
 
 
 class CustomContextMenuEventFilter(QObject):
