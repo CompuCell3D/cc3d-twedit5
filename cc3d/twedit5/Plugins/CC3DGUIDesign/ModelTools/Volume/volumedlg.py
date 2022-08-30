@@ -3,19 +3,23 @@ from itertools import product
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from typing import List
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolGUIBase import CC3DModelToolGUIBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.ui_volumedlg import Ui_VolumePluginGUI
-# from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.VolumeTool import VolumePluginData
+
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.table_component import TableComponent
 
 
 class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
-    def __init__(self, parent=None, volume_plugin_data=None):
+    def __init__(self, parent=None, volume_plugin_data=None, cell_types: List[str] = None):
         super(VolumeGUI, self).__init__(parent)
         self.setupUi(self)
-
+        self.cell_types = ['Medium', 'Condensing', 'NonCondensing']
         self.volume_plugin_data = volume_plugin_data
-
+        self.volume_params_table = None
+        self.table_inserted = ''
         self.user_decision = None
 
         self.selected_row = None
@@ -32,61 +36,68 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         return
 
     def draw_ui(self):
-        print('Inside draw_ui')
-        self.target_vol_LE.setValidator(QDoubleValidator())
-        self.lambda_vol_LE.setValidator(QDoubleValidator())
 
         if self.volume_plugin_data is None:
             return
 
         if self.volume_plugin_data.global_params:
             if self.global_RB.isChecked():
-                self.by_type_RB.toggle()
-                self.global_RB.toggle()
+                self.insert_global_params_table()
             else:
+
                 self.global_RB.toggle()
-            # self.global_RB.toggled.emit(True)
-            self.target_vol_LE.setText(str(self.volume_plugin_data.global_params.target_volume))
-            self.lambda_vol_LE.setText(str(self.volume_plugin_data.global_params.lambda_volume))
-        # if self.cellTypeTable.currentRow() > 0:
-        #     self.selected_row = self.cellTypeTable.currentRow()
-        # else:
-        #     self.selected_row = None
-        #
-        # self.cellTypeTable.itemChanged.disconnect(self.on_table_item_change)
-        #
-        # self.cellTypeTable.setRowCount(0)
-        # for i in range(self.cell_types.__len__()):
-        #     row = self.cellTypeTable.rowCount()
-        #     self.cellTypeTable.insertRow(row)
-        #     tti = TypeTableItem(text=self.cell_types[i])
-        #     self.cellTypeTable.setItem(row, 0, tti)
-        #
-        #     fcb = FreezeCB(parent=self, check_state=self.is_frozen[i], is_medium=row == 0)
-        #     self.cellTypeTable.setCellWidget(row, 1, fcb)
-        #
-        # if self.selected_row is not None and self.selected_row > self.cellTypeTable.rowCount():
-        #     self.selected_row = None
-        #
-        # if self.selected_row is not None:
-        #     self.cellTypeTable.setCurrentCell(self.selected_row, 0)
-        #
-        # self.cellTypeTable.setVerticalHeaderLabels([str(row) for row in range(self.cellTypeTable.rowCount())])
-        # self.cellTypeTable.resizeColumnsToContents()
-        # self.cellTypeTable.resizeRowsToContents()
-        # self.cellTypeTable.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        # self.cellTypeTable.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        #
-        # self.cellTypeTable.itemChanged.connect(self.on_table_item_change)
+
+        elif self.volume_plugin_data.by_type_params:
+            if self.by_type_RB.isChecked():
+                self.insert_by_type_params_table()
+            else:
+                self.by_type_RB.toggle()
+
+    def insert_global_params_table(self):
+        self.volume_params_table = TableComponent(module_data=self.volume_plugin_data.global_params)
+        self.remove_table()
+        self.by_type_GB.layout().addWidget(self.volume_params_table.get_ui())
+        self.table_inserted = 'global'
+
+    def insert_by_type_params_table(self):
+        self.volume_params_table = TableComponent(module_data=self.volume_plugin_data.by_type_params)
+        self.remove_table()
+        self.by_type_GB.layout().addWidget(self.volume_params_table.get_ui())
+
+        self.table_inserted = 'by_type'
+
+    def remove_table(self):
+        if self.by_type_GB.layout().count() > 0:
+            self.by_type_GB.layout().takeAt(0)
 
     def connect_all_signals(self):
         print('connecting signals - to implement')
-        # self.cellTypeTable.itemChanged.connect(self.on_table_item_change)
-        # self.cellTypeAddPB.clicked.connect(self.on_add_cell_type)
-        # self.deleteCellTypePB.clicked.connect(self.on_del_cell_type)
-        # self.clearCellTypeTablePB.clicked.connect(self.on_clear_table)
-        # self.okPB.clicked.connect(self.on_accept)
-        # self.cancelPB.clicked.connect(self.on_reject)
+        self.global_RB.toggled.connect(self.on_global_RB_toggled)
+        self.by_type_RB.toggled.connect(self.on_by_type_RB_toggled)
+        self.ok_PB.clicked.connect(self.accept)
+        self.cancel_PB.clicked.connect(self.reject)
+
+    def on_global_RB_toggled(self, flag):
+
+        if flag:
+            if self.volume_plugin_data.global_params is None:
+                self.volume_plugin_data.global_params = self.volume_plugin_data.get_default_global_params()
+
+            if self.table_inserted != 'global':
+                self.insert_global_params_table()
+                self.volume_plugin_data.mode = 'global'
+
+
+    def on_by_type_RB_toggled(self, flag):
+
+        if flag:
+            if self.volume_plugin_data.by_type_params is None:
+                self.volume_plugin_data.by_type_params = self.volume_plugin_data.get_default_by_type_params(
+                    cell_types=self.cell_types)
+
+            if self.table_inserted != 'by_type':
+                self.insert_by_type_params_table()
+                self.volume_plugin_data.mode = 'by_type'
 
     # def on_table_item_change(self, item: QTableWidgetItem):
     #     if item.row() == 0 and item.column() == 0:
@@ -151,7 +162,6 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
 
     # def validate_name(self, name: str):
     #     return not (name in self.cell_types or name == "Medium" or name.__len__() < 2)
-
 
 # class TypeTableItem(QTableWidgetItem):
 #     def __init__(self, text: str):

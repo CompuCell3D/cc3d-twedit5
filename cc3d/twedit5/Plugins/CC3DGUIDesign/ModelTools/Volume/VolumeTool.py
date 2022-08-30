@@ -32,7 +32,9 @@ from cc3d.core.XMLUtils import dictionaryToMapStrStr as d2mss
 
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3DModelToolBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.volumedlg import VolumeGUI
-from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.VolumePluginData import VolumePluginData, VolumeByTypePluginData
+from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.VolumePluginData import VolumePluginData
+import pandas as pd
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.module_data import ModuleData
 
 
 class VolumeTool(CC3DModelToolBase):
@@ -41,7 +43,7 @@ class VolumeTool(CC3DModelToolBase):
         self._dict_keys_from = []
         self._requisite_modules = []
 
-
+        self.module_data = None
         self.volume_plugin_data = None
         self.updated_volume_plugin_data = None
 
@@ -58,7 +60,10 @@ class VolumeTool(CC3DModelToolBase):
         :param root_element: root simulation CC3D XML element
         :return: None
         """
-        self._sim_dicts = load_xml(root_element=root_element)
+        self.volume_plugin_data = VolumePluginData()
+        self.volume_plugin_data.parse_xml(root_element=root_element)
+        self._sim_dicts['data'] = self.volume_plugin_data
+        # self._sim_dicts = load_xml(root_element=root_element)
 
     def get_tool_element(self):
         """
@@ -72,18 +77,19 @@ class VolumeTool(CC3DModelToolBase):
         Generates plugin element from current sim dictionary states
         :return: plugin element from current sim dictionary states
         """
-        element = self.get_tool_element()
-
-        if self.updated_volume_plugin_data is not None:
-            gp = self.updated_volume_plugin_data.global_params
-            btp = self.updated_volume_plugin_data.by_type_params
-            if gp is not None:
-                element.ElementCC3D('TargetVolume', {}, gp.target_volume)
-                element.ElementCC3D('LambdaVolume', {}, gp.lambda_volume)
-            elif btp is not None:
-                raise NotImplementedError('Volume By type not implemented')
-
-        return element
+        return self.volume_plugin_data.generate_xml_element()
+        # element = self.get_tool_element()
+        #
+        # if self.updated_volume_plugin_data is not None:
+        #     gp = self.updated_volume_plugin_data.global_params
+        #     btp = self.updated_volume_plugin_data.by_type_params
+        #     if gp is not None:
+        #         element.ElementCC3D('TargetVolume', {}, gp.target_volume)
+        #         element.ElementCC3D('LambdaVolume', {}, gp.lambda_volume)
+        #     elif btp is not None:
+        #         raise NotImplementedError('Volume By type not implemented')
+        #
+        # return element
 
     def _process_imports(self) -> None:
         """
@@ -109,6 +115,7 @@ class VolumeTool(CC3DModelToolBase):
         if sim_dicts is None:
             return True
 
+        return False
         new_data = sim_dicts['data']
         current_data = self._sim_dicts['data']
 
@@ -162,13 +169,14 @@ class VolumeTool(CC3DModelToolBase):
         """
         if not gui.user_decision:
             return
-        new_volume_plugin_data = VolumePluginData()
-        if gui.global_RB:
-            new_volume_plugin_data.global_params = VolumeByTypePluginData(
-                target_volume=gui.target_vol_LE.text(), lambda_volume=gui.lambda_vol_LE.text()
-            )
-            if new_volume_plugin_data != self.volume_plugin_data:
-                self.updated_volume_plugin_data = new_volume_plugin_data
+        self.volume_plugin_data = gui.volume_plugin_data
+        # new_volume_plugin_data = VolumePluginData()
+        # if gui.global_RB:
+        #     new_volume_plugin_data.global_params = VolumeByTypePluginData(
+        #         target_volume=gui.target_vol_LE.text(), lambda_volume=gui.lambda_vol_LE.text()
+        #     )
+        #     if new_volume_plugin_data != self.volume_plugin_data:
+        #         self.updated_volume_plugin_data = new_volume_plugin_data
 
     def update_dicts(self):
         """
@@ -180,53 +188,66 @@ class VolumeTool(CC3DModelToolBase):
         return None
 
 
-def load_xml(root_element) -> {}:
-    sim_dicts = {}
-    for key in VolumeTool().dict_keys_from() + VolumeTool().dict_keys_to():
-        sim_dicts[key] = None
 
-    plugin_element = root_element.getFirstElement('Plugin', d2mss({'Name': 'Volume'}))
-
-    if plugin_element is None:
-        return sim_dicts
-
-    global_settings = False
-    by_type_settings = False
-    by_cell_settings = False
-    target_volume = None
-    lambda_volume = None
-
-    if plugin_element.findElement('TargetVolume'):
-        target_volume = plugin_element.getFirstElement('TargetVolume').getDouble()
-        # if sim_dicts['data'] is None:
-        #     sim_dicts['data'] = {}
-        #
-        # sim_dicts['data']['TargetVolume'] = plugin_element.getFirstElement('TargetVolume').getDouble()
-        # global_settings = True
-
-    if plugin_element.findElement('LambdaVolume'):
-        lambda_volume = plugin_element.getFirstElement('LambdaVolume').getDouble()
-        # if sim_dicts['data'] is None:
-        #     sim_dicts['data'] = {}
-        #
-        # sim_dicts['data']['LambdaVolume'] = plugin_element.getFirstElement('LambdaVolume').getDouble()
-        # global_settings = True
-
-    if lambda_volume is not None and target_volume is not None:
-        sim_dicts['data'] = VolumePluginData(
-            global_params=VolumeByTypePluginData(lambda_volume=lambda_volume, target_volume=target_volume))
-
-    # sim_dicts['global_settings'] = global_settings
-    # sim_dicts['by_type_settings'] = by_type_settings
-    # sim_dicts['by_cell_settings'] = by_cell_settings
-    # type_table = {}
-    # plugin_elements = CC3DXMLListPy(plugin_element.getElements('CellType'))
-    # for plugin_element in plugin_elements:
-    #     type_id = int(plugin_element.getAttribute('TypeId'))
-    #     type_name = plugin_element.getAttribute('TypeName')
-    #     is_freeze = plugin_element.findAttribute('Freeze')
-    #     type_table[type_id] = (type_name, is_freeze)
-    #
-    # sim_dicts['data'] = type_table
-
-    return sim_dicts
+# def load_xml(root_element) -> {}:
+#     sim_dicts = {}
+#     for key in VolumeTool().dict_keys_from() + VolumeTool().dict_keys_to():
+#         sim_dicts[key] = None
+#
+#     plugin_element = root_element.getFirstElement('Plugin', d2mss({'Name': 'Volume'}))
+#
+#     if plugin_element is None:
+#         return sim_dicts
+#
+#     global_settings = False
+#     by_type_settings = False
+#     by_cell_settings = False
+#     target_volume = None
+#     lambda_volume = None
+#
+#     if plugin_element.findElement('TargetVolume'):
+#         target_volume = plugin_element.getFirstElement('TargetVolume').getDouble()
+#         # if sim_dicts['data'] is None:
+#         #     sim_dicts['data'] = {}
+#         #
+#         # sim_dicts['data']['TargetVolume'] = plugin_element.getFirstElement('TargetVolume').getDouble()
+#         # global_settings = True
+#
+#     if plugin_element.findElement('LambdaVolume'):
+#         lambda_volume = plugin_element.getFirstElement('LambdaVolume').getDouble()
+#         # if sim_dicts['data'] is None:
+#         #     sim_dicts['data'] = {}
+#         #
+#         # sim_dicts['data']['LambdaVolume'] = plugin_element.getFirstElement('LambdaVolume').getDouble()
+#         # global_settings = True
+#
+#     if lambda_volume is not None and target_volume is not None:
+#
+#         module_data = ModuleData(
+#             df=pd.DataFrame(data=[[target_volume, lambda_volume]], columns=['TargetVolume', 'LambdaVolume']),
+#             types=[float, float],
+#             editable_columns=['TargetVolume', 'LambdaVolume']
+#
+#         )
+#
+#         # sim_dicts['data'] = VolumePluginData(
+#         #     global_params=VolumeByTypePluginData(lambda_volume=lambda_volume, target_volume=target_volume))
+#
+#         sim_dicts['data'] = VolumePluginData(
+#             global_params=module_data)
+#
+#
+#     # sim_dicts['global_settings'] = global_settings
+#     # sim_dicts['by_type_settings'] = by_type_settings
+#     # sim_dicts['by_cell_settings'] = by_cell_settings
+#     # type_table = {}
+#     # plugin_elements = CC3DXMLListPy(plugin_element.getElements('CellType'))
+#     # for plugin_element in plugin_elements:
+#     #     type_id = int(plugin_element.getAttribute('TypeId'))
+#     #     type_name = plugin_element.getAttribute('TypeName')
+#     #     is_freeze = plugin_element.findAttribute('Freeze')
+#     #     type_table[type_id] = (type_name, is_freeze)
+#     #
+#     # sim_dicts['data'] = type_table
+#
+#     return sim_dicts

@@ -43,43 +43,11 @@
     </layout>
    </item>
    <item>
-    <widget class="QGroupBox" name="globalGB">
+    <widget class="QGroupBox" name="by_type_GB">
      <property name="title">
       <string>Global</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <layout class="QHBoxLayout" name="globalLayout">
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;TargetVolume&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="target_vol_LE"/>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;LambdaVolume&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="lambda_vol_LE"/>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="bytypeGB">
-     <property name="title">
-      <string>By Cell Type</string>
-     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_4"/>
     </widget>
    </item>
    <item>
@@ -98,14 +66,14 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="cancelPB">
+      <widget class="QPushButton" name="cancel_PB">
        <property name="text">
         <string>Cancel</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="okPB">
+      <widget class="QPushButton" name="ok_PB">
        <property name="text">
         <string>OK</string>
        </property>
@@ -118,39 +86,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>global_RB</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>globalGB</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>35</x>
-     <y>30</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>38</x>
-     <y>72</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>by_type_RB</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>bytypeGB</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>200</x>
-     <y>40</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>79</x>
-     <y>167</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>okPB</sender>
+   <sender>ok_PB</sender>
    <signal>clicked()</signal>
    <receiver>VolumePluginGUI</receiver>
    <slot>accept()</slot>
@@ -166,7 +102,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>cancelPB</sender>
+   <sender>cancel_PB</sender>
    <signal>clicked()</signal>
    <receiver>VolumePluginGUI</receiver>
    <slot>reject()</slot>

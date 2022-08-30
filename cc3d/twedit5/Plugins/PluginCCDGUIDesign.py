@@ -763,8 +763,12 @@ class CC3DGUIDesign(QObject):
 
             return
 
-        [self.__update_tool_lines(editor=current_main_xml_editor, model_tool=tool)
-         for tool in tools_wrote.values() if tool.validate_dicts(sim_dicts=sim_dicts)]
+        for tool in tools_wrote.values():
+            # if tool.validate_dicts(sim_dicts=sim_dicts):
+            self.__update_tool_lines(editor=current_main_xml_editor, model_tool=tool)
+
+        # [self.__update_tool_lines(editor=current_main_xml_editor, model_tool=tool)
+        #  for tool in tools_wrote.values() if tool.validate_dicts(sim_dicts=sim_dicts)]
 
         self.set_current_root_element_text()
 
