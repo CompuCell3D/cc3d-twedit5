@@ -1205,6 +1205,15 @@ class SnippetUtils(object):
 
         return newSnippet
 
+    @SnippetDecorator('Steppable', ['Type', ['ReactionDiffusionSolverFVM']])
+    def handleReactionDiffusionSolverFVM(self, *args, **kwds):
+
+        kwds['pdeFieldData'] = {'FIELD_NAME_1': 'ReactionDiffusionSolverFVM',
+                                'FIELD_NAME_2': 'ReactionDiffusionSolverFVM'}
+        new_xml_elem = self.generator.generateReactionDiffusionSolverFVM(*args, **kwds)
+        new_snippet = new_xml_elem.getCC3DXMLElementString()
+        return new_snippet
+
     @SnippetDecorator('Steppable', ['Type', ['SteadyStateDiffusionSolver', 'SteadyStateDiffusionSolver2D']])
     def handleSteadyStateDiffusionSolver(self, *args, **kwds):
 

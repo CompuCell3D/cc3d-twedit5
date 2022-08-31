@@ -299,6 +299,7 @@ class Ui_NewSimulationWizard(object):
         self.solverCB.addItem("")
         self.solverCB.addItem("")
         self.solverCB.addItem("")
+        self.solverCB.addItem("")
         self.horizontalLayout_15.addWidget(self.solverCB)
         self.fieldAddPB = QtWidgets.QPushButton(self.wizardPage_7)
         self.fieldAddPB.setObjectName("fieldAddPB")
@@ -881,7 +882,8 @@ class Ui_NewSimulationWizard(object):
         self.solverCB.setItemText(1, _translate("NewSimulationWizard", "FlexibleDiffusionSolverFE"))
         self.solverCB.setItemText(2, _translate("NewSimulationWizard", "FastDiffusionSolver2DFE"))
         self.solverCB.setItemText(3, _translate("NewSimulationWizard", "KernelDiffusionSolver"))
-        self.solverCB.setItemText(4, _translate("NewSimulationWizard", "SteadyStateDiffusionSolver"))
+        self.solverCB.setItemText(4, _translate("NewSimulationWizard", "ReactionDiffusionSolverFVM"))
+        self.solverCB.setItemText(5, _translate("NewSimulationWizard", "SteadyStateDiffusionSolver"))
         self.fieldAddPB.setText(_translate("NewSimulationWizard", "Add"))
         self.label_6.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
