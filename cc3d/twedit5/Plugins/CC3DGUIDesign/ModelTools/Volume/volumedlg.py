@@ -8,7 +8,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolGUIBase import CC3DModelToolGUIBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.ui_volumedlg import Ui_VolumePluginGUI
-
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.xml_parse_data import ParseMode
 from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.table_component import TableComponent
 
 
@@ -19,7 +19,7 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         self.cell_types = ['Medium', 'Condensing', 'NonCondensing']
         self.volume_plugin_data = volume_plugin_data
         self.volume_params_table = None
-        self.table_inserted = ''
+        self.table_inserted = ParseMode.BY_CELL
         self.user_decision = None
 
         self.selected_row = None
@@ -57,14 +57,14 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         self.volume_params_table = TableComponent(module_data=self.volume_plugin_data.global_params)
         self.remove_table()
         self.by_type_GB.layout().addWidget(self.volume_params_table.get_ui())
-        self.table_inserted = 'global'
+        self.table_inserted = ParseMode.GLOBAL
 
     def insert_by_type_params_table(self):
         self.volume_params_table = TableComponent(module_data=self.volume_plugin_data.by_type_params)
         self.remove_table()
         self.by_type_GB.layout().addWidget(self.volume_params_table.get_ui())
 
-        self.table_inserted = 'by_type'
+        self.table_inserted = ParseMode.BY_TYPE
 
     def remove_table(self):
         if self.by_type_GB.layout().count() > 0:
@@ -80,25 +80,31 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
     def on_global_RB_toggled(self, flag):
 
         if flag:
+            self.by_type_GB.show()
             if self.volume_plugin_data.global_params is None:
                 self.volume_plugin_data.global_params = self.volume_plugin_data.get_default_global_params()
 
-            if self.table_inserted != 'global':
+            if self.table_inserted != ParseMode.GLOBAL:
                 self.insert_global_params_table()
-                self.volume_plugin_data.mode = 'global'
+                self.volume_plugin_data.mode = ParseMode.GLOBAL
 
 
     def on_by_type_RB_toggled(self, flag):
 
         if flag:
+            self.by_type_GB.show()
             if self.volume_plugin_data.by_type_params is None:
                 self.volume_plugin_data.by_type_params = self.volume_plugin_data.get_default_by_type_params(
                     cell_types=self.cell_types)
 
-            if self.table_inserted != 'by_type':
+            if self.table_inserted != ParseMode.BY_TYPE:
                 self.insert_by_type_params_table()
-                self.volume_plugin_data.mode = 'by_type'
+                self.volume_plugin_data.mode = ParseMode.BY_TYPE
 
+    def on_by_cell_RB_toggled(self, flag):
+        if flag:
+            self.volume_plugin_data.mode = ParseMode.BY_CELL
+            self.by_type_GB.hide()
     # def on_table_item_change(self, item: QTableWidgetItem):
     #     if item.row() == 0 and item.column() == 0:
     #         item.setText("Medium")
