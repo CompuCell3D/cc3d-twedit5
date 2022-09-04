@@ -207,7 +207,7 @@ class TableModel(QtCore.QAbstractTableModel):
         index = self.index(self.rowCount() - 1, 0, QtCore.QModelIndex())
         position = index.row()
         self.beginInsertRows(index, position, position + rows - 1)
-        self.df = pd.concat([self.df, append_df])
+        self.df = pd.concat([self.df, append_df], ignore_index=True)
         self.endInsertRows()
 
         self.layoutChanged.emit()

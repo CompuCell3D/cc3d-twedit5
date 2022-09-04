@@ -78,16 +78,17 @@ class CellTypeTool(CC3DModelToolBase):
         Generates plugin element from current sim dictionary states
         :return: plugin element from current sim dictionary states
         """
-        element = self.get_tool_element()
-
-        for index in range(self.cell_type_ids.__len__()):
-            attr = {'TypeId': self.cell_type_ids[index], 'TypeName': self.cell_type_names[index]}
-            if self.cell_types_frozen[index]:
-                attr['Freeze'] = ""
-
-            element.ElementCC3D('CellType', attr)
-
-        return element
+        return self.cell_type_plugin_data.generate_xml_element()
+        # element = self.get_tool_element()
+        #
+        # for index in range(self.cell_type_ids.__len__()):
+        #     attr = {'TypeId': self.cell_type_ids[index], 'TypeName': self.cell_type_names[index]}
+        #     if self.cell_types_frozen[index]:
+        #         attr['Freeze'] = ""
+        #
+        #     element.ElementCC3D('CellType', attr)
+        #
+        # return element
 
     def _process_imports(self) -> None:
         """
@@ -176,7 +177,10 @@ class CellTypeTool(CC3DModelToolBase):
         :param gui: tool gui object
         :return: None
         """
-        return
+        if not gui.user_decision:
+            return
+        self.cell_type_plugin_data = gui.cell_type_plugin_data
+
         # if not gui.user_decision:
         #     return
         #

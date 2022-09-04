@@ -68,7 +68,11 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
             self.name_change(old_name=self.cell_types[item.row()], new_name=item.text())
 
     def handle_add_cell_type(self):
-        cell_type_name = self.cellTypeLE.text()
+
+        cell_type_name = self.cellTypeLE.text().strip()
+        if not cell_type_name:
+            return
+
         freeze = self.freezeCHB.isChecked()
 
         # insert_row_df = pd.DataFrame([{"CellType": "New", "TargetVolume": 22, "LambdaVolume": 2.1, "Freeze": False}])
@@ -78,6 +82,10 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
         insert_row_df = self.cell_type_plugin_data.get_cell_type_row(cell_type_name=cell_type_name, freeze=freeze)
         model.append_rows(append_df=insert_row_df)
         self.cell_type_plugin_data.global_params.df = model.df
+
+        # resetting input widgets
+        self.cellTypeLE.clear()
+        self.freezeCHB.setChecked(False)
 
         # self.cell_type_plugin_data.add_cell_type(cell_type_name=cell_type_name, freeze=freeze)
 
