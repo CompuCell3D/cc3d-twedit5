@@ -1514,6 +1514,172 @@ class CC3DMLGeneratorBase:
 
                 diff_data.ElementCC3D("DeltaT", {}, 1.0)
 
+    @GenerateDecorator('Steppable', ['Type', 'ReactionDiffusionSolverFVM'])
+    def generateReactionDiffusionSolverFVM(self, *args, **kwargs):
+
+        cell_type_data = self.cellTypeData
+        m_element = self.mElement
+
+        try:
+            pde_field_data = kwargs['pdeFieldData']
+        except LookupError:
+            pde_field_data = {}
+
+        sim_3d_flag = self.checkIfSim3D(self.gpd)
+
+        m_element.addComment("newline")
+        m_element.addComment("Specification of PDE solvers")
+
+        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
+        example_type = cell_type_names[0] if cell_type_names else "CellType"
+
+        for field_name, solver in pde_field_data.items():
+
+            if solver == 'ReactionDiffusionSolverFVM':
+
+                diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": field_name})
+
+                diff_field_elem.addComment('Discretization length along X')
+                dx_elem = diff_field_elem.ElementCC3D('DeltaX', {}, 1.0)
+                dx_elem.commentOutElement()
+                diff_field_elem.addComment('Discretization length along Y')
+                dy_elem = diff_field_elem.ElementCC3D('DeltaY', {}, 1.0)
+                dy_elem.commentOutElement()
+                diff_field_elem.addComment('Discretization length along Z')
+                dz_elem = diff_field_elem.ElementCC3D('DeltaZ', {}, 1.0)
+                dz_elem.commentOutElement()
+
+                diff_field_elem.addComment('Optional automatic time sub-stepping. Safe, but conservative.')
+                auto_timestep_elem = diff_field_elem.ElementCC3D('AutoTimeSubStep')
+                auto_timestep_elem.commentOutElement()
+
+                # Diffusion data
+
+                diff_data = diff_field_elem.ElementCC3D("DiffusionData")
+                diff_data.ElementCC3D("FieldName", {}, field_name)
+                diff_data.ElementCC3D("DiffusionConstant", {}, 0.1)
+                diff_data.ElementCC3D("DecayConstant", {}, 0.00001)
+                diff_data.addComment("Additional options are:")
+
+                conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
+                conc_eqn_elem.commentOutElement()
+
+                for type_name in cell_type_names:
+                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': type_name}, 0.1)
+
+                for type_name in cell_type_names:
+                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': type_name}, 0.0001)
+
+                diff_data.addComment("Enables diffusion by cell type:")
+                diff_data.ElementCC3D('DiffusivityByType')
+
+                diff_data.addComment("Enables diffusion in the medium according to a settable diffusivity field")
+                diff_field_medium = diff_data.ElementCC3D('DiffusivityFieldInMedium')
+                diff_field_medium.commentOutElement()
+
+                diff_data.addComment("Enables diffusion everywhere according to a settable diffusivity field")
+                diff_field_everywhere = diff_data.ElementCC3D('DiffusivityFieldEverywhere')
+                diff_field_everywhere.commentOutElement()
+
+                diff_data.addComment('Simple permeable interface coefficient')
+                perm_int_cf = diff_data.ElementCC3D('PermIntCoefficient',
+                                                    {'Type1': example_type,
+                                                     'Type2': example_type},
+                                                    0.01)
+                perm_int_cf.commentOutElement()
+
+                diff_data.addComment('Simple permeable interface bias')
+                perm_int_bias = diff_data.ElementCC3D('PermIntBias',
+                                                      {'Type1': example_type,
+                                                       'Type2': example_type},
+                                                      0.001)
+                perm_int_bias.commentOutElement()
+
+                diff_data.addComment('Enables simple permeable interface modeling everywhere')
+                perm_int_flag = diff_data.ElementCC3D('SimplePermInt')
+                perm_int_flag.commentOutElement()
+
+                # Secretion data
+
+                secr_data = diff_field_elem.ElementCC3D("SecretionData")
+                secr_data.addComment('Uniform secretion Definition')
+
+                for type_name in cell_type_names:
+                    secr_data.ElementCC3D("Secretion", {"Type": type_name}, 0.1)
+
+                secrete_on_contact_with = ''
+
+                example_type = ''
+                for type_name in cell_type_names:
+                    if secrete_on_contact_with != '':
+                        secrete_on_contact_with += ','
+
+                    secrete_on_contact_with += type_name
+                    example_type = type_name
+
+                secr_on_contact_elem = secr_data.ElementCC3D("SecretionOnContact",
+                                                             {'Type': example_type,
+                                                              "SecreteOnContactWith": secrete_on_contact_with},
+                                                             0.2)
+                secr_on_contact_elem.commentOutElement()
+
+                const_conc_elem = secr_data.ElementCC3D("ConstantConcentration", {"Type": example_type}, 0.1)
+                const_conc_elem.commentOutElement()
+
+                # Reaction data
+
+                rx_data = diff_field_elem.ElementCC3D('ReactionData')
+
+                rx_data.addComment('Gives this field a symbol for usage in any expression for any field of this solver')
+                rx_data.ElementCC3D('ExpressionSymbol', {}, field_name)
+
+                rx_data.addComment('Rate proportional to local concentration')
+                rx_data.ElementCC3D('ExpressionMult', {}, 'x')
+
+                rx_data.addComment('Rate independent of local concentration')
+                rx_data.ElementCC3D('ExpressionIndep', {}, 'y')
+
+                # Boundary Conditions
+
+                bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
+
+                plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_x_elem.addComment("Other options are (examples):")
+
+                periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
+
+                periodic_x_elem.commentOutElement()
+
+                cd_elem = plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+
+                cd_elem.commentOutElement()
+
+                plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_y_elem.addComment("Other options are (examples):")
+
+                periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
+                periodic_y_elem.commentOutElement()
+
+                cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+                cv_elem.commentOutElement()
+
+                if sim_3d_flag:
+                    plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                    plane_z_elem.addComment("Other options are (examples):")
+
+                    periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
+                    periodic_z_elem.commentOutElement()
+
+                    cvz_elem = plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+
+                    cvz_elem.commentOutElement()
+
     # @GenerateDecorator('Steppable',['Type','SteadyStateDiffusionSolver'])
     def generateSteadyStateDiffusionSolver(self, *args, **kwds):
 

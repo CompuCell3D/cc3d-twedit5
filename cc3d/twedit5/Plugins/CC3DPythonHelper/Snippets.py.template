@@ -39,6 +39,71 @@ import os
 # It is best to call this function from __init__ of first registered steppable
 self.set_output_dir(output_dir="<CUSTOM_OUTPUT_DIR>", abs_path=False)
 
+===============  # @Menu@ Reaction Diffusion Solver FVM
+
+----------  # @Submenu@ Get solver
+# Reference to the reaction diffusion finite volume solver, or None if the solver is not loaded
+rd_fvm = self.reaction_diffusion_solver_fvm
+
+----------  # @Submenu@ Get a diffusivity field
+# Fetch the diffusivity field for a field named "MyField"
+# Requires diffusivity field in medium or everywhere
+my_field_diff = self.field.MyFieldDiff
+
+----------  # @Submenu@ Set diffusive transport on a volume surface
+field_name = 'MyField'              # Name of the field
+surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+self.reaction_diffusion_solver_fvm.useDiffusiveSurface(field_name, surface_name, loc)  # On a surface
+self.reaction_diffusion_solver_fvm.useDiffusiveSurfaces(field_name, loc)               # On all surfaces
+
+----------  # @Submenu@ Set permeable membrane transport on a volume surface
+field_name = 'MyField'              # Name of the field
+surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+self.reaction_diffusion_solver_fvm.usePermeableSurface(field_name, surface_name, loc)  # On a surface
+self.reaction_diffusion_solver_fvm.usePermeableSurfaces(field_name, loc)               # On all surfaces
+
+----------  # @Submenu@ Set a fixed flux on a volume surface
+field_name = 'MyField'              # Name of the field
+surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+flux_val = 0.1                      # Outward flux value
+loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+self.reaction_diffusion_solver_fvm.useFixedFluxSurface(field_name, surface_name, flux_val, loc)
+
+----------  # @Submenu@ Set a fixed concentration on a volume surface
+field_name = 'MyField'              # Name of the field
+surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+conc_val = 0.1                      # Surface concentration value
+loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+self.reaction_diffusion_solver_fvm.useFixedConcentration(field_name, surface_name, conc_val, loc)
+
+----------  # @Submenu@ Set a fixed concentration in a volume
+field_name = 'MyField'  # Name of the field
+conc_val = 1.0  # Volume concentration value
+loc = CompuCell.Point3D(1, 2, 3)  # Coordinates of volume
+self.reaction_diffusion_solver_fvm.useFixedFVConcentration(field_name, conc_val, loc)
+
+----------  # @Submenu@ Get/set cell diffusivity
+# Requires diffusivity by type
+field_name = 'MyField'  # Name of the field
+cell_diff = self.reaction_diffusion_solver_fvm.getCellDiffusivityCoefficient(cell, field_name)
+self.reaction_diffusion_solver_fvm.setCellDiffusivityCoefficient(cell, field_name, 2 * cell_diff)
+
+----------  # @Submenu@ Get/set cell permeation coefficients
+rd_fvm = self.reaction_diffusion_solver_fvm
+field_name = 'MyField'  # Name of the field
+# Get/set for a pair of cell and cell type
+perm_cf, cell_bias = rd_fvm.getPermeableCoefficients(cell, ncell.type, field_name)
+rd_fvm.setCellPermeationCoefficient(cell, ncell.type, field_name, 2 * perm_cf)
+rd_fvm.setCellPermeableBiasCoefficient(cell, ncell.type, field_name, 3 * cell_bias)
+# Get/set for a pair of cell and cell
+perm_cf, cell_bias, ncell_bias = rd_fvm.getPermeableCoefficients(cell, ncell, field_name)
+rd_fvm.setCellPermeationCoefficient(cell, ncell.type, field_name, 2 * perm_cf)
+rd_fvm.setCellPermeableBiasCoefficient(cell, ncell.type, field_name, 3 * cell_bias)
+rd_fvm.setCellPermeableBiasCoefficient(ncell, cell.type, field_name, 4 * ncell_bias)
+
+
 ===============  # @Menu@ SBML Solver
 
 ----------  # @Submenu@ 1. Model Initial Data
