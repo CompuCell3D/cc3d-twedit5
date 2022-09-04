@@ -61,10 +61,6 @@ class CellTypeTool(CC3DModelToolBase):
 
         self.cell_type_plugin_data = CellTypePluginData()
         self.cell_type_plugin_data.parse_xml(root_element=root_element)
-        self._sim_dicts['data_1'] = self.cell_type_plugin_data
-
-
-        self._sim_dicts = load_xml(root_element=root_element)
 
     def get_tool_element(self):
         """
@@ -79,16 +75,6 @@ class CellTypeTool(CC3DModelToolBase):
         :return: plugin element from current sim dictionary states
         """
         return self.cell_type_plugin_data.generate_xml_element()
-        # element = self.get_tool_element()
-        #
-        # for index in range(self.cell_type_ids.__len__()):
-        #     attr = {'TypeId': self.cell_type_ids[index], 'TypeName': self.cell_type_names[index]}
-        #     if self.cell_types_frozen[index]:
-        #         attr['Freeze'] = ""
-        #
-        #     element.ElementCC3D('CellType', attr)
-        #
-        # return element
 
     def _process_imports(self) -> None:
         """
@@ -181,50 +167,6 @@ class CellTypeTool(CC3DModelToolBase):
             return
         self.cell_type_plugin_data = gui.cell_type_plugin_data
 
-        # if not gui.user_decision:
-        #     return
-        #
-        # cell_types = gui.cell_types
-        # is_frozen = gui.is_frozen
-        #
-        # num_old = self.cell_type_names.__len__()
-        # num_new = cell_types.__len__()
-        #
-        # if not self.cell_type_names:
-        #     if not cell_types:
-        #         self.cell_type_ids = []
-        #         self.cell_type_names = []
-        #         self.cell_types_frozen = []
-        #     else:
-        #         self.cell_type_names = cell_types
-        #         self.cell_types_frozen = is_frozen
-        #         self.cell_type_ids = [i for i in range(num_old)]
-        #     return
-        #
-        # for i in range(num_old):
-        #     if self.cell_type_names[i] not in cell_types:
-        #         self.cell_type_names[i] = None
-        #
-        # for i in range(num_new):
-        #     if cell_types[i] in self.cell_type_names:
-        #         cell_types[i] = None
-        #     else:
-        #         for j in range(num_old):
-        #             if self.cell_type_names[j] is None:
-        #                 self.cell_type_names[j] = cell_types[i]
-        #                 self.cell_types_frozen[j] = is_frozen[i]
-        #                 cell_types[i] = None
-        #                 break
-        #
-        # idx_keep = [i for i in range(num_old) if self.cell_type_names[i] is not None]
-        # self.cell_type_names = [self.cell_type_names[i] for i in idx_keep]
-        # self.cell_types_frozen = [self.cell_types_frozen[i] for i in idx_keep]
-        #
-        # idx_append = [i for i in range(num_new) if cell_types[i] is not None]
-        # [self.cell_type_names.append(cell_types[i]) for i in idx_append]
-        # [self.cell_types_frozen.append(is_frozen[i]) for i in idx_append]
-        # self.cell_type_ids = [i for i in range(self.cell_type_names.__len__())]
-
     def update_dicts(self):
         """
         Public method to update sim dictionaries from internal data
@@ -233,26 +175,3 @@ class CellTypeTool(CC3DModelToolBase):
         self._sim_dicts['data'] = {self.cell_type_ids[i]: (self.cell_type_names[i], self.cell_types_frozen[i])
                                    for i in range(self.cell_type_ids.__len__())}
         return None
-
-
-def load_xml(root_element) -> {}:
-    sim_dicts = {}
-    for key in CellTypeTool().dict_keys_from() + CellTypeTool().dict_keys_to():
-        sim_dicts[key] = None
-
-    plugin_element = root_element.getFirstElement('Plugin', d2mss({'Name': 'CellType'}))
-
-    if plugin_element is None:
-        return sim_dicts
-
-    type_table = {}
-    plugin_elements = CC3DXMLListPy(plugin_element.getElements('CellType'))
-    for plugin_element in plugin_elements:
-        type_id = int(plugin_element.getAttribute('TypeId'))
-        type_name = plugin_element.getAttribute('TypeName')
-        is_freeze = plugin_element.findAttribute('Freeze')
-        type_table[type_id] = (type_name, is_freeze)
-
-    sim_dicts['data'] = type_table
-
-    return sim_dicts

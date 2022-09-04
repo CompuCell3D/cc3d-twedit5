@@ -82,18 +82,6 @@ class VolumeTool(CC3DModelToolBase):
         :return: plugin element from current sim dictionary states
         """
         return self.volume_plugin_data.generate_xml_element()
-        # element = self.get_tool_element()
-        #
-        # if self.updated_volume_plugin_data is not None:
-        #     gp = self.updated_volume_plugin_data.global_params
-        #     btp = self.updated_volume_plugin_data.by_type_params
-        #     if gp is not None:
-        #         element.ElementCC3D('TargetVolume', {}, gp.target_volume)
-        #         element.ElementCC3D('LambdaVolume', {}, gp.lambda_volume)
-        #     elif btp is not None:
-        #         raise NotImplementedError('Volume By type not implemented')
-        #
-        # return element
 
     def _process_imports(self) -> None:
         """

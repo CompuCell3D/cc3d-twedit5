@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
+from PyQt5 import QtGui, QtCore
 # from cc3d import CompuCellSetup
 
 
@@ -10,17 +11,17 @@ class TableView(QtWidgets.QTableView):
 
     def mousePressEvent(self, event):
 
-        # pg = CompuCellSetup.persistent_globals
-        # if pg.steering_panel_synchronizer.locked():
-        #     return
         if event.button() == Qt.LeftButton:
-            index = self.indexAt(event.pos())
-            col_name = self.get_col_name(index)
-            # if col_name == 'Value':
-            #     self.edit(index)
-            if col_name in self.model().editable_columns():
-                self.edit(index)
-
+            modifiers = QtWidgets.QApplication.keyboardModifiers()
+            if bool(modifiers == QtCore.Qt.ControlModifier):
+                index = self.indexAt(event.pos())
+                col_name = self.get_col_name(index)
+                # if col_name == 'Value':
+                #     self.edit(index)
+                if col_name in self.model().editable_columns():
+                    self.edit(index)
+            else:
+                super(TableView, self).mousePressEvent(event)
         else:
             super(TableView, self).mousePressEvent(event)
             # QTableView.mousePressEvent(event)

@@ -1,3 +1,4 @@
+import numpy as np
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import *
 import pandas as pd
@@ -212,4 +213,30 @@ class TableModel(QtCore.QAbstractTableModel):
 
         self.layoutChanged.emit()
 
+    def remove_row(self, index: QtCore.QModelIndex, num_rows: int = 1):
+        """
+        Removing row from model. Two thins are important
+        1. calling self.beginRemoveRows and  self.endRemoveRows
+        2. emitting layoutChanged signal to tell view that data layout has changed
+        for more information see https://www.pythonguis.com/faq/remove-and-insertrow-for-martin-fitzpatricks-example/
+        """
 
+        if not index.isValid():
+            return
+        i = index.row()
+        self.beginRemoveRows(index, i, i+num_rows-1)
+        mask = np.ones(self.df.shape[0], dtype=bool)
+        mask[i] = False
+        self.df = self.df[mask]
+        self.endRemoveRows()
+        self.layoutChanged.emit()
+
+        # rows = append_df.shape[0]
+        # index = self.index(self.rowCount() - 1, 0, QtCore.QModelIndex())
+        # position = index.row()
+        # self.beginInsertRows(index, position, position + rows - 1)
+        # self.df = pd.concat([self.df, append_df], ignore_index=True)
+        # self.endInsertRows()
+        #
+        # self.layoutChanged.emit()
+        #

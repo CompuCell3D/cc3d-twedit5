@@ -11,14 +11,10 @@ from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.table_component import TableComp
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypePluginData import CellTypePluginData
 
 
-
 class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
     def __init__(self, parent=None, cell_type_plugin_data:CellTypePluginData = None):
         super(CellTypeGUI, self).__init__(parent)
         self.setupUi(self)
-
-        # self.cell_types = deepcopy(cell_types)
-        # self.is_frozen = deepcopy(is_frozen)
 
         self.cell_type_plugin_data = cell_type_plugin_data
         self.cell_type_params_table = None
@@ -49,7 +45,8 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
         self.cellTypeAddPB.clicked.connect(self.handle_add_cell_type)
         self.okPB.clicked.connect(self.on_accept)
         self.cancelPB.clicked.connect(self.on_reject)
-
+        self.deleteCellTypePB.clicked.connect(self.handle_delete_cell_type)
+        self.clearCellTypeTablePB.clicked.connect(self.handle_clear_table)
         return
         # self.cellTypeTable.itemChanged.connect(self.on_table_item_change)
         # self.cellTypeAddPB.clicked.connect(self.on_add_cell_type)
@@ -75,48 +72,46 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
 
         freeze = self.freezeCHB.isChecked()
 
-        # insert_row_df = pd.DataFrame([{"CellType": "New", "TargetVolume": 22, "LambdaVolume": 2.1, "Freeze": False}])
-
         view = self.cell_type_params_table.table_view
         model = view.model()
         insert_row_df = self.cell_type_plugin_data.get_cell_type_row(cell_type_name=cell_type_name, freeze=freeze)
         model.append_rows(append_df=insert_row_df)
-        self.cell_type_plugin_data.global_params.df = model.df
+
+        self.update_plugin_data_from_model_data()
 
         # resetting input widgets
         self.cellTypeLE.clear()
         self.freezeCHB.setChecked(False)
 
-        # self.cell_type_plugin_data.add_cell_type(cell_type_name=cell_type_name, freeze=freeze)
+    def handle_delete_cell_type(self):
+        view = self.cell_type_params_table.table_view
+        current_index = view.currentIndex()
+        if current_index.isValid():
+            i = current_index.row()
+            cell_type = self.cell_type_plugin_data.global_params.df['TypeName'].values[i]
+            if cell_type == "Medium":
+                return
+            model = view.model()
+            model.remove_row(index=current_index, num_rows=1)
 
-        # if not self.validate_name(name=cell_type_name):
-        #     return
-        #
-        # self.cell_types.append(cell_type_name)
-        # self.is_frozen.append(freeze)
-        #
-        # self.draw_ui()
+            self.update_plugin_data_from_model_data()
 
-    def on_del_cell_type(self):
-        row = self.cellTypeTable.currentRow()
-        col = self.cellTypeTable.currentColumn()
-        if row < 0 or col < 0:
-            return
+    def handle_clear_table(self):
+        view = self.cell_type_params_table.table_view
+        model = view.model()
+        mask = model.df['TypeName'] == "Medium"
+        model.df = model.df[mask]
+        model.layoutChanged.emit()
 
-        cell_name = self.cellTypeTable.item(row, 0).text()
-        if cell_name == "Medium":
-            return
-        else:
-            self.cell_types.pop(row)
-            self.is_frozen.pop(row)
+        self.update_plugin_data_from_model_data()
 
-            self.draw_ui()
-
-    def on_clear_table(self):
-        self.cell_types = []
-        self.is_frozen = []
-        self.init_data()
-        self.draw_ui()
+    def update_plugin_data_from_model_data(self):
+        """
+        updates self.cell_type_plugin_data based on model data (model is in model view controler)
+        """
+        view = self.cell_type_params_table.table_view
+        model = view.model()
+        self.cell_type_plugin_data.global_params.df = model.df
 
     def on_accept(self):
         self.user_decision = True
@@ -133,25 +128,4 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
                     self.cell_types[i] = new_name
                     return
 
-    # def validate_name(self, name: str):
-    #     return not (name in self.cell_types or name == "Medium" or name.__len__() < 2)
 
-
-class TypeTableItem(QTableWidgetItem):
-    def __init__(self, text: str):
-        super(TypeTableItem, self).__init__()
-        self.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
-        self.setText(text)
-
-
-class FreezeCB(QWidget):
-    def __init__(self, parent: CellTypeGUI, check_state: bool = False, is_medium: bool = False):
-        super(FreezeCB, self).__init__(parent)
-
-        self.cb = QCheckBox()
-        self.cb.setCheckable(not is_medium)
-        self.cb.setChecked(check_state and not is_medium)
-
-        self.h_layout = QHBoxLayout(self)
-        self.h_layout.addWidget(self.cb)
-        self.h_layout.setAlignment(Qt.AlignCenter)
