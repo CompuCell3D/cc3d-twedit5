@@ -2,31 +2,31 @@
 
 # Form implementation generated from reading ui file 'celltypedlg.ui'
 #
-# Created by: PyQt5 UI code generator 5.13.0
+# Created by: PyQt5 UI code generator 5.6
 #
 # WARNING! All changes made in this file will be lost!
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_CellTypePluginGUI(object):
     def setupUi(self, CellTypePluginGUI):
         CellTypePluginGUI.setObjectName("CellTypePluginGUI")
-        CellTypePluginGUI.resize(400, 300)
+        CellTypePluginGUI.resize(568, 363)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(CellTypePluginGUI.sizePolicy().hasHeightForWidth())
+        CellTypePluginGUI.setSizePolicy(sizePolicy)
+        CellTypePluginGUI.setMinimumSize(QtCore.QSize(0, 200))
+        CellTypePluginGUI.setBaseSize(QtCore.QSize(0, 200))
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(CellTypePluginGUI)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.cellTypeTable = QtWidgets.QTableWidget(CellTypePluginGUI)
-        self.cellTypeTable.setEnabled(True)
-        self.cellTypeTable.setBaseSize(QtCore.QSize(256, 171))
-        self.cellTypeTable.setObjectName("cellTypeTable")
-        self.cellTypeTable.setColumnCount(2)
-        self.cellTypeTable.setRowCount(0)
-        item = QtWidgets.QTableWidgetItem()
-        self.cellTypeTable.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.cellTypeTable.setHorizontalHeaderItem(1, item)
-        self.verticalLayout_2.addWidget(self.cellTypeTable)
+        self.cell_type_GB = QtWidgets.QGroupBox(CellTypePluginGUI)
+        self.cell_type_GB.setMinimumSize(QtCore.QSize(0, 200))
+        self.cell_type_GB.setObjectName("cell_type_GB")
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.cell_type_GB)
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.verticalLayout_2.addWidget(self.cell_type_GB)
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
@@ -67,7 +67,7 @@ class Ui_CellTypePluginGUI(object):
         self.cancelPB.setObjectName("cancelPB")
         self.horizontalLayout_3.addWidget(self.cancelPB)
         self.verticalLayout_2.addLayout(self.horizontalLayout_3)
-        self.cellTypeTable.raise_()
+        self.cell_type_GB.raise_()
 
         self.retranslateUi(CellTypePluginGUI)
         QtCore.QMetaObject.connectSlotsByName(CellTypePluginGUI)
@@ -75,10 +75,7 @@ class Ui_CellTypePluginGUI(object):
     def retranslateUi(self, CellTypePluginGUI):
         _translate = QtCore.QCoreApplication.translate
         CellTypePluginGUI.setWindowTitle(_translate("CellTypePluginGUI", "CellType Plugin: Please define cell types"))
-        item = self.cellTypeTable.horizontalHeaderItem(0)
-        item.setText(_translate("CellTypePluginGUI", "Cell Type"))
-        item = self.cellTypeTable.horizontalHeaderItem(1)
-        item.setText(_translate("CellTypePluginGUI", "Freeze"))
+        self.cell_type_GB.setTitle(_translate("CellTypePluginGUI", "CellType"))
         self.label_4.setText(_translate("CellTypePluginGUI", "Cell Type"))
         self.freezeCHB.setToolTip(_translate("CellTypePluginGUI", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -91,3 +88,4 @@ class Ui_CellTypePluginGUI(object):
         self.deleteCellTypePB.setText(_translate("CellTypePluginGUI", "Delete Cell Type"))
         self.okPB.setText(_translate("CellTypePluginGUI", "OK"))
         self.cancelPB.setText(_translate("CellTypePluginGUI", "Cancel"))
+

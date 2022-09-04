@@ -60,6 +60,10 @@ class CC3DModelToolBase:
         self.__indent_lvl = -1
         self._indent_list = []
 
+    @staticmethod
+    def get_module_data_class():
+        raise NotImplementedError()
+
     def dict_keys_to(self):
         """
         Returns keys of affected sim dictionaries
@@ -313,7 +317,24 @@ class CC3DModelToolBase:
         qd = self.__setup_standalone(gui=gui)
         qd.exec_()
         self._process_ui_finish(gui=gui)
-        return None
+        return gui.is_accepted()
+        # return None
+
+    # def launch_ui(self) -> None:
+    #     """
+    #     Launches stand-alone GUI
+    #     :return: None
+    #     """
+    #     if self.get_flag_no_ui():
+    #         return None
+    #
+    #     gui = self.get_ui()
+    #     if gui is None:
+    #         return None
+    #     qd = self.__setup_standalone(gui=gui)
+    #     qd.exec_()
+    #     self._process_ui_finish(gui=gui)
+    #     return None
 
     def __setup_standalone(self, gui) -> QDialog:
         qd = QDialog(self.get_parent_ui())

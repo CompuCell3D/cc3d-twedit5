@@ -54,6 +54,10 @@ class VolumeTool(CC3DModelToolBase):
 
         self._user_decision = True
 
+    @staticmethod
+    def get_module_data_class():
+        return VolumePluginData
+
     def load_xml(self, root_element: CC3DXMLElement) -> None:
         """
         Loads plugin data from root XML element

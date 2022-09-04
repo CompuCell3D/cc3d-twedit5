@@ -6,35 +6,44 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>568</width>
+    <height>363</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>200</height>
+   </size>
+  </property>
+  <property name="baseSize">
+   <size>
+    <width>0</width>
+    <height>200</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>CellType Plugin: Please define cell types</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="QTableWidget" name="cellTypeTable">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="baseSize">
+    <widget class="QGroupBox" name="cell_type_GB">
+     <property name="minimumSize">
       <size>
-       <width>256</width>
-       <height>171</height>
+       <width>0</width>
+       <height>200</height>
       </size>
      </property>
-     <column>
-      <property name="text">
-       <string>Cell Type</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Freeze</string>
-      </property>
-     </column>
+     <property name="title">
+      <string>CellType</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3"/>
     </widget>
    </item>
    <item>
@@ -139,8 +148,8 @@ p, li { white-space: pre-wrap; }
     </layout>
    </item>
   </layout>
-  <zorder>cellTypeTable</zorder>
   <zorder></zorder>
+  <zorder>cell_type_GB</zorder>
  </widget>
  <resources/>
  <connections/>

@@ -735,13 +735,36 @@ class CC3DGUIDesign(QObject):
 
             self.set_current_root_element_text()
 
-    def on_call_tool(self, _model_tool):
+    def on_call_tool(self, _model_tool_class):
+        accepted, model_tool = self.show_and_process_dialog(model_tool_class=_model_tool_class)
+        if accepted:
+            current_main_xml_editor = self.get_current_main_xml_editor()
+            self.__update_tool_lines(editor=current_main_xml_editor, model_tool=model_tool)
+            self.set_current_root_element_text()
+        # return
+        # root_element = self.get_current_root_element()
+        #
+        # if root_element is not None:
+        #
+        #     self.do_design_chain(starting_tool=_model_tool, root_element=root_element)
+
+    def show_and_process_dialog(self, model_tool_class):
+        """
+        initializes tool. Displays dialog and handles return from the dialog. If OK we update XML if
+        user clicks cancel or closes dialog we do nothing
+        """
 
         root_element = self.get_current_root_element()
-
-        if root_element is not None:
-
-            self.do_design_chain(starting_tool=_model_tool, root_element=root_element)
+        tool = model_tool_class(root_element=root_element, parent_ui=self.get_ui())
+        accepted = tool.launch_ui()
+        return accepted, tool
+    # def on_call_tool(self, _model_tool):
+    #
+    #     root_element = self.get_current_root_element()
+    #
+    #     if root_element is not None:
+    #
+    #         self.do_design_chain(starting_tool=_model_tool, root_element=root_element)
 
     def do_design_chain(self, starting_tool, root_element=None):
 

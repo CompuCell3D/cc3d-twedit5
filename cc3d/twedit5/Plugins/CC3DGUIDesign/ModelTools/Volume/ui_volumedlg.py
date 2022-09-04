@@ -36,6 +36,9 @@ class Ui_VolumePluginGUI(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
+        self.add_PB = QtWidgets.QPushButton(VolumePluginGUI)
+        self.add_PB.setObjectName("add_PB")
+        self.horizontalLayout.addWidget(self.add_PB)
         self.cancel_PB = QtWidgets.QPushButton(VolumePluginGUI)
         self.cancel_PB.setObjectName("cancel_PB")
         self.horizontalLayout.addWidget(self.cancel_PB)
@@ -56,6 +59,7 @@ class Ui_VolumePluginGUI(object):
         self.by_type_RB.setText(_translate("VolumePluginGUI", "By Cell Type"))
         self.by_cell_RB.setText(_translate("VolumePluginGUI", "By Cell"))
         self.by_type_GB.setTitle(_translate("VolumePluginGUI", "Global"))
+        self.add_PB.setText(_translate("VolumePluginGUI", "Add"))
         self.cancel_PB.setText(_translate("VolumePluginGUI", "Cancel"))
         self.ok_PB.setText(_translate("VolumePluginGUI", "OK"))
 

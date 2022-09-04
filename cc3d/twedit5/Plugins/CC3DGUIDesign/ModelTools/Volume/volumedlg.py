@@ -10,17 +10,17 @@ from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolGUIBase import C
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.ui_volumedlg import Ui_VolumePluginGUI
 from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.xml_parse_data import ParseMode
 from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.table_component import TableComponent
+import pandas as pd
 
 
 class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
     def __init__(self, parent=None, volume_plugin_data=None, cell_types: List[str] = None):
         super(VolumeGUI, self).__init__(parent)
         self.setupUi(self)
-        self.cell_types = ['Medium', 'Condensing', 'NonCondensing']
+        self.cell_types = ["Medium", "Condensing", "NonCondensing"]
         self.volume_plugin_data = volume_plugin_data
         self.volume_params_table = None
         self.table_inserted = ParseMode.BY_CELL
-        self.user_decision = None
 
         self.selected_row = None
 
@@ -71,13 +71,14 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
             self.by_type_GB.layout().takeAt(0)
 
     def connect_all_signals(self):
-        print('connecting signals - to implement')
-        self.global_RB.toggled.connect(self.on_global_RB_toggled)
-        self.by_type_RB.toggled.connect(self.on_by_type_RB_toggled)
+        print("connecting signals - to implement")
+        self.global_RB.toggled.connect(self.handle_global_RB_toggled)
+        self.by_type_RB.toggled.connect(self.handle_by_type_RB_toggled)
         self.ok_PB.clicked.connect(self.accept)
         self.cancel_PB.clicked.connect(self.reject)
+        self.add_PB.clicked.connect(self.handle_add_PB_clicked)
 
-    def on_global_RB_toggled(self, flag):
+    def handle_global_RB_toggled(self, flag):
 
         if flag:
             self.by_type_GB.show()
@@ -88,23 +89,33 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
                 self.insert_global_params_table()
                 self.volume_plugin_data.mode = ParseMode.GLOBAL
 
-
-    def on_by_type_RB_toggled(self, flag):
+    def handle_by_type_RB_toggled(self, flag):
 
         if flag:
             self.by_type_GB.show()
             if self.volume_plugin_data.by_type_params is None:
                 self.volume_plugin_data.by_type_params = self.volume_plugin_data.get_default_by_type_params(
-                    cell_types=self.cell_types)
+                    cell_types=self.cell_types
+                )
 
             if self.table_inserted != ParseMode.BY_TYPE:
                 self.insert_by_type_params_table()
                 self.volume_plugin_data.mode = ParseMode.BY_TYPE
 
-    def on_by_cell_RB_toggled(self, flag):
+    def handle_by_cell_RB_toggled(self, flag):
         if flag:
             self.volume_plugin_data.mode = ParseMode.BY_CELL
             self.by_type_GB.hide()
+
+    def handle_add_PB_clicked(self):
+        print('on_add_PB_clicked')
+
+        insert_row_df = pd.DataFrame([{"CellType": "New", "TargetVolume": 22, "LambdaVolume": 2.1, "Freeze": False}])
+
+        view = self.volume_params_table.table_view
+        model = view.model()
+        model.append_rows(append_df=insert_row_df)
+
     # def on_table_item_change(self, item: QTableWidgetItem):
     #     if item.row() == 0 and item.column() == 0:
     #         item.setText("Medium")
@@ -168,6 +179,7 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
 
     # def validate_name(self, name: str):
     #     return not (name in self.cell_types or name == "Medium" or name.__len__() < 2)
+
 
 # class TypeTableItem(QTableWidgetItem):
 #     def __init__(self, text: str):

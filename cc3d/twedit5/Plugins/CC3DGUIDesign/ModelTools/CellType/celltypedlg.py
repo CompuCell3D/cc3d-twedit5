@@ -3,20 +3,25 @@ from itertools import product
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-
+import pandas as pd
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolGUIBase import CC3DModelToolGUIBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.ui_celltypedlg import Ui_CellTypePluginGUI
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.xml_parse_data import ParseMode
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.table_component import TableComponent
+from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypePluginData import CellTypePluginData
+
 
 
 class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
-    def __init__(self, parent=None, cell_types=None, is_frozen=None):
+    def __init__(self, parent=None, cell_type_plugin_data:CellTypePluginData = None):
         super(CellTypeGUI, self).__init__(parent)
         self.setupUi(self)
 
-        self.cell_types = deepcopy(cell_types)
-        self.is_frozen = deepcopy(is_frozen)
+        # self.cell_types = deepcopy(cell_types)
+        # self.is_frozen = deepcopy(is_frozen)
 
-        self.user_decision = None
+        self.cell_type_plugin_data = cell_type_plugin_data
+        self.cell_type_params_table = None
 
         self.selected_row = None
 
@@ -29,51 +34,29 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
         self.showNormal()
 
     def init_data(self):
-        if self.cell_types is None or not self.cell_types:
-            self.cell_types = ["Medium"]
-
-        if self.is_frozen is None or not self.is_frozen:
-            self.is_frozen = [False]
+        return
 
     def draw_ui(self):
-        if self.cellTypeTable.currentRow() > 0:
-            self.selected_row = self.cellTypeTable.currentRow()
-        else:
-            self.selected_row = None
 
-        self.cellTypeTable.itemChanged.disconnect(self.on_table_item_change)
+        if self.cell_type_plugin_data is None:
+            return
 
-        self.cellTypeTable.setRowCount(0)
-        for i in range(self.cell_types.__len__()):
-            row = self.cellTypeTable.rowCount()
-            self.cellTypeTable.insertRow(row)
-            tti = TypeTableItem(text=self.cell_types[i])
-            self.cellTypeTable.setItem(row, 0, tti)
+        self.cell_type_params_table = TableComponent(module_data=self.cell_type_plugin_data.global_params)
 
-            fcb = FreezeCB(parent=self, check_state=self.is_frozen[i], is_medium=row == 0)
-            self.cellTypeTable.setCellWidget(row, 1, fcb)
-
-        if self.selected_row is not None and self.selected_row > self.cellTypeTable.rowCount():
-            self.selected_row = None
-
-        if self.selected_row is not None:
-            self.cellTypeTable.setCurrentCell(self.selected_row, 0)
-
-        self.cellTypeTable.setVerticalHeaderLabels([str(row) for row in range(self.cellTypeTable.rowCount())])
-        self.cellTypeTable.resizeColumnsToContents()
-        self.cellTypeTable.resizeRowsToContents()
-        self.cellTypeTable.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.cellTypeTable.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-
-        self.cellTypeTable.itemChanged.connect(self.on_table_item_change)
+        self.cell_type_GB.layout().addWidget(self.cell_type_params_table.get_ui())
 
     def connect_all_signals(self):
-        self.cellTypeTable.itemChanged.connect(self.on_table_item_change)
-        self.cellTypeAddPB.clicked.connect(self.on_add_cell_type)
-        self.deleteCellTypePB.clicked.connect(self.on_del_cell_type)
-        self.clearCellTypeTablePB.clicked.connect(self.on_clear_table)
+        self.cellTypeAddPB.clicked.connect(self.handle_add_cell_type)
         self.okPB.clicked.connect(self.on_accept)
         self.cancelPB.clicked.connect(self.on_reject)
+
+        return
+        # self.cellTypeTable.itemChanged.connect(self.on_table_item_change)
+        # self.cellTypeAddPB.clicked.connect(self.on_add_cell_type)
+        # self.deleteCellTypePB.clicked.connect(self.on_del_cell_type)
+        # self.clearCellTypeTablePB.clicked.connect(self.on_clear_table)
+        # self.okPB.clicked.connect(self.on_accept)
+        # self.cancelPB.clicked.connect(self.on_reject)
 
     def on_table_item_change(self, item: QTableWidgetItem):
         if item.row() == 0 and item.column() == 0:
@@ -84,17 +67,27 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
         if item.column() == 0 and item.text() != "Medium" and item.text().__len__() > 2:
             self.name_change(old_name=self.cell_types[item.row()], new_name=item.text())
 
-    def on_add_cell_type(self):
-        cell_name = self.cellTypeLE.text()
-        is_freeze = self.freezeCHB.isChecked()
+    def handle_add_cell_type(self):
+        cell_type_name = self.cellTypeLE.text()
+        freeze = self.freezeCHB.isChecked()
 
-        if not self.validate_name(name=cell_name):
-            return
+        # insert_row_df = pd.DataFrame([{"CellType": "New", "TargetVolume": 22, "LambdaVolume": 2.1, "Freeze": False}])
 
-        self.cell_types.append(cell_name)
-        self.is_frozen.append(is_freeze)
+        view = self.cell_type_params_table.table_view
+        model = view.model()
+        insert_row_df = self.cell_type_plugin_data.get_cell_type_row(cell_type_name=cell_type_name, freeze=freeze)
+        model.append_rows(append_df=insert_row_df)
+        self.cell_type_plugin_data.global_params.df = model.df
 
-        self.draw_ui()
+        # self.cell_type_plugin_data.add_cell_type(cell_type_name=cell_type_name, freeze=freeze)
+
+        # if not self.validate_name(name=cell_type_name):
+        #     return
+        #
+        # self.cell_types.append(cell_type_name)
+        # self.is_frozen.append(freeze)
+        #
+        # self.draw_ui()
 
     def on_del_cell_type(self):
         row = self.cellTypeTable.currentRow()
@@ -132,8 +125,8 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
                     self.cell_types[i] = new_name
                     return
 
-    def validate_name(self, name: str):
-        return not (name in self.cell_types or name == "Medium" or name.__len__() < 2)
+    # def validate_name(self, name: str):
+    #     return not (name in self.cell_types or name == "Medium" or name.__len__() < 2)
 
 
 class TypeTableItem(QTableWidgetItem):

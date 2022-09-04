@@ -31,6 +31,7 @@ class CC3DModelToolGUIBase(QWidget):
 
         self.__ked = KeyEventDetector(parent=self)
         self.installEventFilter(self.__ked)
+        self.user_decision = False
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         self.mtg_close_signal.emit()
@@ -39,6 +40,9 @@ class CC3DModelToolGUIBase(QWidget):
     def enterEvent(self, a0: QEvent) -> None:
         self.mtg_enter_signal.emit()
         super(CC3DModelToolGUIBase, self).enterEvent(a0)
+
+    def is_accepted(self):
+        return self.user_decision
 
 
 class KeyEventDetector(QObject):

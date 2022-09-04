@@ -13,6 +13,8 @@ class EditorDelegate(QStyledItemDelegate):
         col_name = df.columns[index.column()]
 
         if col_name in model.editable_columns():
+            if model.is_boolean(index.column()):
+                return QCheckBox(parent)
             editor = QLineEdit(parent)
 
             # we set initial editor data in setEditorData method

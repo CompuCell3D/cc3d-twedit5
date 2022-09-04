@@ -11,6 +11,8 @@ class TableModel(QtCore.QAbstractTableModel):
         self.df_types = None
         self._editable_columns = None
 
+        # self.inserted_df = None
+
         if module_data is not None:
             self.df = module_data.df
             self.df_types = module_data.types
@@ -34,6 +36,12 @@ class TableModel(QtCore.QAbstractTableModel):
         #     0: 'val',
         #     # 1: 'item_type'
         # }
+
+    def is_boolean(self, col):
+        try:
+            return self.df_types[col] == bool
+        except IndexError:
+            return False
 
     def editable_columns(self):
         return self._editable_columns
@@ -82,13 +90,28 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
 
-        if role == QtCore.Qt.DisplayRole:
+        if role == QtCore.Qt.CheckStateRole:
+            if self.df is not None and self.df_types is not None:
+                i = index.row()
+                j = index.column()
+
+                if self.df_types[j] == bool:
+                    col_name = self.df.columns[j]
+                    if self.df[col_name].values[i]:
+                        return QtCore.Qt.Checked
+                    else:
+                        return QtCore.Qt.Unchecked
+            return QVariant()
+
+        elif role == QtCore.Qt.DisplayRole:
             i = index.row()
             j = index.column()
             col_name = self.df.columns[j]
+            if self.df_types[j] != bool:
 
-
-            return str(self.df[col_name].values[i])
+                return str(self.df[col_name].values[i])
+            else:
+                return QVariant()
             # item = self.item_data[i]
             # item_data_to_display = getattr(item, self.item_data_attr_name[j])
             # return '{}'.format(item_data_to_display)
@@ -149,7 +172,44 @@ class TableModel(QtCore.QAbstractTableModel):
         existing_flags = super(TableModel, self).flags(index)
 
         existing_flags |= QtCore.Qt.ItemIsEditable
+        if self.df is not None and self.df_types is not None:
+            col = index.column()
+            if self.df_types[col] == bool:
+                existing_flags |= QtCore.Qt.ItemIsUserCheckable
 
         return existing_flags
+
+    # def insertRows(self, position, rows, QModelIndex, parent):
+    #     if self.inserted_df is None:
+    #         return
+    #     self.beginInsertRows(QModelIndex, position, position+rows-1)
+    #     default_row = ['']*len(self.df.columns)  # or _headers if you have that defined.
+    #     insert_df = self.df[:1]
+    #     for i in range(rows):
+    #         self.df = pd.concat([self.df, insert_df])
+    #         # self._data.insert(position, default_row)
+    #     self.endInsertRows()
+    #
+    #
+    #     self.layoutChanged.emit()
+    #
+    #
+    #     return True
+
+    def append_rows(self, append_df: pd.DataFrame):
+        """
+        Appending row to model. Two thins are important
+        1. calling self.beginInsertRows and  self.endInsertRows()
+        2. emitting layoutChanged signal to tell view that data layout has changed
+        for more information see https://www.pythonguis.com/faq/remove-and-insertrow-for-martin-fitzpatricks-example/
+        """
+        rows = append_df.shape[0]
+        index = self.index(self.rowCount() - 1, 0, QtCore.QModelIndex())
+        position = index.row()
+        self.beginInsertRows(index, position, position + rows - 1)
+        self.df = pd.concat([self.df, append_df])
+        self.endInsertRows()
+
+        self.layoutChanged.emit()
 
 

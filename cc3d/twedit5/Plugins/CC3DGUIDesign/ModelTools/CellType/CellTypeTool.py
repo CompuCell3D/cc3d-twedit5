@@ -32,6 +32,7 @@ from cc3d.core.XMLUtils import dictionaryToMapStrStr as d2mss
 
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3DModelToolBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.celltypedlg import CellTypeGUI
+from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypePluginData import CellTypePluginData
 
 
 class CellTypeTool(CC3DModelToolBase):
@@ -43,6 +44,7 @@ class CellTypeTool(CC3DModelToolBase):
         self.cell_type_names = None
         self.cell_type_ids = None
         self.cell_types_frozen = None
+        self.cell_type_plugin_data = None
 
         super(CellTypeTool, self).__init__(dict_keys_to=self._dict_keys_to, dict_keys_from=self._dict_keys_from,
                                            requisite_modules=self._requisite_modules, sim_dicts=sim_dicts,
@@ -56,6 +58,12 @@ class CellTypeTool(CC3DModelToolBase):
         :param root_element: root simulation CC3D XML element
         :return: None
         """
+
+        self.cell_type_plugin_data = CellTypePluginData()
+        self.cell_type_plugin_data.parse_xml(root_element=root_element)
+        self._sim_dicts['data_1'] = self.cell_type_plugin_data
+
+
         self._sim_dicts = load_xml(root_element=root_element)
 
     def get_tool_element(self):
@@ -160,7 +168,7 @@ class CellTypeTool(CC3DModelToolBase):
         Returns UI widget
         :return:
         """
-        return CellTypeGUI(cell_types=self.cell_type_names, is_frozen=self.cell_types_frozen)
+        return CellTypeGUI(cell_type_plugin_data=self.cell_type_plugin_data)
 
     def _process_ui_finish(self, gui: CellTypeGUI):
         """
@@ -168,49 +176,50 @@ class CellTypeTool(CC3DModelToolBase):
         :param gui: tool gui object
         :return: None
         """
-        if not gui.user_decision:
-            return
-
-        cell_types = gui.cell_types
-        is_frozen = gui.is_frozen
-
-        num_old = self.cell_type_names.__len__()
-        num_new = cell_types.__len__()
-
-        if not self.cell_type_names:
-            if not cell_types:
-                self.cell_type_ids = []
-                self.cell_type_names = []
-                self.cell_types_frozen = []
-            else:
-                self.cell_type_names = cell_types
-                self.cell_types_frozen = is_frozen
-                self.cell_type_ids = [i for i in range(num_old)]
-            return
-
-        for i in range(num_old):
-            if self.cell_type_names[i] not in cell_types:
-                self.cell_type_names[i] = None
-
-        for i in range(num_new):
-            if cell_types[i] in self.cell_type_names:
-                cell_types[i] = None
-            else:
-                for j in range(num_old):
-                    if self.cell_type_names[j] is None:
-                        self.cell_type_names[j] = cell_types[i]
-                        self.cell_types_frozen[j] = is_frozen[i]
-                        cell_types[i] = None
-                        break
-
-        idx_keep = [i for i in range(num_old) if self.cell_type_names[i] is not None]
-        self.cell_type_names = [self.cell_type_names[i] for i in idx_keep]
-        self.cell_types_frozen = [self.cell_types_frozen[i] for i in idx_keep]
-
-        idx_append = [i for i in range(num_new) if cell_types[i] is not None]
-        [self.cell_type_names.append(cell_types[i]) for i in idx_append]
-        [self.cell_types_frozen.append(is_frozen[i]) for i in idx_append]
-        self.cell_type_ids = [i for i in range(self.cell_type_names.__len__())]
+        return
+        # if not gui.user_decision:
+        #     return
+        #
+        # cell_types = gui.cell_types
+        # is_frozen = gui.is_frozen
+        #
+        # num_old = self.cell_type_names.__len__()
+        # num_new = cell_types.__len__()
+        #
+        # if not self.cell_type_names:
+        #     if not cell_types:
+        #         self.cell_type_ids = []
+        #         self.cell_type_names = []
+        #         self.cell_types_frozen = []
+        #     else:
+        #         self.cell_type_names = cell_types
+        #         self.cell_types_frozen = is_frozen
+        #         self.cell_type_ids = [i for i in range(num_old)]
+        #     return
+        #
+        # for i in range(num_old):
+        #     if self.cell_type_names[i] not in cell_types:
+        #         self.cell_type_names[i] = None
+        #
+        # for i in range(num_new):
+        #     if cell_types[i] in self.cell_type_names:
+        #         cell_types[i] = None
+        #     else:
+        #         for j in range(num_old):
+        #             if self.cell_type_names[j] is None:
+        #                 self.cell_type_names[j] = cell_types[i]
+        #                 self.cell_types_frozen[j] = is_frozen[i]
+        #                 cell_types[i] = None
+        #                 break
+        #
+        # idx_keep = [i for i in range(num_old) if self.cell_type_names[i] is not None]
+        # self.cell_type_names = [self.cell_type_names[i] for i in idx_keep]
+        # self.cell_types_frozen = [self.cell_types_frozen[i] for i in idx_keep]
+        #
+        # idx_append = [i for i in range(num_new) if cell_types[i] is not None]
+        # [self.cell_type_names.append(cell_types[i]) for i in idx_append]
+        # [self.cell_types_frozen.append(is_frozen[i]) for i in idx_append]
+        # self.cell_type_ids = [i for i in range(self.cell_type_names.__len__())]
 
     def update_dicts(self):
         """
