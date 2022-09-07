@@ -7,6 +7,8 @@ import re
 from cc3d.cpp.CC3DXML import *
 from cc3d.core.XMLUtils import ElementCC3D
 from cc3d.twedit5.Plugins.CC3DGUIDesign.CC3DMLScannerTools import ElementCC3DX
+from typing import Dict, Type
+from cc3d.twedit5.Plugins.PluginCCDGUIDesign import CC3DGUIDesign
 
 # Start-Of-Header
 
@@ -34,12 +36,14 @@ class CC3DModelToolBase:
     Template superclass for CC3DML editor tools
     """
     def __init__(self, dict_keys_to: [] = None, dict_keys_from: [] = None, requisite_modules: [] = None, sim_dicts=None,
-                 root_element: CC3DXMLElement = None, parent_ui: QObject = None, modules_to_react_to: [] = None):
+                 root_element: CC3DXMLElement = None, parent_ui: QObject = None, modules_to_react_to: [] = None,
+                 design_gui_plugin: CC3DGUIDesign = None):
         self._xml_element = None
         self._element_cc3d = None
         self._dict_keys_to = dict_keys_to
         self._dict_keys_from = dict_keys_from
         self._requisite_modules = requisite_modules
+        self.design_gui_plugin = design_gui_plugin
         self.__parent_ui = parent_ui
         self._user_decision = False
         # if any of the modules is changed current module must react to it. E.g. if CellType changes Volume must handle
@@ -62,7 +66,9 @@ class CC3DModelToolBase:
 
     @staticmethod
     def get_module_data_class():
-        raise NotImplementedError()
+        """returns class that represents module data e.g. CellTypePluginData or VolumePluginData
+        """
+        return None
 
     def dict_keys_to(self):
         """

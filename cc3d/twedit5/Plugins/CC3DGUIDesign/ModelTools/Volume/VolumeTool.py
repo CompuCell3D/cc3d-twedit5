@@ -1,16 +1,16 @@
 # Start-Of-Header
 
-name = 'Volume'
+name = "Volume"
 
-author = 'T.J. Sego, Maciek Swat'
+author = "T.J. Sego, Maciek Swat"
 
-version = '0.0.0'
+version = "0.0.0"
 
-class_name = 'VolumeTool'
+class_name = "VolumeTool"
 
-module_type = 'Plugin'
+module_type = "Plugin"
 
-short_description = 'Volume plugin tool'
+short_description = "Volume plugin tool"
 
 long_description = """This tool provides model design support for the Volume plugin, including a graphical user 
 interface and CC3DML parser and generator"""
@@ -30,6 +30,7 @@ from cc3d.cpp.CC3DXML import *
 from cc3d.core.XMLUtils import ElementCC3D, CC3DXMLListPy
 from cc3d.core.XMLUtils import dictionaryToMapStrStr as d2mss
 
+from cc3d.twedit5.Plugins.PluginCCDGUIDesign import CC3DGUIDesign
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3DModelToolBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.volumedlg import VolumeGUI
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.VolumePluginData import VolumePluginData
@@ -38,19 +39,28 @@ from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.module_data import ModuleData
 
 
 class VolumeTool(CC3DModelToolBase):
-    def __init__(self, sim_dicts=None, root_element=None, parent_ui: QObject = None):
-        self._dict_keys_to = ['data']
+    def __init__(
+        self, sim_dicts=None, root_element=None, parent_ui: QObject = None, design_gui_plugin: CC3DGUIDesign = None
+    ):
+        self._dict_keys_to = ["data"]
         self._dict_keys_from = []
         self._requisite_modules = []
 
         self.module_data = None
         self.volume_plugin_data = None
         self.updated_volume_plugin_data = None
+        self.modules_to_react_to_data_dict = {}
 
-        super(VolumeTool, self).__init__(dict_keys_to=self._dict_keys_to, dict_keys_from=self._dict_keys_from,
-                                         requisite_modules=self._requisite_modules, sim_dicts=sim_dicts,
-                                         root_element=root_element, parent_ui=parent_ui,
-                                         modules_to_react_to=['CellType'])
+        super(VolumeTool, self).__init__(
+            dict_keys_to=self._dict_keys_to,
+            dict_keys_from=self._dict_keys_from,
+            requisite_modules=self._requisite_modules,
+            sim_dicts=sim_dicts,
+            root_element=root_element,
+            parent_ui=parent_ui,
+            modules_to_react_to=["CellType"],
+            design_gui_plugin=design_gui_plugin,
+        )
 
         self._user_decision = True
 
@@ -66,15 +76,27 @@ class VolumeTool(CC3DModelToolBase):
         """
         self.volume_plugin_data = VolumePluginData()
         self.volume_plugin_data.parse_xml(root_element=root_element)
-        self._sim_dicts['data'] = self.volume_plugin_data
-        # self._sim_dicts = load_xml(root_element=root_element)
+
+        # parsing any other data modules that current plugin/steppable might need to know about
+        for module_name in self._modules_to_react_to:
+            # fetching class representing module data e.g. volumePluginData
+            module_data_class = self.design_gui_plugin.get_module_data_class(module_name=module_name)
+            if module_data_class is not None:
+                # assuming this class exists we create object of this class and parse from XML to populate
+                # plugin/steppable data
+                module_data = module_data_class()
+                module_data.parse_xml(root_element=root_element)
+                # we store prepopulated data in a dictionary
+                self.modules_to_react_to_data_dict[module_name] = module_data
+
+        self._sim_dicts["data"] = self.volume_plugin_data
 
     def get_tool_element(self):
         """
         Returns base tool CC3D element
         :return:
         """
-        return ElementCC3D('Plugin', {'Name': 'Volume'})
+        return ElementCC3D("Plugin", {"Name": "Volume"})
 
     def generate(self):
         """
@@ -93,7 +115,7 @@ class VolumeTool(CC3DModelToolBase):
         if self._sim_dicts is None or not self._sim_dicts:
             return
 
-        volume_plugin_data = self._sim_dicts['data']
+        volume_plugin_data = self._sim_dicts["data"]
         if volume_plugin_data is None:
             return
         self.volume_plugin_data = volume_plugin_data
@@ -108,8 +130,8 @@ class VolumeTool(CC3DModelToolBase):
             return True
 
         return False
-        new_data = sim_dicts['data']
-        current_data = self._sim_dicts['data']
+        new_data = sim_dicts["data"]
+        current_data = self._sim_dicts["data"]
 
         if new_data is current_data:
             return True
@@ -136,13 +158,13 @@ class VolumeTool(CC3DModelToolBase):
             global_sim_dict = {}
 
         if local_sim_dict is not None:
-            global_sim_dict['data'] = local_sim_dict['data']
+            global_sim_dict["data"] = local_sim_dict["data"]
         else:
             if self._sim_dicts is None:
                 self._sim_dicts = {}
-                global_sim_dict['data'] = None
+                global_sim_dict["data"] = None
 
-            global_sim_dict['data'] = deepcopy(self._sim_dicts['data'])
+            global_sim_dict["data"] = deepcopy(self._sim_dicts["data"])
 
         return global_sim_dict
 
@@ -151,7 +173,9 @@ class VolumeTool(CC3DModelToolBase):
         Returns UI widget
         :return:
         """
-        return VolumeGUI(volume_plugin_data=self.volume_plugin_data)
+        return VolumeGUI(
+            volume_plugin_data=self.volume_plugin_data, modules_to_react_to_data_dict=self.modules_to_react_to_data_dict
+        )
 
     def _process_ui_finish(self, gui: VolumeGUI):
         """
@@ -178,7 +202,6 @@ class VolumeTool(CC3DModelToolBase):
         # self._sim_dicts['data'] = {self.cell_type_ids[i]: (self.cell_type_names[i], self.cell_types_frozen[i])
         #                            for i in range(self.cell_type_ids.__len__())}
         return None
-
 
 
 # def load_xml(root_element) -> {}:

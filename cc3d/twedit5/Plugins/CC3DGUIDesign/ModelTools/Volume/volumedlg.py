@@ -5,23 +5,27 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from typing import List
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+from typing import Dict
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolGUIBase import CC3DModelToolGUIBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Volume.ui_volumedlg import Ui_VolumePluginGUI
 from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.xml_parse_data import ParseMode
 from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.table_component import TableComponent
 import pandas as pd
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.xml_parse_data import XMLParseData
 
 
 class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
-    def __init__(self, parent=None, volume_plugin_data=None, cell_types: List[str] = None):
+    def __init__(
+        self, parent=None, volume_plugin_data=None, modules_to_react_to_data_dict: Dict[str, XMLParseData] = None
+    ):
         super(VolumeGUI, self).__init__(parent)
         self.setupUi(self)
         self.cell_types = ["Medium", "Condensing", "NonCondensing"]
         self.volume_plugin_data = volume_plugin_data
         self.volume_params_table = None
         self.table_inserted = ParseMode.BY_CELL
-
+        # todo - move it to base class
+        self.modules_to_react_to_data_dict = modules_to_react_to_data_dict
         self.selected_row = None
 
         self.init_data()
@@ -31,6 +35,13 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         self.draw_ui()
 
         self.showNormal()
+
+    def get_parsed_module_data(self, module_name):
+        try:
+            return self.modules_to_react_to_data_dict[module_name]
+        except KeyError:
+            return None
+
 
     def init_data(self):
         return
@@ -94,8 +105,10 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         if flag:
             self.by_type_GB.show()
             if self.volume_plugin_data.by_type_params is None:
+                cell_type_plugin_data =self.get_parsed_module_data(module_name='CellType')
+                cell_types = cell_type_plugin_data.get_cell_types()
                 self.volume_plugin_data.by_type_params = self.volume_plugin_data.get_default_by_type_params(
-                    cell_types=self.cell_types
+                    cell_types=cell_types
                 )
 
             if self.table_inserted != ParseMode.BY_TYPE:
@@ -108,7 +121,7 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
             self.by_type_GB.hide()
 
     def handle_add_PB_clicked(self):
-        print('on_add_PB_clicked')
+        print("on_add_PB_clicked")
 
         insert_row_df = pd.DataFrame([{"CellType": "New", "TargetVolume": 22, "LambdaVolume": 2.1, "Freeze": False}])
 

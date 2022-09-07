@@ -25,6 +25,9 @@ class CellTypePluginData(XMLParseData):
             editable_columns=self.editable_cols,
         )
 
+    def get_cell_types(self) -> List[str]:
+        return self.global_params.df['TypeName'].values
+
     def parse_xml(self, root_element):
         sim_dicts = {}
         plugin_element = root_element.getFirstElement("Plugin", d2mss({"Name": "CellType"}))

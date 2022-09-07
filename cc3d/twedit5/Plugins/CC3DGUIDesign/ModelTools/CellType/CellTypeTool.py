@@ -1,16 +1,16 @@
 # Start-Of-Header
 
-name = 'CellType'
+name = "CellType"
 
-author = 'T.J. Sego'
+author = "T.J. Sego"
 
-version = '0.0.0'
+version = "0.0.0"
 
-class_name = 'CellTypeTool'
+class_name = "CellTypeTool"
 
-module_type = 'Plugin'
+module_type = "Plugin"
 
-short_description = 'CellType plugin tool'
+short_description = "CellType plugin tool"
 
 long_description = """This tool provides model design support for the CellType plugin, including a graphical user 
 interface and CC3DML parser and generator"""
@@ -33,24 +33,38 @@ from cc3d.core.XMLUtils import dictionaryToMapStrStr as d2mss
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3DModelToolBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.celltypedlg import CellTypeGUI
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypePluginData import CellTypePluginData
+from cc3d.twedit5.Plugins.PluginCCDGUIDesign import CC3DGUIDesign
 
 
 class CellTypeTool(CC3DModelToolBase):
-    def __init__(self, sim_dicts=None, root_element=None, parent_ui: QObject = None):
-        self._dict_keys_to = ['data']
+    def __init__(
+        self, sim_dicts=None, root_element=None, parent_ui: QObject = None, design_gui_plugin: CC3DGUIDesign = None
+    ):
+        self._dict_keys_to = ["data"]
         self._dict_keys_from = []
-        self._requisite_modules = ['Potts']
+        self._requisite_modules = ["Potts"]
 
         self.cell_type_names = None
         self.cell_type_ids = None
         self.cell_types_frozen = None
         self.cell_type_plugin_data = None
 
-        super(CellTypeTool, self).__init__(dict_keys_to=self._dict_keys_to, dict_keys_from=self._dict_keys_from,
-                                           requisite_modules=self._requisite_modules, sim_dicts=sim_dicts,
-                                           root_element=root_element, parent_ui=parent_ui)
+        super(CellTypeTool, self).__init__(
+            dict_keys_to=self._dict_keys_to,
+            dict_keys_from=self._dict_keys_from,
+            requisite_modules=self._requisite_modules,
+            sim_dicts=sim_dicts,
+            root_element=root_element,
+            parent_ui=parent_ui,
+            design_gui_plugin=design_gui_plugin
+        )
 
         self._user_decision = True
+
+    @staticmethod
+    def get_module_data_class():
+        """returns CellTypePluginData"""
+        return CellTypePluginData
 
     def load_xml(self, root_element: CC3DXMLElement) -> None:
         """
@@ -67,7 +81,7 @@ class CellTypeTool(CC3DModelToolBase):
         Returns base tool CC3D element
         :return:
         """
-        return ElementCC3D('Plugin', {'Name': 'CellType'})
+        return ElementCC3D("Plugin", {"Name": "CellType"})
 
     def generate(self):
         """
@@ -90,7 +104,7 @@ class CellTypeTool(CC3DModelToolBase):
         self.cell_type_names = []
         self.cell_types_frozen = []
 
-        cell_type_data = self._sim_dicts['data']
+        cell_type_data = self._sim_dicts["data"]
         if cell_type_data is None:
             return
         type_ids = list(cell_type_data.keys())
@@ -112,8 +126,8 @@ class CellTypeTool(CC3DModelToolBase):
         if sim_dicts is None:
             return True
 
-        new_data = sim_dicts['data']
-        current_data = self._sim_dicts['data']
+        new_data = sim_dicts["data"]
+        current_data = self._sim_dicts["data"]
 
         if new_data is current_data:
             return True
@@ -140,13 +154,13 @@ class CellTypeTool(CC3DModelToolBase):
             global_sim_dict = {}
 
         if local_sim_dict is not None:
-            global_sim_dict['data'] = local_sim_dict['data']
+            global_sim_dict["data"] = local_sim_dict["data"]
         else:
             if self._sim_dicts is None:
                 self._sim_dicts = {}
-                global_sim_dict['data'] = None
+                global_sim_dict["data"] = None
 
-            global_sim_dict['data'] = deepcopy(self._sim_dicts['data'])
+            global_sim_dict["data"] = deepcopy(self._sim_dicts["data"])
 
         return global_sim_dict
 
@@ -172,6 +186,8 @@ class CellTypeTool(CC3DModelToolBase):
         Public method to update sim dictionaries from internal data
         :return: None
         """
-        self._sim_dicts['data'] = {self.cell_type_ids[i]: (self.cell_type_names[i], self.cell_types_frozen[i])
-                                   for i in range(self.cell_type_ids.__len__())}
+        self._sim_dicts["data"] = {
+            self.cell_type_ids[i]: (self.cell_type_names[i], self.cell_types_frozen[i])
+            for i in range(self.cell_type_ids.__len__())
+        }
         return None
