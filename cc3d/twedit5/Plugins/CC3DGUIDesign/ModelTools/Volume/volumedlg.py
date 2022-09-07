@@ -42,6 +42,8 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         except KeyError:
             return None
 
+    def get_module_data_for_dependencies(self):
+        return self.modules_to_react_to_data_dict
 
     def init_data(self):
         return
@@ -105,10 +107,14 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         if flag:
             self.by_type_GB.show()
             if self.volume_plugin_data.by_type_params is None:
-                cell_type_plugin_data =self.get_parsed_module_data(module_name='CellType')
+                cell_type_plugin_data = self.get_parsed_module_data(module_name="CellType")
                 cell_types = cell_type_plugin_data.get_cell_types()
                 self.volume_plugin_data.by_type_params = self.volume_plugin_data.get_default_by_type_params(
                     cell_types=cell_types
+                )
+            else:
+                self.volume_plugin_data.update_from_dependent_modules(
+                    dependent_module_data_dict=self.modules_to_react_to_data_dict
                 )
 
             if self.table_inserted != ParseMode.BY_TYPE:

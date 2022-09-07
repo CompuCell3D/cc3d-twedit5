@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from cc3d.core.XMLUtils import ElementCC3D
-from typing import Optional
+from typing import Optional, Dict
 from enum import Enum
 
 
@@ -31,3 +31,6 @@ class XMLParseData:
         :return:
         """
         return ElementCC3D('Module')
+
+    def update_from_dependent_modules(self, dependent_module_data_dict):
+        return

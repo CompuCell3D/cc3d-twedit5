@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, List
 import pandas as pd
 from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.module_data import ModuleData
 from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.xml_parse_data import XMLParseData, ParseMode
@@ -13,6 +13,9 @@ class VolumePluginData(XMLParseData):
     global_params: ModuleData = None
     by_type_params: ModuleData = None
     # mode: str = ''  # global, by_type, by_cell,
+    by_type_types: List = field(default_factory=lambda: [str, float, float])
+    by_type_cols: List[str] = field(default_factory=lambda:  ['CellType', 'TargetVolume', 'LambdaVolume'])
+    by_type_editable_cols: List[str] = field(default_factory=lambda: ['TargetVolume', 'LambdaVolume'])
 
     def get_default_global_params(self):
         cols = ['TargetVolume', 'LambdaVolume']
@@ -26,8 +29,8 @@ class VolumePluginData(XMLParseData):
             if cell_type.lower() == 'medium':
                 continue
             data.append([cell_type, 0., 0.])
-        return ModuleData(df=pd.DataFrame(data=data, columns=cols),
-                   types=[str, float, float], editable_columns=cols[1:])
+        return ModuleData(df=pd.DataFrame(data=data, columns=self.by_type_cols),
+                   types=self.by_type_types, editable_columns=self.by_type_editable_cols)
 
     def parse_xml(self, root_element):
         sim_dicts = {}
@@ -96,3 +99,34 @@ class VolumePluginData(XMLParseData):
         :return:
         """
         return ElementCC3D('Plugin', {'Name': 'Volume'})
+
+    def update_from_dependent_modules(self, dependent_module_data_dict):
+
+        cell_type_plugin_data = dependent_module_data_dict.get('CellType', None)
+
+        if cell_type_plugin_data is None:
+            return
+
+        if self.mode != ParseMode.BY_TYPE:
+            return
+
+        if self.by_type_params.df is None:
+            return
+
+        cell_types = cell_type_plugin_data.get_cell_types()
+
+        keep_mask = self.by_type_params.df['CellType'].isin(cell_types)
+
+        self.by_type_params.df = self.by_type_params.df[keep_mask]
+
+        # additional types
+        additional_types = list(set(cell_types) - set(self.by_type_params.df['CellType']))
+
+        data = []
+        for cell_type in additional_types:
+            if cell_type.lower() == 'medium':
+                continue
+            data.append([cell_type, 0., 0.])
+        additional_df = pd.DataFrame(data=data, columns=self.by_type_cols)
+        self.by_type_params.df = pd.concat([self.by_type_params.df, additional_df])
+
