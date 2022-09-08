@@ -102,6 +102,8 @@ class VolumePluginData(XMLParseData):
 
     def update_from_dependent_modules(self, dependent_module_data_dict):
 
+        if dependent_module_data_dict is None:
+            return
         cell_type_plugin_data = dependent_module_data_dict.get('CellType', None)
 
         if cell_type_plugin_data is None:

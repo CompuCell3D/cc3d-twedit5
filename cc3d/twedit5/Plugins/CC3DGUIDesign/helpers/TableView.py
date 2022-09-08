@@ -10,16 +10,23 @@ class TableView(QtWidgets.QTableView):
         QtWidgets.QTableView.__init__(self, *args, **kwargs)
 
     def mousePressEvent(self, event):
-
+        model = self.model()
         if event.button() == Qt.LeftButton:
             modifiers = QtWidgets.QApplication.keyboardModifiers()
             if bool(modifiers == QtCore.Qt.ControlModifier):
-                index = self.indexAt(event.pos())
-                col_name = self.get_col_name(index)
-                # if col_name == 'Value':
-                #     self.edit(index)
-                if col_name in self.model().editable_columns():
-                    self.edit(index)
+                if model.contains_matrix():
+                    index = self.indexAt(event.pos())
+                    if index.isValid():
+                        self.edit(index)
+                    else:
+                        super(TableView, self).mousePressEvent(event)
+                else:
+                    index = self.indexAt(event.pos())
+                    col_name = self.get_col_name(index)
+                    # if col_name == 'Value':
+                    #     self.edit(index)
+                    if col_name in self.model().editable_columns():
+                        self.edit(index)
             else:
                 super(TableView, self).mousePressEvent(event)
         else:
@@ -33,7 +40,7 @@ class TableView(QtWidgets.QTableView):
         if not model:
             return None
 
-        # return model.header_data[index.column()]
+
         return model.df.columns[index.column()]
 
     def sizeHint(self):

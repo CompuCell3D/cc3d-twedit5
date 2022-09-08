@@ -9,18 +9,27 @@ class EditorDelegate(QStyledItemDelegate):
             return
 
         model = index.model()
-        df = model.df
-        col_name = df.columns[index.column()]
+        if not model.contains_matrix():
+            # model based on dataframe
+            df = model.df
+            col_name = df.columns[index.column()]
 
-        if col_name in model.editable_columns():
-            if model.is_boolean(index.column()):
-                return QCheckBox(parent)
-            editor = QLineEdit(parent)
+            if col_name in model.editable_columns():
+                if model.is_boolean(index.column()):
+                    return QCheckBox(parent)
+                editor = QLineEdit(parent)
 
-            # we set initial editor data in setEditorData method
-            return editor
+                # we set initial editor data in setEditorData method
+                return editor
+            else:
+                return None
         else:
-            return None
+            # model based on matrix
+            if index.isValid():
+                editor = QLineEdit(parent)
+                return editor
+
+
 
         # column_name = self.get_col_name_from_index(index)
         # print('column_name=',column_name)
@@ -55,19 +64,26 @@ class EditorDelegate(QStyledItemDelegate):
 
     def setEditorData(self, editor, index):
 
-        col_name = self.get_col_name_from_index(index)
-        if not col_name:
-            return
-        if not index.isValid():
+        if index.isValid():
             return
 
         model = index.model()
+        if not model:
+            return
+        if not model.contains_matrix():
+            # model based on dataframe - list of rows
+            col_name = self.get_col_name_from_index(index)
+            if not col_name:
+                return
 
-        if col_name in model.editable_columns():
+            if col_name in model.editable_columns():
+                value = index.model().data(index, Qt.DisplayRole)
+                editor.setText(str(value))
+            else:
+                return
+        else:
             value = index.model().data(index, Qt.DisplayRole)
             editor.setText(str(value))
-        else:
-            return
 
         # if column_name == 'Value':
         #     value = index.model().data(index, Qt.DisplayRole)

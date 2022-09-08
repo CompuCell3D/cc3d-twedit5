@@ -12,7 +12,8 @@ class TableComponent:
         self.model = TableModel(module_data=module_data)
         self.table_view = TableView()
         self.table_view.setModel(self.model)
-        self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        if not self.model.contains_matrix():
+            self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.delegate = EditorDelegate()
         self.table_view.setItemDelegate(self.delegate)
 

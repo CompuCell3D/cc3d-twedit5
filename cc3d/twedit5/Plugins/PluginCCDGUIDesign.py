@@ -197,19 +197,32 @@ class CC3DGUIDesign(QObject):
 
         for key, tool, btd in self.model_tools_manager.active_tools():
 
-            if tool().get_ui() is not None:
+            action_key = str(key) + "Tool"
+            qa = QAction(action_key, self)
+            qa.setStatusTip(btd.short_description)
+            try:
+                qa.triggered.connect(functools.partial(self.on_call_tool, tool))
+            except Exception as e:
+                traceback.print_exc(file=sys.stdout)
 
-                action_key = str(key) + "Tool"
-                qa = QAction(action_key, self)
-                qa.setStatusTip(btd.short_description)
-                try:
-                    qa.triggered.connect(functools.partial(self.on_call_tool, tool))
-                except Exception as e:
-                    traceback.print_exc(file=sys.stdout)
+            self.active_tools_action_dict[key] = {"ActionKey": action_key, "QAction": qa}
 
-                self.active_tools_action_dict[key] = {"ActionKey": action_key, "QAction": qa}
+            am.addAction(qa)
 
-                am.addAction(qa)
+
+            # if tool().get_ui() is not None:
+            #
+            #     action_key = str(key) + "Tool"
+            #     qa = QAction(action_key, self)
+            #     qa.setStatusTip(btd.short_description)
+            #     try:
+            #         qa.triggered.connect(functools.partial(self.on_call_tool, tool))
+            #     except Exception as e:
+            #         traceback.print_exc(file=sys.stdout)
+            #
+            #     self.active_tools_action_dict[key] = {"ActionKey": action_key, "QAction": qa}
+            #
+            #     am.addAction(qa)
 
     def connect_all_signals(self):
         self.__ui.panels[0].currentChanged.connect(self.on_active_editor_change)

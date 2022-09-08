@@ -2,7 +2,7 @@ import numpy as np
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import *
 import pandas as pd
-from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.module_data import ModuleData
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.module_data import ModuleData, TableType
 
 
 class TableModel(QtCore.QAbstractTableModel):
@@ -11,13 +11,20 @@ class TableModel(QtCore.QAbstractTableModel):
         self.df = None
         self.df_types = None
         self._editable_columns = None
-
-        # self.inserted_df = None
+        self.arr = None
+        self.arr_columns = None
+        self.arr_element_type = None
+        self.table_type = None
 
         if module_data is not None:
             self.df = module_data.df
             self.df_types = module_data.types
             self._editable_columns = module_data.editable_columns
+            self.arr: np.adarray = module_data.arr
+            self.arr_columns = module_data.arr_columns
+            self.arr_element_type = module_data.arr_element_type
+            self.table_type = module_data.table_type
+
 
         # self.df = pd.DataFrame(data=[['Condensing', 25.0, 2.0],
         #                              ['NonCondensing', 26.0, 2.1]],
@@ -37,6 +44,9 @@ class TableModel(QtCore.QAbstractTableModel):
         #     0: 'val',
         #     # 1: 'item_type'
         # }
+
+    def contains_matrix(self):
+        return self.table_type == TableType.MATRIX
 
     def is_boolean(self, col):
         try:
@@ -60,10 +70,23 @@ class TableModel(QtCore.QAbstractTableModel):
     def headerData(self, p_int, orientation, role=None):
 
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            try:
-                return self.df.columns[p_int]
-            except IndexError:
-                return QVariant()
+            if self.table_type == TableType.ROW_LIST:
+                try:
+                    return self.df.columns[p_int]
+                except IndexError:
+                    return QVariant()
+            else:
+                try:
+                    return self.arr_columns[p_int]
+                except IndexError:
+                    return QVariant()
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            if self.table_type == TableType.MATRIX:
+                try:
+                    return self.arr_columns[p_int]
+                except IndexError:
+                    return QVariant()
+
 
         # if orientation == Qt.Vertical and role == Qt.DisplayRole:
         #     try:
@@ -74,10 +97,16 @@ class TableModel(QtCore.QAbstractTableModel):
         return QVariant()
 
     def rowCount(self, parent=QtCore.QModelIndex()):
-        return self.df.shape[0]
+        if self.table_type == TableType.ROW_LIST:
+            return self.df.shape[0]
+        else:
+            return self.arr.shape[0]
 
     def columnCount(self, parent=QtCore.QModelIndex()):
-        return self.df.shape[1]
+        if self.table_type == TableType.ROW_LIST:
+            return self.df.shape[1]
+        else:
+            return self.arr.shape[1]
 
     def get_item(self, index):
         if not index.isValid():
@@ -85,9 +114,12 @@ class TableModel(QtCore.QAbstractTableModel):
 
         i = index.row()
         j = index.column()
-        col_name = self.df.columns[j]
+        if self.table_type == TableType.ROW_LIST:
+            col_name = self.df.columns[j]
 
-        return self.df[col_name].values[i]
+            return self.df[col_name].values[i]
+        else:
+            return self.arr[i,j]
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
 
@@ -107,23 +139,27 @@ class TableModel(QtCore.QAbstractTableModel):
         elif role == QtCore.Qt.DisplayRole:
             i = index.row()
             j = index.column()
-            col_name = self.df.columns[j]
-            if self.df_types[j] != bool:
+            if self.table_type == TableType.ROW_LIST:
+                col_name = self.df.columns[j]
+                if self.df_types[j] != bool:
 
-                return str(self.df[col_name].values[i])
+                    return str(self.df[col_name].values[i])
+                else:
+                    return QVariant()
             else:
-                return QVariant()
+                return str(self.arr[i, j])
             # item = self.item_data[i]
             # item_data_to_display = getattr(item, self.item_data_attr_name[j])
             # return '{}'.format(item_data_to_display)
 
         elif role == Qt.BackgroundRole:
-            batch = (index.row()) % 2
-            if batch == 0:
-                return QtGui.QColor('white')
+            if self.table_type == TableType.ROW_LIST:
+                batch = (index.row()) % 2
+                if batch == 0:
+                    return QtGui.QColor('white')
 
-            else:
-                return QtGui.QColor('gray')
+                else:
+                    return QtGui.QColor('gray')
 
         # elif role == Qt.ToolTipRole:
         #     i = index.row()
@@ -152,19 +188,28 @@ class TableModel(QtCore.QAbstractTableModel):
 
         i = index.row()
         j = index.column()
-        col_name = self.df.columns[j]
+        if self.contains_matrix():
+            try:
+                value = self.arr_element_type(value)
+            except ValueError:
+                return False
+            self.arr[i, j] = value
+            self.dirty_flag = True
+        else:
 
-        col_type = self.df_types[j]
-        try:
-            value = col_type(value)
-        except ValueError:
-            return False
+            col_name = self.df.columns[j]
 
-        self.df[col_name].values[i] = value
-        # item = self.item_data[index.row()]
-        # item.val = value
-        # item.dirty_flag = True
-        self.dirty_flag = True
+            col_type = self.df_types[j]
+            try:
+                value = col_type(value)
+            except ValueError:
+                return False
+
+            self.df[col_name].values[i] = value
+            # item = self.item_data[index.row()]
+            # item.val = value
+            # item.dirty_flag = True
+            self.dirty_flag = True
         return True
 
     def flags(self, index):
