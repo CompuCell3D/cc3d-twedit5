@@ -72,7 +72,7 @@ class CellTypeTool(CC3DModelToolBase):
         :param root_element: root simulation CC3D XML element
         :return: None
         """
-
+        self.parse_dependent_modules(root_element=root_element)
         self.cell_type_plugin_data = CellTypePluginData()
         self.cell_type_plugin_data.parse_xml(root_element=root_element)
 

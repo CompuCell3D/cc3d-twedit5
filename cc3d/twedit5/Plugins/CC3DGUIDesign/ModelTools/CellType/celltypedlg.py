@@ -12,16 +12,12 @@ from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypePluginData i
 
 
 class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
-    def __init__(self, parent=None, cell_type_plugin_data:CellTypePluginData = None):
+    def __init__(self, parent=None, cell_type_plugin_data: CellTypePluginData = None):
         super(CellTypeGUI, self).__init__(parent)
         self.setupUi(self)
 
         self.cell_type_plugin_data = cell_type_plugin_data
         self.cell_type_params_table = None
-
-        self.selected_row = None
-
-        self.init_data()
 
         self.connect_all_signals()
 
@@ -43,17 +39,10 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
 
     def connect_all_signals(self):
         self.cellTypeAddPB.clicked.connect(self.handle_add_cell_type)
-        self.okPB.clicked.connect(self.on_accept)
-        self.cancelPB.clicked.connect(self.on_reject)
+        self.okPB.clicked.connect(self.handle_accept)
+        self.cancelPB.clicked.connect(self.handle_reject)
         self.deleteCellTypePB.clicked.connect(self.handle_delete_cell_type)
         self.clearCellTypeTablePB.clicked.connect(self.handle_clear_table)
-        return
-        # self.cellTypeTable.itemChanged.connect(self.on_table_item_change)
-        # self.cellTypeAddPB.clicked.connect(self.on_add_cell_type)
-        # self.deleteCellTypePB.clicked.connect(self.on_del_cell_type)
-        # self.clearCellTypeTablePB.clicked.connect(self.on_clear_table)
-        # self.okPB.clicked.connect(self.on_accept)
-        # self.cancelPB.clicked.connect(self.on_reject)
 
     def on_table_item_change(self, item: QTableWidgetItem):
         if item.row() == 0 and item.column() == 0:
@@ -88,7 +77,7 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
         current_index = view.currentIndex()
         if current_index.isValid():
             i = current_index.row()
-            cell_type = self.cell_type_plugin_data.global_params.df['TypeName'].values[i]
+            cell_type = self.cell_type_plugin_data.global_params.df["TypeName"].values[i]
             if cell_type == "Medium":
                 return
             model = view.model()
@@ -99,7 +88,7 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
     def handle_clear_table(self):
         view = self.cell_type_params_table.table_view
         model = view.model()
-        mask = model.df['TypeName'] == "Medium"
+        mask = model.df["TypeName"] == "Medium"
         model.df = model.df[mask]
         model.layoutChanged.emit()
 
@@ -113,11 +102,11 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
         model = view.model()
         self.cell_type_plugin_data.global_params.df = model.df
 
-    def on_accept(self):
+    def handle_accept(self):
         self.user_decision = True
         self.close()
 
-    def on_reject(self):
+    def handle_reject(self):
         self.user_decision = False
         self.close()
 
@@ -127,5 +116,3 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
                 if self.cell_types[i] == old_name:
                     self.cell_types[i] = new_name
                     return
-
-
