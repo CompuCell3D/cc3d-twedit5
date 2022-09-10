@@ -31,23 +31,26 @@ from cc3d.core.XMLUtils import ElementCC3D, CC3DXMLListPy
 from cc3d.core.XMLUtils import dictionaryToMapStrStr as d2mss
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3DModelToolBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypeTool import CellTypeTool
-
+from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Contact.ContactPluginData import ContactPluginData
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Contact.contactdlg import ContactGUI
 from cc3d.twedit5.Plugins.PluginCCDGUIDesign import CC3DGUIDesign
 
 
 class ContactTool(CC3DModelToolBase):
     def __init__(
-        self, sim_dicts=None, root_element=None, parent_ui: QObject = None, design_gui_plugin: CC3DGUIDesign = None
+            self, sim_dicts=None, root_element=None, parent_ui: QObject = None, design_gui_plugin: CC3DGUIDesign = None
     ):
         self._dict_keys_to = ["contactMatrix", "NeighborOrder"]
         self._dict_keys_from = ["data", "NeighborOrder"]
-        self._requisite_modules = ["Potts", "CellType"]
+        # self._requisite_modules = ["Potts", "CellType"]
+        self._requisite_modules = ["CellType"]
 
         self.cell_type_names = None
         self.neighbor_order = 4
         self.contact_matrix = None
         self.user_decision = None
+        # forward declaration - initialized in parse_xml()
+        self.contact_plugin_data = None
 
         super(ContactTool, self).__init__(
             dict_keys_to=self._dict_keys_to,
@@ -56,8 +59,14 @@ class ContactTool(CC3DModelToolBase):
             sim_dicts=sim_dicts,
             root_element=root_element,
             parent_ui=parent_ui,
+            modules_to_react_to=["CellType"],
             design_gui_plugin=design_gui_plugin,
         )
+
+    @staticmethod
+    def get_module_data_class():
+        """returns CellTypePluginData"""
+        return ContactPluginData
 
     def _process_imports(self) -> None:
         self.cell_type_names = OrderedDict()
@@ -138,7 +147,11 @@ class ContactTool(CC3DModelToolBase):
         :param root_element: root simulation CC3D XML element
         :return: None
         """
-        self._sim_dicts = load_xml(root_element=root_element)
+        self.parse_dependent_modules(root_element=root_element)
+        self.contact_plugin_data = ContactPluginData()
+        self.contact_plugin_data.parse_xml(root_element=root_element)
+
+        # self._sim_dicts = load_xml(root_element=root_element)
 
     def get_tool_element(self):
         """
@@ -152,19 +165,7 @@ class ContactTool(CC3DModelToolBase):
         Generates plugin element from current sim dictionary states
         :return: plugin element from current sim dictionary states
         """
-        element = self.get_tool_element()
-        for id1 in range(0, self.cell_type_names.keys().__len__()):
-            for id2 in range(id1, self.cell_type_names.keys().__len__()):
-                try:
-                    t1 = self.cell_type_names[id1]
-                    t2 = self.cell_type_names[id2]
-                    element.ElementCC3D("Energy", {"Type1": t1, "Type2": t2}, str(self.contact_matrix[t1][t2]))
-                except IndexError:
-                    pass
-
-        element.ElementCC3D("NeighborOrder", {}, str(self.neighbor_order))
-
-        return element
+        return self.contact_plugin_data.generate_xml_element()
 
     def _append_to_global_dict(self, global_sim_dict: dict = None, local_sim_dict: dict = None):
         """
@@ -186,9 +187,9 @@ class ContactTool(CC3DModelToolBase):
         return global_sim_dict
 
     def get_ui(self) -> ContactGUI:
-        return ContactGUI(
-            parent=self.get_parent_ui(), contact_matrix=self.contact_matrix, neighbor_order=self.neighbor_order
-        )
+
+        return ContactGUI(contact_plugin_data=self.contact_plugin_data,
+                          modules_to_react_to_data_dict=self.modules_to_react_to_data_dict)
 
     def _process_ui_finish(self, gui: QObject):
         """
@@ -196,11 +197,15 @@ class ContactTool(CC3DModelToolBase):
         :param gui: tool gui object
         :return: None
         """
-        self.user_decision = gui.user_decision
-        if gui.user_decision:
-            self.contact_matrix = gui.contact_matrix
-            self.neighbor_order = gui.neighbor_order
-            self.__flag_internal_validate = True
+        if not gui.user_decision:
+            return
+        self.contact_plugin_data = gui.contact_plugin_data
+
+        # self.user_decision = gui.user_decision
+        # if gui.user_decision:
+        #     self.contact_matrix = gui.contact_matrix
+        #     self.neighbor_order = gui.neighbor_order
+        #     self.__flag_internal_validate = True
 
     def update_dicts(self):
         """
@@ -214,51 +219,50 @@ class ContactTool(CC3DModelToolBase):
     def get_user_decision(self) -> bool:
         return self.user_decision
 
-
-def load_xml(root_element) -> {}:
-    sim_dicts = {}
-    for key in ContactTool().dict_keys_from() + ContactTool().dict_keys_to():
-        sim_dicts[key] = None
-
-    cell_type_tool = CellTypeTool(root_element=root_element)
-    for key, val in cell_type_tool.extract_sim_dicts():
-        sim_dicts[key] = val
-
-    plugin_element = root_element.getFirstElement("Plugin", d2mss({"Name": "Contact"}))
-
-    if plugin_element is None:
-        return sim_dicts
-
-    if plugin_element.findElement("NeighborOrder"):
-        sim_dicts["NeighborOrder"] = plugin_element.getFirstElement("NeighborOrder").getDouble()
-
-    elements = CC3DXMLListPy(plugin_element.getElements("Energy"))
-    contact_matrix_import = {}
-    cell_types_import = []
-    for element in elements:
-        type1 = element.getAttribute("Type1")
-        type2 = element.getAttribute("Type2")
-        val = element.getDouble()
-        if type1 not in contact_matrix_import.keys():
-            contact_matrix_import[type1] = {}
-        contact_matrix_import[type1][type2] = val
-
-        if type2 not in contact_matrix_import.keys():
-            contact_matrix_import[type2] = {}
-        contact_matrix_import[type2][type1] = val
-
-        cell_types_import.append(type1)
-        cell_types_import.append(type2)
-
-    cell_types = list(set(cell_types_import))
-    contact_matrix = {cell_type: {} for cell_type in cell_types}
-    for t1, t2 in product(cell_types, cell_types):
-        if t1 in contact_matrix_import.keys() and t2 in contact_matrix_import[t1].keys():
-            val = contact_matrix_import[t1][t2]
-        else:
-            val = 0.0
-        contact_matrix[t1][t2] = val
-        contact_matrix[t2][t1] = val
-
-    sim_dicts["contactMatrix"] = contact_matrix
-    return sim_dicts
+# def load_xml(root_element) -> {}:
+#     sim_dicts = {}
+#     for key in ContactTool().dict_keys_from() + ContactTool().dict_keys_to():
+#         sim_dicts[key] = None
+#
+#     cell_type_tool = CellTypeTool(root_element=root_element)
+#     for key, val in cell_type_tool.extract_sim_dicts():
+#         sim_dicts[key] = val
+#
+#     plugin_element = root_element.getFirstElement("Plugin", d2mss({"Name": "Contact"}))
+#
+#     if plugin_element is None:
+#         return sim_dicts
+#
+#     if plugin_element.findElement("NeighborOrder"):
+#         sim_dicts["NeighborOrder"] = plugin_element.getFirstElement("NeighborOrder").getDouble()
+#
+#     elements = CC3DXMLListPy(plugin_element.getElements("Energy"))
+#     contact_matrix_import = {}
+#     cell_types_import = []
+#     for element in elements:
+#         type1 = element.getAttribute("Type1")
+#         type2 = element.getAttribute("Type2")
+#         val = element.getDouble()
+#         if type1 not in contact_matrix_import.keys():
+#             contact_matrix_import[type1] = {}
+#         contact_matrix_import[type1][type2] = val
+#
+#         if type2 not in contact_matrix_import.keys():
+#             contact_matrix_import[type2] = {}
+#         contact_matrix_import[type2][type1] = val
+#
+#         cell_types_import.append(type1)
+#         cell_types_import.append(type2)
+#
+#     cell_types = list(set(cell_types_import))
+#     contact_matrix = {cell_type: {} for cell_type in cell_types}
+#     for t1, t2 in product(cell_types, cell_types):
+#         if t1 in contact_matrix_import.keys() and t2 in contact_matrix_import[t1].keys():
+#             val = contact_matrix_import[t1][t2]
+#         else:
+#             val = 0.0
+#         contact_matrix[t1][t2] = val
+#         contact_matrix[t2][t1] = val
+#
+#     sim_dicts["contactMatrix"] = contact_matrix
+#     return sim_dicts
