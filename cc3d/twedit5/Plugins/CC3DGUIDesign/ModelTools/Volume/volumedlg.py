@@ -20,25 +20,17 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
     ):
         super(VolumeGUI, self).__init__(parent, modules_to_react_to_data_dict=modules_to_react_to_data_dict)
         self.setupUi(self)
-        self.cell_types = ["Medium", "Condensing", "NonCondensing"]
         self.volume_plugin_data = volume_plugin_data
         self.volume_params_table = None
         self.table_inserted = ParseMode.BY_CELL
 
-
         self.selected_row = None
-
-        self.init_data()
 
         self.connect_all_signals()
 
         self.draw_ui()
 
         self.showNormal()
-
-
-    def init_data(self):
-        return
 
     def draw_ui(self):
 
@@ -81,7 +73,7 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
         self.by_type_RB.toggled.connect(self.handle_by_type_RB_toggled)
         self.ok_PB.clicked.connect(self.accept)
         self.cancel_PB.clicked.connect(self.reject)
-        self.add_PB.clicked.connect(self.handle_add_PB_clicked)
+
 
     def handle_global_RB_toggled(self, flag):
 
@@ -118,57 +110,6 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
             self.volume_plugin_data.mode = ParseMode.BY_CELL
             self.by_type_GB.hide()
 
-    def handle_add_PB_clicked(self):
-        print("on_add_PB_clicked")
-
-        insert_row_df = pd.DataFrame([{"CellType": "New", "TargetVolume": 22, "LambdaVolume": 2.1, "Freeze": False}])
-
-        view = self.volume_params_table.table_view
-        model = view.model()
-        model.append_rows(append_df=insert_row_df)
-
-    # def on_table_item_change(self, item: QTableWidgetItem):
-    #     if item.row() == 0 and item.column() == 0:
-    #         item.setText("Medium")
-    #         return
-    #     elif item.row() < 0:
-    #         return
-    #     if item.column() == 0 and item.text() != "Medium" and item.text().__len__() > 2:
-    #         self.name_change(old_name=self.cell_types[item.row()], new_name=item.text())
-
-    # def on_add_cell_type(self):
-    #     cell_name = self.cellTypeLE.text()
-    #     is_freeze = self.freezeCHB.isChecked()
-    #
-    #     if not self.validate_name(name=cell_name):
-    #         return
-    #
-    #     self.cell_types.append(cell_name)
-    #     self.is_frozen.append(is_freeze)
-    #
-    #     self.draw_ui()
-    #
-    # def on_del_cell_type(self):
-    #     row = self.cellTypeTable.currentRow()
-    #     col = self.cellTypeTable.currentColumn()
-    #     if row < 0 or col < 0:
-    #         return
-    #
-    #     cell_name = self.cellTypeTable.item(row, 0).text()
-    #     if cell_name == "Medium":
-    #         return
-    #     else:
-    #         self.cell_types.pop(row)
-    #         self.is_frozen.pop(row)
-    #
-    #         self.draw_ui()
-    #
-    # def on_clear_table(self):
-    #     self.cell_types = []
-    #     self.is_frozen = []
-    #     self.init_data()
-    #     self.draw_ui()
-
     def accept(self):
         self.user_decision = True
         self.close()
@@ -176,37 +117,3 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
     def reject(self):
         self.user_decision = False
         self.close()
-
-    # def on_reject(self):
-    #     self.user_decision = False
-    #     self.close()
-
-    # def name_change(self, old_name: str, new_name: str):
-    #     if self.validate_name(name=new_name):
-    #         for i in range(self.cell_types.__len__()):
-    #             if self.cell_types[i] == old_name:
-    #                 self.cell_types[i] = new_name
-    #                 return
-
-    # def validate_name(self, name: str):
-    #     return not (name in self.cell_types or name == "Medium" or name.__len__() < 2)
-
-
-# class TypeTableItem(QTableWidgetItem):
-#     def __init__(self, text: str):
-#         super(TypeTableItem, self).__init__()
-#         self.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
-#         self.setText(text)
-#
-#
-# class FreezeCB(QWidget):
-#     def __init__(self, parent: CellTypeGUI, check_state: bool = False, is_medium: bool = False):
-#         super(FreezeCB, self).__init__(parent)
-#
-#         self.cb = QCheckBox()
-#         self.cb.setCheckable(not is_medium)
-#         self.cb.setChecked(check_state and not is_medium)
-#
-#         self.h_layout = QHBoxLayout(self)
-#         self.h_layout.addWidget(self.cb)
-#         self.h_layout.setAlignment(Qt.AlignCenter)
