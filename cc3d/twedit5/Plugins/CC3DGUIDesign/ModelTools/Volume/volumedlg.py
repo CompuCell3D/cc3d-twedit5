@@ -18,14 +18,14 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
     def __init__(
         self, parent=None, volume_plugin_data=None, modules_to_react_to_data_dict: Dict[str, XMLParseData] = None
     ):
-        super(VolumeGUI, self).__init__(parent)
+        super(VolumeGUI, self).__init__(parent, modules_to_react_to_data_dict=modules_to_react_to_data_dict)
         self.setupUi(self)
         self.cell_types = ["Medium", "Condensing", "NonCondensing"]
         self.volume_plugin_data = volume_plugin_data
         self.volume_params_table = None
         self.table_inserted = ParseMode.BY_CELL
-        # todo - move it to base class
-        self.modules_to_react_to_data_dict = modules_to_react_to_data_dict
+
+
         self.selected_row = None
 
         self.init_data()
@@ -36,14 +36,6 @@ class VolumeGUI(CC3DModelToolGUIBase, Ui_VolumePluginGUI):
 
         self.showNormal()
 
-    def get_parsed_module_data(self, module_name):
-        try:
-            return self.modules_to_react_to_data_dict[module_name]
-        except KeyError:
-            return None
-
-    def get_module_data_for_dependencies(self):
-        return self.modules_to_react_to_data_dict
 
     def init_data(self):
         return

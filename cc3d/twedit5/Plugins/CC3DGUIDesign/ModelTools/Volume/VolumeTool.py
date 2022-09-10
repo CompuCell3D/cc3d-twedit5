@@ -74,22 +74,9 @@ class VolumeTool(CC3DModelToolBase):
         :param root_element: root simulation CC3D XML element
         :return: None
         """
+        self.parse_dependent_modules(root_element=root_element)
         self.volume_plugin_data = VolumePluginData()
         self.volume_plugin_data.parse_xml(root_element=root_element)
-
-        # parsing any other data modules that current plugin/steppable might need to know about
-        for module_name in self._modules_to_react_to:
-            # fetching class representing module data e.g. volumePluginData
-            module_data_class = self.design_gui_plugin.get_module_data_class(module_name=module_name)
-            if module_data_class is not None:
-                # assuming this class exists we create object of this class and parse from XML to populate
-                # plugin/steppable data
-                module_data = module_data_class()
-                module_data.parse_xml(root_element=root_element)
-                # we store prepopulated data in a dictionary
-                self.modules_to_react_to_data_dict[module_name] = module_data
-
-        self._sim_dicts["data"] = self.volume_plugin_data
 
     def get_tool_element(self):
         """
@@ -202,67 +189,3 @@ class VolumeTool(CC3DModelToolBase):
         # self._sim_dicts['data'] = {self.cell_type_ids[i]: (self.cell_type_names[i], self.cell_types_frozen[i])
         #                            for i in range(self.cell_type_ids.__len__())}
         return None
-
-
-# def load_xml(root_element) -> {}:
-#     sim_dicts = {}
-#     for key in VolumeTool().dict_keys_from() + VolumeTool().dict_keys_to():
-#         sim_dicts[key] = None
-#
-#     plugin_element = root_element.getFirstElement('Plugin', d2mss({'Name': 'Volume'}))
-#
-#     if plugin_element is None:
-#         return sim_dicts
-#
-#     global_settings = False
-#     by_type_settings = False
-#     by_cell_settings = False
-#     target_volume = None
-#     lambda_volume = None
-#
-#     if plugin_element.findElement('TargetVolume'):
-#         target_volume = plugin_element.getFirstElement('TargetVolume').getDouble()
-#         # if sim_dicts['data'] is None:
-#         #     sim_dicts['data'] = {}
-#         #
-#         # sim_dicts['data']['TargetVolume'] = plugin_element.getFirstElement('TargetVolume').getDouble()
-#         # global_settings = True
-#
-#     if plugin_element.findElement('LambdaVolume'):
-#         lambda_volume = plugin_element.getFirstElement('LambdaVolume').getDouble()
-#         # if sim_dicts['data'] is None:
-#         #     sim_dicts['data'] = {}
-#         #
-#         # sim_dicts['data']['LambdaVolume'] = plugin_element.getFirstElement('LambdaVolume').getDouble()
-#         # global_settings = True
-#
-#     if lambda_volume is not None and target_volume is not None:
-#
-#         module_data = ModuleData(
-#             df=pd.DataFrame(data=[[target_volume, lambda_volume]], columns=['TargetVolume', 'LambdaVolume']),
-#             types=[float, float],
-#             editable_columns=['TargetVolume', 'LambdaVolume']
-#
-#         )
-#
-#         # sim_dicts['data'] = VolumePluginData(
-#         #     global_params=VolumeByTypePluginData(lambda_volume=lambda_volume, target_volume=target_volume))
-#
-#         sim_dicts['data'] = VolumePluginData(
-#             global_params=module_data)
-#
-#
-#     # sim_dicts['global_settings'] = global_settings
-#     # sim_dicts['by_type_settings'] = by_type_settings
-#     # sim_dicts['by_cell_settings'] = by_cell_settings
-#     # type_table = {}
-#     # plugin_elements = CC3DXMLListPy(plugin_element.getElements('CellType'))
-#     # for plugin_element in plugin_elements:
-#     #     type_id = int(plugin_element.getAttribute('TypeId'))
-#     #     type_name = plugin_element.getAttribute('TypeName')
-#     #     is_freeze = plugin_element.findAttribute('Freeze')
-#     #     type_table[type_id] = (type_name, is_freeze)
-#     #
-#     # sim_dicts['data'] = type_table
-#
-#     return sim_dicts
