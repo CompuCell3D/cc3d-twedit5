@@ -3,7 +3,6 @@ from itertools import product
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolGUIBase import CC3DModelToolGUIBase
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Contact.ui_contactdlg import Ui_ContactPluginGUI
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Contact.ContactPluginData import ContactPluginData
@@ -20,24 +19,13 @@ class ContactGUI(CC3DModelToolGUIBase, Ui_ContactPluginGUI):
         self.contact_plugin_data = contact_plugin_data
         self.contact_plugin_table = None
 
-        self.neighbor_order_list = range(1, 5)
-        self.cell_types = None
-
         self.user_decision = None
-
-        self.valid_color = QColor("black")
-        self.invalid_color = QColor("red")
-
-        self.init_data()
 
         self.draw_ui()
 
         self.connect_all_signals()
 
         self.showNormal()
-
-    def init_data(self):
-        return
 
     def draw_ui(self):
         if self.contact_plugin_data is None:
