@@ -34,7 +34,8 @@ if __name__ == '__main__':
         ]),
         arr_columns=['Condensing', 'NonCondensing', 'Proliferating'],
         arr_element_type=float,
-        table_type=TableType.MATRIX | TableType.IS_SYMMETRIC
+        # table_type=TableType.MATRIX | TableType.IS_SYMMETRIC
+        table_type=TableType.MATRIX
 
     )
 
