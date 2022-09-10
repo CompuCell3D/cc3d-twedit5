@@ -26,7 +26,16 @@ class CellTypePluginData(XMLParseData):
         )
 
     def get_cell_types(self) -> List[str]:
-        return self.global_params.df['TypeName'].values
+        """returns list of cell types ordered by cell type
+        """
+        # ordering types by cell type id
+        cell_types = self.global_params.df['TypeName'].values
+        cell_type_ids = self.global_params.df['TypeId'].values
+        cell_type_ids_argsort = np.argsort(cell_type_ids)
+        # actual ordering
+        cell_types = cell_types[cell_type_ids_argsort]
+
+        return cell_types
 
     def parse_xml(self, root_element):
         sim_dicts = {}
@@ -42,10 +51,10 @@ class CellTypePluginData(XMLParseData):
             freeze = plugin_element.findAttribute("Freeze")
             data.append([type_id, type_name, freeze])
 
-            self.mode = ParseMode.GLOBAL
-            self.global_params = ModuleData(
-                df=pd.DataFrame(data=data, columns=self.cols), types=self.types, editable_columns=self.editable_cols
-            )
+        self.mode = ParseMode.GLOBAL
+        self.global_params = ModuleData(
+            df=pd.DataFrame(data=data, columns=self.cols), types=self.types, editable_columns=self.editable_cols
+        )
 
     def generate_xml_element(self) -> Optional[ElementCC3D]:
         """
@@ -73,18 +82,6 @@ class CellTypePluginData(XMLParseData):
         """
         return ElementCC3D("Plugin", {"Name": "CellType"})
 
-    # def add_cell_type(self, cell_type_name: str, freeze: bool = False):
-    #     if not self.validate_type_name(cell_type_name=cell_type_name):
-    #         return
-    #     next_type_id = np.max(self.global_params.df["TypeId"]) + 1
-    #     insert_row = {
-    #         "TypeName": cell_type_name,
-    #         "TypeId": next_type_id,
-    #         "Freeze": freeze,
-    #     }
-    #
-    #     self.global_params.df = pd.concat([self.global_params.df, pd.DataFrame([insert_row])])
-
     def get_cell_type_row(self, cell_type_name: str, freeze: bool = False):
         if not self.validate_type_name(cell_type_name=cell_type_name):
             return
@@ -95,9 +92,6 @@ class CellTypePluginData(XMLParseData):
             "Freeze": freeze,
         }
         return pd.DataFrame([insert_row])
-
-        # self.global_params.df = pd.concat([self.global_params.df, pd.DataFrame([insert_row])])
-
 
     def clear(self):
         self.global_params.df = self.get_default_params()
