@@ -25,9 +25,6 @@ class CellTypeGUI(CC3DModelToolGUIBase, Ui_CellTypePluginGUI):
 
         self.showNormal()
 
-    def init_data(self):
-        return
-
     def draw_ui(self):
 
         if self.cell_type_plugin_data is None:
