@@ -64,7 +64,7 @@ class CC3DModelToolBase:
         if root_element is not None:
             self.load_xml(root_element=root_element)
 
-        self._process_imports()
+        # self._process_imports()
         self.tool_element = self.get_tool_element()
 
         self.__indent_lvl = -1
@@ -267,15 +267,6 @@ class CC3DModelToolBase:
             if key not in self._sim_dicts.keys():
                 self._sim_dicts[key] = None
 
-    def _process_imports(self) -> None:
-        """
-        Performs internal UI processing of dictionary/XML inputs during initialization
-        This is where UI internal attributes are initialized, potential disagreements between multiple
-        information inputs are reconciled, and default data is set
-        :return: None
-        """
-        raise NotImplementedError
-
     def validate_dicts(self, sim_dicts=None) -> bool:
         """
         Validates current sim dictionary states against changes
@@ -290,21 +281,6 @@ class CC3DModelToolBase:
         :param sim_dicts: sim dictionaries according to other tools
         :return:{bool} flag is low when external changes affected internal data
         """
-        if sim_dicts is None:
-            return False
-
-        return_flag = self.validate_dicts(sim_dicts=sim_dicts)
-
-        sim_dicts_local = deepcopy(sim_dicts)
-        for key in self._dict_keys_from:
-            if key in sim_dicts_local.keys():
-                self._sim_dicts[key] = sim_dicts_local[key]
-            else:
-                self._sim_dicts[key] = None
-
-        self._process_imports()
-
-        return return_flag
 
     def append_to_global_dict(self, global_sim_dict: dict = None, local_sim_dict: dict = None):
         """

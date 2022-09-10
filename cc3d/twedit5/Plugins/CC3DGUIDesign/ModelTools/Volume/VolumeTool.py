@@ -92,21 +92,6 @@ class VolumeTool(CC3DModelToolBase):
         """
         return self.volume_plugin_data.generate_xml_element()
 
-    def _process_imports(self) -> None:
-        """
-        Performs internal UI processing of dictionary/XML inputs during initialization
-        This is where UI internal attributes are initialized, potential disagreements between multiple
-        information inputs are reconciled, and default data is set
-        :return: None
-        """
-        if self._sim_dicts is None or not self._sim_dicts:
-            return
-
-        volume_plugin_data = self._sim_dicts["data"]
-        if volume_plugin_data is None:
-            return
-        self.volume_plugin_data = volume_plugin_data
-
     def validate_dicts(self, sim_dicts=None) -> bool:
         """
         Validates current sim dictionary states against changes

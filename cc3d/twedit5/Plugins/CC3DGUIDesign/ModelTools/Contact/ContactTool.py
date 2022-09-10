@@ -68,44 +68,6 @@ class ContactTool(CC3DModelToolBase):
         """returns CellTypePluginData"""
         return ContactPluginData
 
-    def _process_imports(self) -> None:
-        self.cell_type_names = OrderedDict()
-        self.contact_matrix = {}
-
-        cell_type_dict = self._sim_dicts["data"]
-        if cell_type_dict is None:
-            return
-
-        type_ids = list(cell_type_dict.keys())
-        type_ids.sort()
-        for type_id in type_ids:
-            self.cell_type_names[type_id] = cell_type_dict[type_id][0]
-
-        if self._sim_dicts["NeighborOrder"] is not None:
-            self.neighbor_order = self._sim_dicts["NeighborOrder"]
-
-        for t1 in self.cell_type_names.values():
-            self.contact_matrix[t1] = {t2: 0.0 for t2 in self.cell_type_names.values()}
-
-        if self._sim_dicts["contactMatrix"] is not None:
-            contact_matrix_import = self._sim_dicts["contactMatrix"]
-        else:
-            contact_matrix_import = {}
-
-        for t1, t2 in product(self.cell_type_names.values(), self.cell_type_names.values()):
-            try:
-                val = contact_matrix_import[t1][t2]
-                self.contact_matrix[t1][t2] = val
-            except KeyError:
-                try:
-                    val = contact_matrix_import[t2][t1]
-                    self.contact_matrix[t1][t2] = val
-                except KeyError:
-                    pass
-
-        for t1, t2 in product(self.cell_type_names.values(), self.cell_type_names.values()):
-            self.contact_matrix[t2][t1] = self.contact_matrix[t1][t2]
-
     def validate_dicts(self, sim_dicts=None) -> bool:
         """
         Validates current sim dictionary states against changes

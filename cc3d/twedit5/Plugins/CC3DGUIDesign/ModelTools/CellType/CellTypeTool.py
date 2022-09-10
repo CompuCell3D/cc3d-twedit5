@@ -90,33 +90,6 @@ class CellTypeTool(CC3DModelToolBase):
         """
         return self.cell_type_plugin_data.generate_xml_element()
 
-    def _process_imports(self) -> None:
-        """
-        Performs internal UI processing of dictionary/XML inputs during initialization
-        This is where UI internal attributes are initialized, potential disagreements between multiple
-        information inputs are reconciled, and default data is set
-        :return: None
-        """
-        if self._sim_dicts is None or not self._sim_dicts:
-            return
-
-        self.cell_type_ids = []
-        self.cell_type_names = []
-        self.cell_types_frozen = []
-
-        cell_type_data = self._sim_dicts["data"]
-        if cell_type_data is None:
-            return
-        type_ids = list(cell_type_data.keys())
-        type_ids.sort()
-
-        type_id = 0
-        for tid in type_ids:
-            self.cell_type_ids.append(type_id)
-            self.cell_type_names.append(cell_type_data[tid][0])
-            self.cell_types_frozen.append(cell_type_data[tid][1])
-            type_id += 1
-
     def validate_dicts(self, sim_dicts=None) -> bool:
         """
         Validates current sim dictionary states against changes
