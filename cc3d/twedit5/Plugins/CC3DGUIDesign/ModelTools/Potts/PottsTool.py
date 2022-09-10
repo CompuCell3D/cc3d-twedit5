@@ -29,8 +29,7 @@ from cc3d.cpp.CC3DXML import *
 from cc3d.core.XMLUtils import ElementCC3D, CC3DXMLListPy
 from cc3d.core.XMLUtils import dictionaryToMapStrStr as d2mss
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CC3DModelToolBase import CC3DModelToolBase
-from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.CellType.CellTypeTool import CellTypeTool
-
+from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Potts.PottsData import PottsData
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.Potts.pottsdlg import PottsGUI
 import traceback
 import sys
@@ -44,6 +43,8 @@ class PottsTool(CC3DModelToolBase):
         self._dict_keys_to = ["generalPropertiesData"]
         self._dict_keys_from = ["data"]
         self._requisite_modules = ["CellType"]
+
+        self.potts_data = None
 
         self.dim_x = None
         self.dim_y = None
@@ -151,7 +152,11 @@ class PottsTool(CC3DModelToolBase):
         :param root_element: root simulation CC3D XML element
         :return: None
         """
-        self._sim_dicts = load_xml(root_element=root_element)
+        self.parse_dependent_modules(root_element=root_element)
+        self.potts_data = PottsData()
+        self.potts_data.parse_xml(root_element=root_element)
+
+        # self._sim_dicts = load_xml(root_element=root_element)
 
     def get_tool_element(self):
         """
@@ -165,76 +170,77 @@ class PottsTool(CC3DModelToolBase):
         Generates plugin element from current sim dictionary states
         :return: plugin element from current sim dictionary states
         """
-        gpd = self._sim_dicts["generalPropertiesData"]
-        element = self.get_tool_element()
-
-        element.addComment("Basic properties of CPM (GGH) algorithm")
-        element.ElementCC3D("Dimensions", {"x": gpd["Dim"][0], "y": gpd["Dim"][1], "z": gpd["Dim"][2]})
-        element.ElementCC3D("Steps", {}, gpd["MCS"])
-        if isinstance(gpd["MembraneFluctuations"], dict):
-            mf_element = element.ElementCC3D("FluctuationAmplitude", {})
-            for cell_type, param in gpd["MembraneFluctuations"]["Parameters"].items():
-                mf_element.ElementCC3D(
-                    "FluctuationAmplitudeParameters", {"CellType": cell_type, "FluctuationAmplitude": str(param)}
-                )
-
-            element.ElementCC3D("FluctuationAmplitudeFunctionName", {}, gpd["MembraneFluctuations"]["FunctionName"])
-        else:
-            element.ElementCC3D("FluctuationAmplitude", {}, gpd["MembraneFluctuations"])
-        element.ElementCC3D("NeighborOrder", {}, gpd["NeighborOrder"])
-
-        if gpd["LatticeType"] != default_gpd()["LatticeType"]:
-            element.ElementCC3D("LatticeType", {}, gpd["LatticeType"])
-
-        if gpd["Dim"][2] > 1:
-            dim_list = ["x", "y", "z"]
-        else:
-            dim_list = ["x", "y"]
-        [element.ElementCC3D("Boundary_" + dim_name, {}, gpd["BoundaryConditions"][dim_name]) for dim_name in dim_list]
-
-        if gpd["Offset"] != default_gpd()["Offset"]:
-            element.ElementCC3D("Offset", {}, gpd["Offset"])
-
-        if gpd["KBoltzman"] != default_gpd()["KBoltzman"]:
-            element.ElementCC3D("KBoltzman", {}, gpd["KBoltzman"])
-
-        if gpd["Anneal"] != default_gpd()["Anneal"]:
-            element.ElementCC3D("Anneal", {}, gpd["Anneal"])
-
-        if gpd["Flip2DimRatio"] != default_gpd()["Flip2DimRatio"]:
-            element.ElementCC3D("Flip2DimRatio", {}, gpd["Flip2DimRatio"])
-
-        if gpd["DebugOutputFrequency"] != default_gpd()["DebugOutputFrequency"]:
-            element.ElementCC3D("DebugOutputFrequency", {}, gpd["DebugOutputFrequency"])
-
-        if gpd["RandomSeed"] != default_gpd()["RandomSeed"]:
-            element.ElementCC3D("RandomSeed", {}, int(gpd["RandomSeed"]))
-
-        if gpd["EnergyFunctionCalculator"] != default_gpd()["EnergyFunctionCalculator"]:
-            energy_func_calc_element: ElementCC3D = element.ElementCC3D(
-                "EnergyFunctionCalculator", {"Type": gpd["EnergyFunctionCalculator"]["Type"]}
-            )
-            energy_func_calc_element.ElementCC3D(
-                "OutputFileName",
-                {"Frequency": gpd["EnergyFunctionCalculator"]["OutputFileName"]["Frequency"]},
-                gpd["EnergyFunctionCalculator"]["OutputFileName"]["OutputFileName"],
-            )
-            ef_dict = {"Frequency": gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["Frequency"]}
-            if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["GatherResults"]:
-                ef_dict["GatherResults"] = ""
-            if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputAccepted"]:
-                ef_dict["OutputAccepted"] = ""
-            if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputRejected"]:
-                ef_dict["OutputRejected"] = ""
-            if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputTotal"]:
-                ef_dict["OutputTotal"] = ""
-            energy_func_calc_element.ElementCC3D(
-                "OutputCoreFileNameSpinFlips",
-                ef_dict,
-                gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputCoreFileNameSpinFlips"],
-            )
-
-        return element
+        return self.potts_data.generate_xml_element()
+        # gpd = self._sim_dicts["generalPropertiesData"]
+        # element = self.get_tool_element()
+        #
+        # element.addComment("Basic properties of CPM (GGH) algorithm")
+        # element.ElementCC3D("Dimensions", {"x": gpd["Dim"][0], "y": gpd["Dim"][1], "z": gpd["Dim"][2]})
+        # element.ElementCC3D("Steps", {}, gpd["MCS"])
+        # if isinstance(gpd["MembraneFluctuations"], dict):
+        #     mf_element = element.ElementCC3D("FluctuationAmplitude", {})
+        #     for cell_type, param in gpd["MembraneFluctuations"]["Parameters"].items():
+        #         mf_element.ElementCC3D(
+        #             "FluctuationAmplitudeParameters", {"CellType": cell_type, "FluctuationAmplitude": str(param)}
+        #         )
+        #
+        #     element.ElementCC3D("FluctuationAmplitudeFunctionName", {}, gpd["MembraneFluctuations"]["FunctionName"])
+        # else:
+        #     element.ElementCC3D("FluctuationAmplitude", {}, gpd["MembraneFluctuations"])
+        # element.ElementCC3D("NeighborOrder", {}, gpd["NeighborOrder"])
+        #
+        # if gpd["LatticeType"] != default_gpd()["LatticeType"]:
+        #     element.ElementCC3D("LatticeType", {}, gpd["LatticeType"])
+        #
+        # if gpd["Dim"][2] > 1:
+        #     dim_list = ["x", "y", "z"]
+        # else:
+        #     dim_list = ["x", "y"]
+        # [element.ElementCC3D("Boundary_" + dim_name, {}, gpd["BoundaryConditions"][dim_name]) for dim_name in dim_list]
+        #
+        # if gpd["Offset"] != default_gpd()["Offset"]:
+        #     element.ElementCC3D("Offset", {}, gpd["Offset"])
+        #
+        # if gpd["KBoltzman"] != default_gpd()["KBoltzman"]:
+        #     element.ElementCC3D("KBoltzman", {}, gpd["KBoltzman"])
+        #
+        # if gpd["Anneal"] != default_gpd()["Anneal"]:
+        #     element.ElementCC3D("Anneal", {}, gpd["Anneal"])
+        #
+        # if gpd["Flip2DimRatio"] != default_gpd()["Flip2DimRatio"]:
+        #     element.ElementCC3D("Flip2DimRatio", {}, gpd["Flip2DimRatio"])
+        #
+        # if gpd["DebugOutputFrequency"] != default_gpd()["DebugOutputFrequency"]:
+        #     element.ElementCC3D("DebugOutputFrequency", {}, gpd["DebugOutputFrequency"])
+        #
+        # if gpd["RandomSeed"] != default_gpd()["RandomSeed"]:
+        #     element.ElementCC3D("RandomSeed", {}, int(gpd["RandomSeed"]))
+        #
+        # if gpd["EnergyFunctionCalculator"] != default_gpd()["EnergyFunctionCalculator"]:
+        #     energy_func_calc_element: ElementCC3D = element.ElementCC3D(
+        #         "EnergyFunctionCalculator", {"Type": gpd["EnergyFunctionCalculator"]["Type"]}
+        #     )
+        #     energy_func_calc_element.ElementCC3D(
+        #         "OutputFileName",
+        #         {"Frequency": gpd["EnergyFunctionCalculator"]["OutputFileName"]["Frequency"]},
+        #         gpd["EnergyFunctionCalculator"]["OutputFileName"]["OutputFileName"],
+        #     )
+        #     ef_dict = {"Frequency": gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["Frequency"]}
+        #     if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["GatherResults"]:
+        #         ef_dict["GatherResults"] = ""
+        #     if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputAccepted"]:
+        #         ef_dict["OutputAccepted"] = ""
+        #     if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputRejected"]:
+        #         ef_dict["OutputRejected"] = ""
+        #     if gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputTotal"]:
+        #         ef_dict["OutputTotal"] = ""
+        #     energy_func_calc_element.ElementCC3D(
+        #         "OutputCoreFileNameSpinFlips",
+        #         ef_dict,
+        #         gpd["EnergyFunctionCalculator"]["OutputCoreFileNameSpinFlips"]["OutputCoreFileNameSpinFlips"],
+        #     )
+        #
+        # return element
 
     def _append_to_global_dict(self, global_sim_dict: dict = None, local_sim_dict: dict = None):
         if local_sim_dict is None:
@@ -253,10 +259,18 @@ class PottsTool(CC3DModelToolBase):
     def get_ui(self) -> PottsGUI:
         return PottsGUI(
             parent=self.get_parent_ui(),
-            gpd=self.__get_gpd_from_internals(),
-            cell_types=self.cell_types,
-            valid_functions=self.__valid_functions,
+            potts_data=self.potts_data
+            # gpd=self.__get_gpd_from_internals(),
+            # cell_types=self.cell_types,
+            # valid_functions=self.__valid_functions,
         )
+
+        # return PottsGUI(
+        #     parent=self.get_parent_ui(),
+        #     gpd=self.__get_gpd_from_internals(),
+        #     cell_types=self.cell_types,
+        #     valid_functions=self.__valid_functions,
+        # )
 
     def _process_ui_finish(self, gui: QObject):
         """
@@ -264,9 +278,13 @@ class PottsTool(CC3DModelToolBase):
         :param gui: tool gui object
         :return: None
         """
-        self.user_decision = gui.user_decision
-        if gui.user_decision:
-            self.__load_internals_gpd_from_dict(gui.gpd)
+        if not gui.user_decision:
+            return
+        self.potts_data = gui.potts_data
+
+        # self.user_decision = gui.user_decision
+        # if gui.user_decision:
+        #     self.__load_internals_gpd_from_dict(gui.gpd)
 
     def update_dicts(self):
         """
@@ -280,125 +298,125 @@ class PottsTool(CC3DModelToolBase):
         return self.user_decision
 
 
-def load_xml(root_element) -> {}:
-    sim_dicts = {}
-
-    cell_type_tool = CellTypeTool(root_element=root_element)
-    for key, val in cell_type_tool.extract_sim_dicts():
-        sim_dicts[key] = val
-
-    gpd = default_gpd()
-
-    potts_element = root_element.getFirstElement("Potts")
-
-    if potts_element is None:
-        sim_dicts["generalPropertiesData"] = gpd
-        return sim_dicts
-
-    potts_element: CC3DXMLElement
-    element: CC3DXMLElement
-
-    element = potts_element.getFirstElement("Dimensions")
-    if element:
-
-        if element.findAttribute("x"):
-            gpd["Dim"][0] = element.getAttributeAsUInt("x")
-
-        if element.findAttribute("y"):
-            gpd["Dim"][1] = element.getAttributeAsUInt("y")
-
-        if element.findAttribute("z"):
-            gpd["Dim"][2] = element.getAttributeAsUInt("z")
-
-    element = potts_element.getFirstElement("FluctuationAmplitude")
-    if element:
-        p_elements = CC3DXMLListPy(element.getElements("FluctuationAmplitudeParameters"))
-        if p_elements:
-            gpd["MembraneFluctuations"] = {"Parameters": {}, "FunctionName": "Min"}
-            p_element: CC3DXMLElement
-            for p_element in p_elements:
-                cell_type = p_element.getAttribute("CellType")
-                amp = float(p_element.getAttribute("FluctuationAmplitude"))
-                gpd["MembraneFluctuations"]["Parameters"][cell_type] = amp
-
-            f_element: CC3DXMLElement = potts_element.getFirstElement("FluctuationAmplitudeFunctionName")
-            if f_element:
-                gpd["MembraneFluctuations"]["FunctionName"] = f_element.getText()
-            else:
-                gpd["MembraneFluctuations"] = float(element.getText())
-
-        else:
-            gpd["MembraneFluctuations"] = float(element.getText())
-
-    element = potts_element.getFirstElement("Temperature")
-    if element:
-        gpd["MembraneFluctuations"] = float(element.getText())
-
-    n_element = potts_element.getFirstElement("NeighborOrder")
-
-    if n_element:
-        gpd["NeighborOrder"] = float(n_element.getText())
-
-    s_element = potts_element.getFirstElement("Steps")
-
-    if s_element:
-        gpd["MCS"] = float(s_element.getText())
-
-    offset_element = potts_element.getFirstElement("Offset")
-    if offset_element:
-        gpd["Offset"] = float(offset_element.getText())
-
-    coefficient_element = potts_element.getFirstElement("KBoltzman")
-    if coefficient_element:
-        gpd["KBoltzman"] = float(coefficient_element.getText())
-
-    anneal_element = potts_element.getFirstElement("Anneal")
-    if anneal_element:
-        gpd["Anneal"] = float(anneal_element.getText())
-
-    flip_to_dim_ratio_element = potts_element.getFirstElement("Flip2DimRatio")
-    if flip_to_dim_ratio_element:
-        gpd["Flip2DimRatio"] = float(flip_to_dim_ratio_element.getText())
-
-    debug_output_freq_element = potts_element.getFirstElement("DebugOutputFrequency")
-    if debug_output_freq_element:
-        gpd["DebugOutputFrequency"] = float(debug_output_freq_element.getText())
-
-    random_seed_element = potts_element.getFirstElement("RandomSeed")
-    if random_seed_element:
-        gpd["RandomSeed"] = int(random_seed_element.getText())
-
-    energy_func_calc_element = potts_element.getFirstElement("EnergyFunctionCalculator")
-    if energy_func_calc_element:
-        func_type = energy_func_calc_element.getAttribute("Type")
-
-        file_name_element = energy_func_calc_element.getFirstElement("OutputFileName")
-        file_name = file_name_element.getText()
-        file_freq = float(file_name_element.getAttribute("Frequency"))
-
-        spin_element = energy_func_calc_element.getFirstElement("OutputCoreFileNameSpinFlips")
-        spin_name = spin_element.getText()
-        spin_freq = float(spin_element.getAttribute("Frequency"))
-        gather_results = spin_element.findAttribute("GatherResults")
-        output_accepted = spin_element.findAttribute("OutputAccepted")
-        output_rejected = spin_element.findAttribute("OutputRejected")
-        output_total = spin_element.findAttribute("OutputTotal")
-
-        gpd["EnergyFunctionCalculator"] = {
-            "Type": func_type,
-            "OutputFileName": {"OutputFileName": file_name, "Frequency": file_freq},
-            "OutputCoreFileNameSpinFlips": {
-                "OutputCoreFileNameSpinFlips": spin_name,
-                "Frequency": spin_freq,
-                "GatherResults": gather_results,
-                "OutputAccepted": output_accepted,
-                "OutputRejected": output_rejected,
-                "OutputTotal": output_total,
-            },
-        }
-
-    sim_dicts["generalPropertiesData"] = gpd
-    return sim_dicts
+# def load_xml(root_element) -> {}:
+#     sim_dicts = {}
+#
+#     cell_type_tool = CellTypeTool(root_element=root_element)
+#     for key, val in cell_type_tool.extract_sim_dicts():
+#         sim_dicts[key] = val
+#
+#     gpd = default_gpd()
+#
+#     potts_element = root_element.getFirstElement("Potts")
+#
+#     if potts_element is None:
+#         sim_dicts["generalPropertiesData"] = gpd
+#         return sim_dicts
+#
+#     potts_element: CC3DXMLElement
+#     element: CC3DXMLElement
+#
+#     element = potts_element.getFirstElement("Dimensions")
+#     if element:
+#
+#         if element.findAttribute("x"):
+#             gpd["Dim"][0] = element.getAttributeAsUInt("x")
+#
+#         if element.findAttribute("y"):
+#             gpd["Dim"][1] = element.getAttributeAsUInt("y")
+#
+#         if element.findAttribute("z"):
+#             gpd["Dim"][2] = element.getAttributeAsUInt("z")
+#
+#     element = potts_element.getFirstElement("FluctuationAmplitude")
+#     if element:
+#         p_elements = CC3DXMLListPy(element.getElements("FluctuationAmplitudeParameters"))
+#         if p_elements:
+#             gpd["MembraneFluctuations"] = {"Parameters": {}, "FunctionName": "Min"}
+#             p_element: CC3DXMLElement
+#             for p_element in p_elements:
+#                 cell_type = p_element.getAttribute("CellType")
+#                 amp = float(p_element.getAttribute("FluctuationAmplitude"))
+#                 gpd["MembraneFluctuations"]["Parameters"][cell_type] = amp
+#
+#             f_element: CC3DXMLElement = potts_element.getFirstElement("FluctuationAmplitudeFunctionName")
+#             if f_element:
+#                 gpd["MembraneFluctuations"]["FunctionName"] = f_element.getText()
+#             else:
+#                 gpd["MembraneFluctuations"] = float(element.getText())
+#
+#         else:
+#             gpd["MembraneFluctuations"] = float(element.getText())
+#
+#     element = potts_element.getFirstElement("Temperature")
+#     if element:
+#         gpd["MembraneFluctuations"] = float(element.getText())
+#
+#     n_element = potts_element.getFirstElement("NeighborOrder")
+#
+#     if n_element:
+#         gpd["NeighborOrder"] = float(n_element.getText())
+#
+#     s_element = potts_element.getFirstElement("Steps")
+#
+#     if s_element:
+#         gpd["MCS"] = float(s_element.getText())
+#
+#     offset_element = potts_element.getFirstElement("Offset")
+#     if offset_element:
+#         gpd["Offset"] = float(offset_element.getText())
+#
+#     coefficient_element = potts_element.getFirstElement("KBoltzman")
+#     if coefficient_element:
+#         gpd["KBoltzman"] = float(coefficient_element.getText())
+#
+#     anneal_element = potts_element.getFirstElement("Anneal")
+#     if anneal_element:
+#         gpd["Anneal"] = float(anneal_element.getText())
+#
+#     flip_to_dim_ratio_element = potts_element.getFirstElement("Flip2DimRatio")
+#     if flip_to_dim_ratio_element:
+#         gpd["Flip2DimRatio"] = float(flip_to_dim_ratio_element.getText())
+#
+#     debug_output_freq_element = potts_element.getFirstElement("DebugOutputFrequency")
+#     if debug_output_freq_element:
+#         gpd["DebugOutputFrequency"] = float(debug_output_freq_element.getText())
+#
+#     random_seed_element = potts_element.getFirstElement("RandomSeed")
+#     if random_seed_element:
+#         gpd["RandomSeed"] = int(random_seed_element.getText())
+#
+#     energy_func_calc_element = potts_element.getFirstElement("EnergyFunctionCalculator")
+#     if energy_func_calc_element:
+#         func_type = energy_func_calc_element.getAttribute("Type")
+#
+#         file_name_element = energy_func_calc_element.getFirstElement("OutputFileName")
+#         file_name = file_name_element.getText()
+#         file_freq = float(file_name_element.getAttribute("Frequency"))
+#
+#         spin_element = energy_func_calc_element.getFirstElement("OutputCoreFileNameSpinFlips")
+#         spin_name = spin_element.getText()
+#         spin_freq = float(spin_element.getAttribute("Frequency"))
+#         gather_results = spin_element.findAttribute("GatherResults")
+#         output_accepted = spin_element.findAttribute("OutputAccepted")
+#         output_rejected = spin_element.findAttribute("OutputRejected")
+#         output_total = spin_element.findAttribute("OutputTotal")
+#
+#         gpd["EnergyFunctionCalculator"] = {
+#             "Type": func_type,
+#             "OutputFileName": {"OutputFileName": file_name, "Frequency": file_freq},
+#             "OutputCoreFileNameSpinFlips": {
+#                 "OutputCoreFileNameSpinFlips": spin_name,
+#                 "Frequency": spin_freq,
+#                 "GatherResults": gather_results,
+#                 "OutputAccepted": output_accepted,
+#                 "OutputRejected": output_rejected,
+#                 "OutputTotal": output_total,
+#             },
+#         }
+#
+#     sim_dicts["generalPropertiesData"] = gpd
+#     return sim_dicts
 
 
 def default_gpd() -> dict:

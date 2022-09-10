@@ -79,6 +79,9 @@ p, li { white-space: pre-wrap; }
          <property name="text">
           <string>Add</string>
          </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
       </layout>
@@ -89,6 +92,9 @@ p, li { white-space: pre-wrap; }
         <widget class="QPushButton" name="clearCellTypeTablePB">
          <property name="text">
           <string>Clear Table</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -109,6 +115,9 @@ p, li { white-space: pre-wrap; }
         <widget class="QPushButton" name="deleteCellTypePB">
          <property name="text">
           <string>Delete Cell Type</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -136,12 +145,18 @@ p, li { white-space: pre-wrap; }
        <property name="text">
         <string>OK</string>
        </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="cancelPB">
        <property name="text">
         <string>Cancel</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
