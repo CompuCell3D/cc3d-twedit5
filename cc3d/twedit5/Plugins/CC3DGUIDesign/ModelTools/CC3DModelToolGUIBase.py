@@ -1,6 +1,8 @@
 from PyQt5.QtCore import QObject, pyqtSignal, QEvent
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from typing import Dict
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.xml_parse_data import XMLParseData
 
 # Start-Of-Header
 
@@ -26,12 +28,21 @@ class CC3DModelToolGUIBase(QWidget):
     mtg_close_signal = pyqtSignal()
     mtg_enter_signal = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, modules_to_react_to_data_dict: Dict[str, XMLParseData] = None):
         super(CC3DModelToolGUIBase, self).__init__(parent)
 
         self.__ked = KeyEventDetector(parent=self)
         self.installEventFilter(self.__ked)
         self.user_decision = False
+        self.modules_to_react_to_data_dict = modules_to_react_to_data_dict
+
+    def get_parsed_module_data(self, module_name):
+        if self.modules_to_react_to_data_dict:
+            return self.modules_to_react_to_data_dict.get(module_name, None)
+        return None
+
+    def get_module_data_for_dependencies(self):
+        return self.modules_to_react_to_data_dict
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         self.mtg_close_signal.emit()

@@ -49,6 +49,12 @@ class CC3DModelToolBase:
         # if any of the modules is changed current module must react to it. E.g. if CellType changes Volume must handle
         # such change
         self._modules_to_react_to = modules_to_react_to
+        if self._modules_to_react_to is None:
+            self._modules_to_react_to = []
+
+        # dict of module data - contains only entries based on the module names listed in self._modules_to_react_to
+        # modules data are initialized (by parsing xml for dependent modules) just before when they are needed
+        self.modules_to_react_to_data_dict = {}
 
         self.__flag_no_ui = False
 
@@ -63,6 +69,27 @@ class CC3DModelToolBase:
 
         self.__indent_lvl = -1
         self._indent_list = []
+
+    def parse_dependent_modules(self, root_element: CC3DXMLElement):
+        """
+        Populates  self.modules_to_react_to_data_dict with module data (e.g VolumePluginData) for all dependent modules
+        listed in self._modules_to_react_to
+        """
+        if self.design_gui_plugin is None:
+            # this happens when syntax highlighters use Plugin/Steppable Tool
+            return
+
+        # parsing any other data modules that current plugin/steppable might need to know about
+        for module_name in self._modules_to_react_to:
+            # fetching class representing module data e.g. volumePluginData
+            module_data_class = self.design_gui_plugin.get_module_data_class(module_name=module_name)
+            if module_data_class is not None:
+                # assuming this class exists we create object of this class and parse from XML to populate
+                # plugin/steppable data
+                module_data = module_data_class()
+                module_data.parse_xml(root_element=root_element)
+                # we store prepopulated data in a dictionary
+                self.modules_to_react_to_data_dict[module_name] = module_data
 
     @staticmethod
     def get_module_data_class():
