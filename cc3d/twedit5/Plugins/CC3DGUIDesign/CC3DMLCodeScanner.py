@@ -643,8 +643,8 @@ class ScannerPack(QObject):
 
         self.editor.SCN_FOCUSIN.connect(self.handle_focus_changed)
         self.editor.SCN_FOCUSOUT.connect(self.handle_focus_changed)
-        self.cp.dwell_block.connect(self.hm.show_dwell_msg)
-        self.cp.end_dwell.connect(self.hm.remove_dwell_msg)
+        # self.cp.dwell_block.connect(self.hm.show_dwell_msg)
+        # self.cp.end_dwell.connect(self.hm.remove_dwell_msg)
         self.editor.textChanged.connect(self.handle_text_changed)
         self.cst.timeout.connect(self.paint_editor)
         self.cs.get_ui().panels[0].tabBarLocal.currentChanged.connect(self.handle_ui_tab_changed)
@@ -687,6 +687,7 @@ class ScannerPack(QObject):
             self.post_scanning_status()
 
     def paint_editor(self):
+        return
         scanned_blocks = self.cs.get_scanned_blocks(xml_string=str(self.editor.text()))
         self.has_warnings = False
         self.has_errors = False
@@ -699,6 +700,7 @@ class ScannerPack(QObject):
             self.post_scanning_status()
 
     def erase_paint(self):
+        return
         if self.cp.color_blocks is not None:
             self.cp.erase_paint()
             self.is_painted = False
