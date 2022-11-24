@@ -99,7 +99,7 @@ class CC3DModulesModel(QtCore.QAbstractTableModel):
         elif role == Qt.ForegroundRole:
             if row['ModuleName'] == '':
                 # return QtGui.QColor("darkGray")
-                return QtGui.QColor(215, 214, 213
+                return QtGui.QColor(215, 214, 213)
 
             # if self.table_type & TableType.ROW_LIST:
             #     batch = (index.row()) % 2

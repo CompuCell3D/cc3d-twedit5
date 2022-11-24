@@ -1548,8 +1548,6 @@ class EditorWindow(QMainWindow):
 
         fileNamesSorted = [openFilesToRestore[1][key] for key in keys]
 
-        # fileList=QStringList()
-
         dbgMsg(dir(fileList))
 
         for fileName in fileNamesSorted:
@@ -2925,8 +2923,6 @@ class EditorWindow(QMainWindow):
 
         i = 1
 
-        # findText = QString(_text)  # a new copy of a textTo Find
-
         findText = _text  # a new copy of a textTo Find
 
         if _reFlag:
@@ -3383,8 +3379,6 @@ class EditorWindow(QMainWindow):
             elif idx >= 1:
 
                 if _str[idx - 1] == '\\':
-
-                    # if QString(_str.at(idx - 1)) == "\\":
 
                     _str = _str[:idx - 1] + _str[idx:]
 
@@ -7376,7 +7370,7 @@ class EditorWindow(QMainWindow):
         """
 
         if caption is None:
-            caption = QString()
+            caption = ''
 
         self.addDockWidget(where, dock)
 

@@ -44,10 +44,15 @@ from cc3d.core import XMLUtils
 from cc3d.core.CC3DSimulationDataHandler import CC3DSimulationData, CC3DSimulationDataHandler
 import xml
 from typing import Union, Type
-
+from PyQt5 import QtWidgets
 from cc3d.twedit5.Plugins.CC3DGUIDesign.CC3DMLCodeScanner import CC3DMLCodeScanner
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.widgets import CC3DModuleDockWidget
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.table_with_delegates_buttons_cc3d import ModuleWidget,ButtonsDelegate
+from cc3d.twedit5.Plugins.CC3DGUIDesign.helpers.cc3d_modules_model import CC3DModulesModel
 from cc3d.twedit5.Plugins.CC3DGUIDesign import CC3DMLScannerTools as cc3dst
 from cc3d.twedit5.Plugins.CC3DGUIDesign.ModelTools.ModelToolsManager import ModelToolsManager
+from cc3d.twedit5.Plugins.PluginCCDProject import CC3DProjectTreeWidget
+
 
 error = ""
 
@@ -66,6 +71,8 @@ class CC3DGUIDesign(QObject):
         QObject.__init__(self, ui)
 
         self.__ui: EditorWindow = ui
+        self.module_dock = None
+        self.module_widget = None
 
         self.active_editor = None
 
@@ -159,8 +166,41 @@ class CC3DGUIDesign(QObject):
             active_tools_info=self.active_tools_info,
             tool_links_dict=self.tool_links_dict,
         )
-
+        self.add_widgets()
         self.connect_all_signals()
+
+    def add_widgets(self):
+        """Adds all widgets associated with gui design plugin
+        """
+        # adds dock widget below ProjectWindow to display list of modules
+        self.module_dock = CC3DModuleDockWidget(self.__ui)
+        self.module_dock.setObjectName("CC3D Modules")
+        self.__ui.addDockWidget(Qt.RightDockWidgetArea, self.module_dock)
+        # self.module_widget = ModuleWidget(self.module_dock)
+
+        # # setting up table view for modules
+        self.model = CC3DModulesModel()
+        self.tableView = QtWidgets.QTableView()
+        self.tableView.setModel(self.model)
+        self.tableView.horizontalHeader().setStretchLastSection(True)
+        # self.tableView.verticalHeader().setStretchLastSection(True)
+        # self.tableView.clicked.connect(self.onClick)
+        self.tableView.verticalHeader().hide()
+        #
+        #
+        delegate = ButtonsDelegate(self.tableView)
+        self.tableView.setItemDelegate(delegate)
+
+        # self.tableView = CC3DProjectTreeWidget()
+        self.module_dock.setWidget(self.tableView)
+
+        # self.setWidget(self.module_widget)
+
+        self.module_dock.setWindowTitle('CC3D Modules')
+
+        self.module_dock.show()
+
+
 
     def activate(self):
         """
@@ -202,7 +242,7 @@ class CC3DGUIDesign(QObject):
             qa.setStatusTip(btd.short_description)
             try:
                 qa.triggered.connect(functools.partial(self.on_call_tool, tool))
-            except Exception as e:
+            except Exception as e:  # todo - make exception less general
                 traceback.print_exc(file=sys.stdout)
 
             self.active_tools_action_dict[key] = {"ActionKey": action_key, "QAction": qa}

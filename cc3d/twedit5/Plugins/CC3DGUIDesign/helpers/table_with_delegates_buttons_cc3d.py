@@ -44,15 +44,10 @@ class ButtonsDelegate(QtWidgets.QStyledItemDelegate):
         return ViewWidget(150, index, use_buttons=not section_header_flag, parent=parent)
 
 
-class Example(QtWidgets.QMainWindow):
+class ModuleWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(Example, self).__init__(parent)
-
-        # dirPath  = "/home/cioc/Documents/GPR/GRP"
-        dirPath = "/Users/m/Downloads"
-
-        self.setCentralWidget(QtWidgets.QWidget())
-        layout = QtWidgets.QGridLayout(self.centralWidget())
+        super(ModuleWidget, self).__init__(parent)
+        layout = QtWidgets.QGridLayout(self)
 
         self.model = QtGui.QStandardItemModel(self)
         self.model = CC3DModulesModel()
@@ -67,21 +62,64 @@ class Example(QtWidgets.QMainWindow):
         self.tableView.setItemDelegate(delegate)
 
         layout.addWidget(self.tableView)
-        self.resize(300, 500)
+        self.resize(self.minimumSizeHint())
 
-    def appendRowItems(self, dir_path):
-        for root, dirs, files in os.walk(dir_path):
-            if root == dir_path:
-                for file in files:
-                    item = QtGui.QStandardItem(file)
-                    item.setData(os.path.join(root, file))
-                    self.model.appendRow(item)
+    def sizeHint(self):
+        return self.minimumSizeHint()
 
-    # @QtCore.Slot(QtCore.QModelIndex)
+    def minimumSizeHint(self):
+        return QtCore.QSize(300, 500)
+
     def onClick(self, ix):
         it = self.model.itemFromIndex(ix)
         print(it.data())
 
+
+class Example(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        super(Example, self).__init__(parent)
+
+        self.module_widget =  ModuleWidget(parent=parent)
+
+        self.setCentralWidget(self.module_widget)
+        self.resize(300, 500)
+
+# class Example(QtWidgets.QMainWindow):
+#     def __init__(self, parent=None):
+#         super(Example, self).__init__(parent)
+#
+#
+#         self.setCentralWidget(QtWidgets.QWidget())
+#         layout = QtWidgets.QGridLayout(self.centralWidget())
+#
+#         self.model = QtGui.QStandardItemModel(self)
+#         self.model = CC3DModulesModel()
+#         self.tableView = QtWidgets.QTableView()
+#         self.tableView.setModel(self.model)
+#         self.tableView.horizontalHeader().setStretchLastSection(True)
+#         self.tableView.clicked.connect(self.onClick)
+#         self.tableView.verticalHeader().hide()
+#         # self.appendRowItems(dirPath)
+#
+#         delegate = ButtonsDelegate(self.tableView)
+#         self.tableView.setItemDelegate(delegate)
+#
+#         layout.addWidget(self.tableView)
+#         self.resize(300, 500)
+#
+#     def appendRowItems(self, dir_path):
+#         for root, dirs, files in os.walk(dir_path):
+#             if root == dir_path:
+#                 for file in files:
+#                     item = QtGui.QStandardItem(file)
+#                     item.setData(os.path.join(root, file))
+#                     self.model.appendRow(item)
+#
+#     # @QtCore.Slot(QtCore.QModelIndex)
+#     def onClick(self, ix):
+#         it = self.model.itemFromIndex(ix)
+#         print(it.data())
+#
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)

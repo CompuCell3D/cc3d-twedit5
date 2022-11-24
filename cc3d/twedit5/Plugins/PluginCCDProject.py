@@ -1032,6 +1032,8 @@ class CC3DProject(QObject, TweditPluginBase):
 
         self.cc3dProjectDock = self.__createDockWindow("CC3D Project")
 
+
+
         self.textEdit = QTextEdit()
 
         self.treeWidget = CC3DProjectTreeWidget()
@@ -1090,7 +1092,7 @@ class CC3DProject(QObject, TweditPluginBase):
         """
 
         if caption is None:
-            caption = QString()
+            caption = ''
 
         self.__ui.addDockWidget(where, dock)
 

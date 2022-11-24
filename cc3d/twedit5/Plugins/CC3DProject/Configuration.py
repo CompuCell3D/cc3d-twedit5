@@ -123,14 +123,6 @@ class Configuration:
 
             self.settings.setValue(_key, QVariant(_value))
 
-            # elif _key in ["InitialSize","InitialPosition","ListOfOpenFiles","FRSyntax","FRFindHistory","FRReplaceHistory","FRFiltersHistory","FRDirectoryHistory","KeyboardShortcuts"]: # QSize, QPoint,QStringList , QString values
-
-            # self.settings.setValue(_key,QVariant(_value))
-
-            # else:
-
-            # dbgMsg("Wrong format of configuration option:",_key,":",_value)
-
     def setKeyboardShortcut(self, _actionName, _keyboardshortcut):
 
         self.modifiedKeyboardShortcuts[_actionName] = _keyboardshortcut
@@ -141,7 +133,7 @@ class Configuration:
 
     def prepareKeyboardShortcutsForStorage(self):
 
-        self.modifiedKeyboardShortcutsStringList = QStringList()
+        self.modifiedKeyboardShortcutsStringList = []
 
         for actionName in list(self.modifiedKeyboardShortcuts.keys()):
             self.modifiedKeyboardShortcutsStringList.append(actionName)

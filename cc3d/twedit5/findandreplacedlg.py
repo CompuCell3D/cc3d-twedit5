@@ -155,10 +155,6 @@ class FindAndReplaceHistory:
 
         self.transparencyEnable = True
 
-        # self.findHistoryIF=QStringList()
-
-        # self.replaceHistoryIF=QStringList()
-
         self.filtersHistoryIF = []
 
         self.directoryHistoryIF = []

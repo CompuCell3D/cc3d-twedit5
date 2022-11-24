@@ -926,7 +926,7 @@ def toUnicode(s):
 
     """
 
-    if isinstance(s, QString):
+    if isinstance(s, str):
 
         return s
 
@@ -2595,7 +2595,7 @@ def prepareQtMacBundle(toolname, version, args):
 
     else:
 
-        return ("", QStringList())
+        return ("", [])
 
     
 
@@ -2611,7 +2611,7 @@ def prepareQtMacBundle(toolname, version, args):
 
 
 
-    newArgs = QStringList()
+    newArgs = []
 
     newArgs.append("-a")
 

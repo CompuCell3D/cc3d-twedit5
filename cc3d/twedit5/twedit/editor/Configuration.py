@@ -227,7 +227,7 @@ class Configuration:
 
                 return self.defaultConfigs[_key]
 
-        # QStringList values
+        #  values
         elif _key in ["RecentDocuments", "RecentDirectories", "ListOfOpenFiles", "ListOfOpenFilesAndPanels",
 
                       "FRFindHistory", "FRReplaceHistory", "FRFiltersHistory", "FRDirectoryHistory",
@@ -278,7 +278,7 @@ class Configuration:
 
             self.settings.setValue(_key, QVariant(_value))
 
-        # QSize, QPoint,QStringList , QString values
+        # QSize, QPoint,[], str values
         elif _key in ["RecentDocuments", "RecentDirectories", "InitialSize", "InitialPosition", "ListOfOpenFiles",
 
                       "ListOfOpenFilesAndPanels", "FRSyntax", "FRFindHistory", "FRReplaceHistory", "FRFiltersHistory",
