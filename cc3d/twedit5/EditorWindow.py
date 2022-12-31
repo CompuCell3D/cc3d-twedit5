@@ -140,6 +140,7 @@ from cc3d.twedit5.twedit.utils.collection_utils import remove_duplicates
 # from codecs import BOM_UTF8, BOM_UTF16, BOM_UTF32
 from cc3d.twedit5.PluginManager.PluginManager import PluginManager
 from cc3d.twedit5.ThemeManager import ThemeManager
+from cc3d.twedit5.styles import tab_bar_style
 
 coding_regexps = [
     (2, re.compile(r'''coding[:=]\s*([-\w_.]+)''')),
@@ -207,7 +208,7 @@ class CustomTabBar(QTabBar):
 
         self.tabWidget = _parent
 
-        self.setStyleSheet("QTabBar::tab { height: 20px;}")
+        self.setStyleSheet("QTabBar::tab { height: 20px;} " + tab_bar_style)
 
         self.clickedTabPosition = -1
 
