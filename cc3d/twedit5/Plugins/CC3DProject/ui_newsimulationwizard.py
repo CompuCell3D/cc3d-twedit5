@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_NewSimulationWizard(object):
     def setupUi(self, NewSimulationWizard):
         NewSimulationWizard.setObjectName("NewSimulationWizard")
-        NewSimulationWizard.resize(770, 701)
+        NewSimulationWizard.resize(951, 701)
         self.wizardPage1 = QtWidgets.QWizardPage()
         self.wizardPage1.setObjectName("wizardPage1")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.wizardPage1)
@@ -299,7 +299,6 @@ class Ui_NewSimulationWizard(object):
         self.solverCB.addItem("")
         self.solverCB.addItem("")
         self.solverCB.addItem("")
-        self.solverCB.addItem("")
         self.horizontalLayout_15.addWidget(self.solverCB)
         self.fieldAddPB = QtWidgets.QPushButton(self.wizardPage_7)
         self.fieldAddPB.setObjectName("fieldAddPB")
@@ -438,6 +437,7 @@ class Ui_NewSimulationWizard(object):
         self.comCHB.setObjectName("comCHB")
         self.verticalLayout_5.addWidget(self.comCHB)
         self.neighborCHB = QtWidgets.QCheckBox(self.groupBox_4)
+        self.neighborCHB.setChecked(True)
         self.neighborCHB.setObjectName("neighborCHB")
         self.verticalLayout_5.addWidget(self.neighborCHB)
         self.momentOfInertiaCHB = QtWidgets.QCheckBox(self.groupBox_4)
@@ -882,8 +882,7 @@ class Ui_NewSimulationWizard(object):
         self.solverCB.setItemText(1, _translate("NewSimulationWizard", "FlexibleDiffusionSolverFE"))
         self.solverCB.setItemText(2, _translate("NewSimulationWizard", "FastDiffusionSolver2DFE"))
         self.solverCB.setItemText(3, _translate("NewSimulationWizard", "KernelDiffusionSolver"))
-        self.solverCB.setItemText(4, _translate("NewSimulationWizard", "ReactionDiffusionSolverFVM"))
-        self.solverCB.setItemText(5, _translate("NewSimulationWizard", "SteadyStateDiffusionSolver"))
+        self.solverCB.setItemText(4, _translate("NewSimulationWizard", "SteadyStateDiffusionSolver"))
         self.fieldAddPB.setText(_translate("NewSimulationWizard", "Add"))
         self.label_6.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -1215,8 +1214,8 @@ class Ui_NewSimulationWizard(object):
         self.textBrowser.setHtml(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">CC3D project will be generated now</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:12pt;\"><br /></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600; color:#0000ff;\">NOTE:</span><span style=\" font-size:12pt;\"> The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters</span></p></body></html>"))
+"</style></head><body style=\" font-family:\'.AppleSystemUIFont\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'MS Shell Dlg 2\'; font-size:12pt;\">CC3D project will be generated now</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'MS Shell Dlg 2\'; font-size:12pt;\"><br /></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'MS Shell Dlg 2\'; font-size:12pt; font-weight:600; color:#0000ff;\">NOTE:</span><span style=\" font-family:\'MS Shell Dlg 2\'; font-size:12pt;\"> The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters</span></p></body></html>"))
 
