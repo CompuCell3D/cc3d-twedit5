@@ -450,9 +450,8 @@ class DeathSteppable(SteppableBasePy):
 
         file = open(self.steppablesPythonFileName, "w")
 
-        header = '''
-from cc3d.core.PySteppables import *
-
+        header = '''from cc3d.core.PySteppables import *
+import numpy as np
 
 '''
         file.write(header)

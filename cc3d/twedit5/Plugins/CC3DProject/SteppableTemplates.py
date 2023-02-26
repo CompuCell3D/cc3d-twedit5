@@ -33,6 +33,7 @@ class SteppableTemplates:
 from cc3d.core.PySteppables import *
 import numpy as np
 
+
 """
 
     def generate_steppable_code(self, steppable_name="GenericSteppable", frequency=1, steppable_type="Generic",
