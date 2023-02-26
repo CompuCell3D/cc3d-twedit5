@@ -34,6 +34,7 @@ requirements:
   build:
     - python={{ python }}
     - setuptools
+#    - pyqtwebkit
 
   run:
     - python={{ python }}

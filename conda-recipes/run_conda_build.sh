@@ -1,3 +1,4 @@
+
 export version="4.4.0"
 export build_number=0
 export numpy_version="1.21"
@@ -9,4 +10,4 @@ export boost_version="1.78"
 export tbb_devel_version="2021" 
 
 conda build -c local -c conda-forge -c compucell3d . --python=3.7
-#conda render .
+#conda render . python=3.7
