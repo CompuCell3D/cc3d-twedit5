@@ -148,11 +148,21 @@ class Worker(QThread, QObject):
                   f'cd {build_dir}<br>' \
                   f'nmake<br>' \
                   f'nmake install'
+        elif sys.platform.startswith('darwin'):
+            msg = f'<br><br>Now open a terminal and do the following:<br><br>' \
+                  f'if you are on osx deactivate conda base env:' \
+                  f'conda deactivate base \n' \
+                  f'or install DSK to /opt/MacOSX10.10.sdk\n' \
+                  f'get MacOSX10.10.sdk from https://github.com/phracker/MacOSX-SDKs only then you can run compilation steps' \
+                  f'cd {build_dir}<br>' \
+                  f'make<br>' \
+                  f'make install'
         else:
             msg = f'<br><br>Now open a terminal and do the following:<br><br>' \
                   f'cd {build_dir}<br>' \
                   f'make<br>' \
                   f'make install'
+
 
         return msg
 
