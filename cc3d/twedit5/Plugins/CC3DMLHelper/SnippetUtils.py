@@ -599,7 +599,7 @@ class SnippetUtils(object):
 
         kwds['constraintDataDict'] = constraintDataDict
 
-        newXMLElement = self.generator.generateVolumeFlexPlugin(*args, **kwds)
+        newXMLElement = self.generator.generateImplicitMotilityPlugin(*args, **kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
 
