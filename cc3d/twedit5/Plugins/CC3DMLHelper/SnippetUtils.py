@@ -61,8 +61,6 @@ class SnippetDecorator(object):
 
             obj = args[0]
 
-            cellTypeData = kwds['data']
-
             editor = kwds['editor']
 
             moduleAttributeLabel = self.moduleName[0]
@@ -76,11 +74,6 @@ class SnippetDecorator(object):
 
             try:
 
-                # root_element,moduleBegin,moduleEnd= self.extractCurrentModule(editor,
-                # cc3dXML2ObjConverter,_moduleType='Plugin',_moduleName=['Name','Contact'])
-
-                # print 'moduleAttributeLabel,moduleAlias=',(moduleAttributeLabel,moduleAlias)
-
                 if moduleAttributeLabel == '':  # modules with no attribute in the openeing element e.g. <Potts>
 
                     cc3dXML2ObjConverter, moduleBegin, moduleEnd = obj.extractCurrentModule(editor, self.moduleType, [])
@@ -90,10 +83,6 @@ class SnippetDecorator(object):
                     cc3dXML2ObjConverter, moduleBegin, moduleEnd = obj.extractCurrentModule(editor, self.moduleType,
                                                                                             [moduleAttributeLabel,
                                                                                              moduleAlias])
-
-
-
-
 
             except UserWarning as e:
 
@@ -127,8 +116,6 @@ class SnippetDecorator(object):
 
 class SnippetUtils(object):
 
-    # def __init__(self):
-
     def __init__(self, _cc3dmlHelper=None):
 
         self.generator = CC3DMLGeneratorBase()
@@ -147,11 +134,7 @@ class SnippetUtils(object):
 
         global dictOfModules
 
-        # print 'dictOfModules=',dictOfModules
-
         for moduleName, moduleType in dictOfModules.items():
-
-            # print  'moduleName=',moduleName,' moduleType=',moduleType
 
             if moduleType == 'Plugin':
 
@@ -160,10 +143,6 @@ class SnippetUtils(object):
             elif moduleType == 'Steppable':
 
                 self.handlerDict['Steppables ' + moduleName] = getattr(self, 'handle' + moduleName)
-
-            # elif moduleType=='Potts':
-
-            # self.handlerDict['Potts '+'Simulation Configuration']=getattr(self,'handle'+'Potts')
 
             elif moduleType in ['Metadata', 'Potts']:
 
@@ -182,8 +161,8 @@ class SnippetUtils(object):
 
         snippet = ''
 
-        for lineNumber in range(_beginLine,
-                                _endLine + 1):  # +1 to include last line - range by default does not include last value from the interval
+        # +1 to include last line - range by default does not include last value from the interval
+        for lineNumber in range(_beginLine, _endLine + 1):
 
             snippet += _editor.text(lineNumber)
 
@@ -197,10 +176,7 @@ class SnippetUtils(object):
 
         return contactMatrix
 
-    def extractCurrentModule(self, _editor, _moduleType,
-                             _moduleName):  # editor,_moduleType='Plugin',_moduleName=['Name','Contact']
-
-        moduleName = []
+    def extractCurrentModule(self, _editor, _moduleType, _moduleName):
 
         try:
 
@@ -216,18 +192,10 @@ class SnippetUtils(object):
 
             moduleName = _moduleName
 
-        # print 'ecm _moduleType,moduleName=',(_moduleType,moduleName)
-
         moduleBegin, moduleEnd = self.cc3dmlHelper.findModuleLine(_editor=_editor, _moduleType=_moduleType,
                                                                   _moduleName=moduleName)
 
-        # moduleBegin,moduleEnd=self.cc3dmlHelper.findModuleLine(_editor=_editor,_moduleType=_moduleType,_moduleName=_moduleName)
-
-        # print 'ecm moduleBegin,moduleEnd=',(moduleBegin,moduleEnd)
-
         snippet = self.extractSnippet(_editor, moduleBegin, moduleEnd)
-
-        # print 'EXTRACT moduleBegin,moduleEnd=',(moduleBegin,moduleEnd)
 
         if moduleBegin < 0 and moduleEnd < 0:
             return None, moduleBegin, moduleEnd
@@ -244,27 +212,20 @@ class SnippetUtils(object):
 
             raise UserWarning(e.__str__())
 
-        # return root_element,moduleBegin,moduleEnd
+        # have to return cc3dXML2ObjConverter instead of root_element because
+        # if we return root_element then cc3dXML2ObjConverter will get deleted and
+        # child elements in root_elements get lost
 
-        return cc3dXML2ObjConverter, moduleBegin, moduleEnd  # have to return cc3dXML2ObjConverter instead of root_element because if we return root_element then cc3dXML2ObjConverter
-
-        # will get deleted and child elements in root_elements get lost
+        return cc3dXML2ObjConverter, moduleBegin, moduleEnd
 
     def extractElementListProperties(self, _root_element, _elementFormat):
-
-        ''' 
-
-            _elementFormat=[ElementName,TypeOfElementValue,[AttribName,Type,Optional,MultiDictKey],[AttribName,Type,Optional,MultiDictKey],...]
+        """
+        _elementFormat=[ElementName,TypeOfElementValue,[AttribName,Type,Optional,MultiDictKey],[AttribName,Type,Optional,MultiDictKey],...]
 
             e.g. [VolumeEnergyParameters,None,[CellType,String,False,True],[LambdaVolume,Double,False,False],[TargetVolume,Double,False,False]]
 
-            
-
-            _returnObjectFormat=[MultiDimDict={(Key1,Key2):[ElementValue,Attrib1,Attrib2]}]    
-
-            
-
-        '''
+        _returnObjectFormat=[MultiDimDict={(Key1,Key2):[ElementValue,Attrib1,Attrib2]}]
+        """
 
         # parsing _elementFormat to determine type of the return object
 
@@ -275,10 +236,6 @@ class SnippetUtils(object):
             elementValueFormat = _elementFormat[1]
 
             multiDictKeys = []
-
-            attributes = []
-
-            elementFormatLength = len(_elementFormat)
 
             attributeFormatList = _elementFormat[2:]
 
@@ -385,8 +342,6 @@ class SnippetUtils(object):
 
                 attributeKeyFlag = attributeFormat[3]
 
-                attributeValue = None
-
                 print('attributeFormat=', attributeFormat)
 
                 if element.findAttribute(attributeName):
@@ -404,8 +359,6 @@ class SnippetUtils(object):
                     else:
 
                         valueList.append(attributeValue)
-
-
 
                 else:
 
@@ -427,10 +380,7 @@ class SnippetUtils(object):
 
         return moduleDataDict
 
-        # def findModule(self,editor,aliases,_moduleType='Plugin',_moduleName=['Name',''])
-
-    def warnIfModuleExists(self, _editor, _moduleType,
-                           _moduleName):  # _moduleType='Plugin',_moduleName=['Name',['Volume','VolumeLocalFlex']]
+    def warnIfModuleExists(self, _editor, _moduleType, _moduleName):
 
         # added for clarity purposes
 
@@ -446,18 +396,10 @@ class SnippetUtils(object):
 
         moduleBegin = -1
 
-        moduleEnd = -1
-
-        # print 'aliases=',aliases
-
-        # print 'self.cc3dmlHelper=',self.cc3dmlHelper
-
         for alias in aliases:
 
             moduleBegin, moduleEnd = self.cc3dmlHelper.findModuleLine(editor, _moduleType=moduleType,
                                                                       _moduleName=[moduleName, alias])
-
-            # print  'moduleBegin,moduleEnd=',(moduleBegin,moduleEnd)
 
             if moduleBegin >= 0 and moduleEnd >= 0:
                 currentAlias = alias
@@ -467,8 +409,6 @@ class SnippetUtils(object):
         if not len(aliases):  # this is for modules like <Potts> which have no attributes in the opening element
 
             moduleBegin, moduleEnd = self.cc3dmlHelper.findModuleLine(editor, _moduleType=moduleType, _moduleName=[])
-
-            # print 'moduleBegin,moduleEnd=',(moduleBegin,moduleEnd)
 
             if moduleBegin >= 0 and moduleEnd >= 0:
                 currentAlias = moduleType
@@ -526,12 +466,10 @@ class SnippetUtils(object):
 
     def remmoveExistingCode(self, _editor, _moduleBegin, _moduleEnd):
 
-        if _moduleBegin >= 0 and _moduleEnd >= 0 and _moduleBegin <= _moduleEnd:
+        if 0 <= _moduleBegin <= _moduleEnd and _moduleEnd >= 0:
             self.cc3dmlHelper.removeLines(_editor, _moduleBegin, _moduleEnd)
 
     def handleNewSnippet(self, _editor, _newSnippet, _taskFlag, _moduleBegin, _moduleEnd):
-
-        # print 'handleNewSnippet _moduleBegin,_moduleEnd = ',(_moduleBegin,_moduleEnd)
 
         if _taskFlag == MB_CANCEL:
             return
@@ -556,12 +494,6 @@ class SnippetUtils(object):
 
     @SnippetDecorator('Plugin', ['Name', ['Connectivity']])
     def handleConnectivity(self, *args, **kwds):
-
-        root_element = kwds['root_element']
-
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
 
         newXMLElement = self.generator.generateConnectivityPlugin(*args, **kwds)
 
@@ -662,12 +594,6 @@ class SnippetUtils(object):
     @SnippetDecorator('Plugin', ['Name', ['ExternalPotential']])
     def handleExternalPotential(self, *args, **kwds):
 
-        root_element = kwds['root_element']
-
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
         newXMLElement = self.generator.generateExternalPotentialPlugin(*args, **kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
@@ -730,8 +656,7 @@ class SnippetUtils(object):
 
         if root_element is not None:
             constraintDataDict = self.extractElementListProperties(root_element, ['LengthEnergyParameters', None,
-                                                                                  ['CellType', '', False, True], \
- \
+                                                                                  ['CellType', '', False, True],
                                                                                   ['TargetLength', 'AsDouble', False,
                                                                                    False],
                                                                                   ['MinorTargetLength', 'AsDouble',
@@ -752,10 +677,6 @@ class SnippetUtils(object):
 
         root_element = kwds['root_element']
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
         contactMatrix = {}
 
         if root_element:
@@ -763,13 +684,9 @@ class SnippetUtils(object):
                                                               ['Energy', 'Double', ['Type1', '', False, True],
                                                                ['Type2', '', False, True]])
 
-            # contactElement=ElementCC3D("Plugin",{"Name":"Contact"})
-
         kwds['contactMatrix'] = contactMatrix
 
         kwds['NeighborOrder'] = self.getNeighborOrder(root_element)
-
-        # kwds['insert_root_element']=contactElement
 
         # we use existing entries to rewrite contact matrix
 
@@ -784,10 +701,6 @@ class SnippetUtils(object):
 
         root_element = kwds['root_element']
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
         contactMatrix = {}
 
         if root_element:
@@ -795,13 +708,9 @@ class SnippetUtils(object):
                                                               ['Energy', 'Double', ['Type1', '', False, True],
                                                                ['Type2', '', False, True]])
 
-        # contactElement=ElementCC3D("Plugin",{"Name":"ContactInternal"})
-
         kwds['contactMatrix'] = contactMatrix
 
         kwds['NeighborOrder'] = self.getNeighborOrder(root_element)
-
-        # kwds['insert_root_element']=contactElement
 
         newXMLElement = self.generator.generateContactInternalPlugin(*args, **kwds)
 
@@ -813,10 +722,6 @@ class SnippetUtils(object):
     def handleContactCompartment(self, *args, **kwds):
 
         root_element = kwds['root_element']
-
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
 
         contactMatrix = {}
 
@@ -848,10 +753,6 @@ class SnippetUtils(object):
 
         root_element = kwds['root_element']
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
         specificityMatrix = {}
 
         if root_element:
@@ -874,10 +775,6 @@ class SnippetUtils(object):
 
         root_element = kwds['root_element']
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
         kwds['NeighborOrder'] = self.getNeighborOrder(root_element)
 
         newXMLElement = self.generator.generateFocalPointPlasticityPlugin(*args, **kwds)
@@ -889,12 +786,6 @@ class SnippetUtils(object):
     @SnippetDecorator('Plugin', ['Name', ['ElasticityTracker']])
     def handleElasticityTracker(self, *args, **kwds):
 
-        root_element = kwds['root_element']
-
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
         newXMLElement = self.generator.generateElasticityTrackerPlugin(*args, **kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
@@ -904,12 +795,6 @@ class SnippetUtils(object):
     @SnippetDecorator('Plugin', ['Name', ['Elasticity']])
     def handleElasticity(self, *args, **kwds):
 
-        root_element = kwds['root_element']
-
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
         newXMLElement = self.generator.generateElasticityPlugin(*args, **kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
@@ -918,8 +803,6 @@ class SnippetUtils(object):
 
     @SnippetDecorator('Plugin', ['Name', ['AdhesionFlex']])
     def handleAdhesionFlex(self, *args, **kwds):
-
-        cellTypeData = kwds['data']
 
         editor = kwds['editor']
 
@@ -945,25 +828,13 @@ class SnippetUtils(object):
     @SnippetDecorator('Plugin', ['Name', ['Chemotaxis']])
     def handleChemotaxis(self, *args, **kwds):
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
-        newSnippet = ''
-
         chemotaxisData = {}
 
-        chemDict1 = {}
-
-        chemDict1["CellType"] = 'CHEMOTAXING_TYPE'
-
-        chemDict1["Lambda"] = 1.0
-
-        chemDict1["ChemotaxTowards"] = 'CELL_TYPES'
-
-        chemDict1["SatCoef"] = 0.0
-
-        chemDict1["ChemotaxisType"] = 'regular'
+        chemDict1 = {"CellType": 'CHEMOTAXING_TYPE',
+                     "Lambda": 1.0,
+                     "ChemotaxTowards": 'CELL_TYPES',
+                     "SatCoef": 0.0,
+                     "ChemotaxisType": 'regular'}
 
         try:
 
@@ -973,17 +844,11 @@ class SnippetUtils(object):
 
             chemotaxisData['FIELD_FROM_PDE_SOLVER'] = [chemDict1]
 
-        chemDict2 = {}
-
-        chemDict2["CellType"] = 'CHEMOTAXING_TYPE'
-
-        chemDict2["Lambda"] = 1.0
-
-        chemDict2["ChemotaxTowards"] = 'CELL_TYPES'
-
-        chemDict2["SatCoef"] = 100.0
-
-        chemDict2["ChemotaxisType"] = 'saturation'
+        chemDict2 = {"CellType": 'CHEMOTAXING_TYPE',
+                     "Lambda": 1.0,
+                     "ChemotaxTowards": 'CELL_TYPES',
+                     "SatCoef": 100.0,
+                     "ChemotaxisType": 'saturation'}
 
         try:
 
@@ -993,17 +858,11 @@ class SnippetUtils(object):
 
             chemotaxisData['FIELD_FROM_PDE_SOLVER'] = [chemDict2]
 
-        chemDict3 = {}
-
-        chemDict3["CellType"] = 'CHEMOTAXING_TYPE'
-
-        chemDict3["Lambda"] = 1.0
-
-        chemDict3["ChemotaxTowards"] = 'CELL_TYPES'
-
-        chemDict3["SatCoef"] = 10.1
-
-        chemDict3["ChemotaxisType"] = 'saturation linear'
+        chemDict3 = {"CellType": 'CHEMOTAXING_TYPE',
+                     "Lambda": 1.0,
+                     "ChemotaxTowards": 'CELL_TYPES',
+                     "SatCoef": 10.1,
+                     "ChemotaxisType": 'saturation linear'}
 
         try:
 
@@ -1015,8 +874,6 @@ class SnippetUtils(object):
 
         kwds['chemotaxisData'] = chemotaxisData
 
-        # kwds['pdeFieldData']=pdeFieldData
-
         newXMLElement = self.generator.generateChemotaxisPlugin(*args, **kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
@@ -1026,23 +883,12 @@ class SnippetUtils(object):
     @SnippetDecorator('Plugin', ['Name', ['Secretion']])
     def handleSecretion(self, *args, **kwds):
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
-        newSnippet = ''
-
         secretionData = {}
 
-        secrDict1 = {}
-
-        secrDict1["CellType"] = 'CELL_TYPE_NAME'
-
-        secrDict1["Rate"] = 0.1
-
-        secrDict1["OnContactWith"] = ''
-
-        secrDict1["SecretionType"] = 'uniform'
+        secrDict1 = {"CellType": 'CELL_TYPE_NAME',
+                     "Rate": 0.1,
+                     "OnContactWith": '',
+                     "SecretionType": 'uniform'}
 
         try:
 
@@ -1052,15 +898,10 @@ class SnippetUtils(object):
 
             secretionData['FIELD_FROM_PDE_SOLVER'] = [secrDict1]
 
-        secrDict2 = {}
-
-        secrDict2["CellType"] = 'CELL_TYPE_NAME'
-
-        secrDict2["Rate"] = 1.1
-
-        secrDict2["OnContactWith"] = 'COMMA_SEPARATED_TYPE_NAMES'
-
-        secrDict2["SecretionType"] = 'on contact'
+        secrDict2 = {"CellType": 'CELL_TYPE_NAME',
+                     "Rate": 1.1,
+                     "OnContactWith": 'COMMA_SEPARATED_TYPE_NAMES',
+                     "SecretionType": 'on contact'}
 
         try:
 
@@ -1070,15 +911,10 @@ class SnippetUtils(object):
 
             secretionData['FIELD_FROM_PDE_SOLVER'] = [secrDict2]
 
-        secrDict3 = {}
-
-        secrDict3["CellType"] = 'CELL_TYPE_NAME'
-
-        secrDict3["Rate"] = 0.5
-
-        secrDict3["OnContactWith"] = ''
-
-        secrDict3["SecretionType"] = 'constant concentration'
+        secrDict3 = {"CellType": 'CELL_TYPE_NAME',
+                     "Rate": 0.5,
+                     "OnContactWith": '',
+                     "SecretionType": 'constant concentration'}
 
         try:
 
@@ -1089,8 +925,6 @@ class SnippetUtils(object):
             secretionData['FIELD_FROM_PDE_SOLVER'] = [secrDict3]
 
         kwds['secretionData'] = secretionData
-
-        # kwds['pdeFieldData']=pdeFieldData
 
         newXMLElement = self.generator.generateSecretionPlugin(*args, **kwds)
 
@@ -1140,11 +974,8 @@ class SnippetUtils(object):
     @SnippetDecorator('Steppable', ['Type', ['DiffusionSolverFE']])
     def handleDiffusionSolverFE(self, *args, **kwds):
 
-        pdeFieldData = {}
-
-        pdeFieldData['FIELD_NAME_1'] = 'DiffusionSolverFE'
-
-        pdeFieldData['FIELD_NAME_2'] = 'DiffusionSolverFE'
+        pdeFieldData = {'FIELD_NAME_1': 'DiffusionSolverFE',
+                        'FIELD_NAME_2': 'DiffusionSolverFE'}
 
         kwds['pdeFieldData'] = pdeFieldData
 
@@ -1157,11 +988,8 @@ class SnippetUtils(object):
     @SnippetDecorator('Steppable', ['Type', ['FlexibleDiffusionSolverFE']])
     def handleFlexibleDiffusionSolverFE(self, *args, **kwds):
 
-        pdeFieldData = {}
-
-        pdeFieldData['FIELD_NAME_1'] = 'FlexibleDiffusionSolverFE'
-
-        pdeFieldData['FIELD_NAME_2'] = 'FlexibleDiffusionSolverFE'
+        pdeFieldData = {'FIELD_NAME_1': 'FlexibleDiffusionSolverFE',
+                        'FIELD_NAME_2': 'FlexibleDiffusionSolverFE'}
 
         kwds['pdeFieldData'] = pdeFieldData
 
@@ -1174,11 +1002,8 @@ class SnippetUtils(object):
     @SnippetDecorator('Steppable', ['Type', ['FastDiffusionSolver2DFE']])
     def handleFastDiffusionSolver2DFE(self, *args, **kwds):
 
-        pdeFieldData = {}
-
-        pdeFieldData['FIELD_NAME_1'] = 'FastDiffusionSolver2DFE'
-
-        pdeFieldData['FIELD_NAME_2'] = 'FastDiffusionSolver2DFE'
+        pdeFieldData = {'FIELD_NAME_1': 'FastDiffusionSolver2DFE',
+                        'FIELD_NAME_2': 'FastDiffusionSolver2DFE'}
 
         kwds['pdeFieldData'] = pdeFieldData
 
@@ -1191,11 +1016,8 @@ class SnippetUtils(object):
     @SnippetDecorator('Steppable', ['Type', ['KernelDiffusionSolver']])
     def handleKernelDiffusionSolver(self, *args, **kwds):
 
-        pdeFieldData = {}
-
-        pdeFieldData['FIELD_NAME_1'] = 'KernelDiffusionSolver'
-
-        pdeFieldData['FIELD_NAME_2'] = 'KernelDiffusionSolver'
+        pdeFieldData = {'FIELD_NAME_1': 'KernelDiffusionSolver',
+                        'FIELD_NAME_2': 'KernelDiffusionSolver'}
 
         kwds['pdeFieldData'] = pdeFieldData
 
@@ -1217,11 +1039,8 @@ class SnippetUtils(object):
     @SnippetDecorator('Steppable', ['Type', ['SteadyStateDiffusionSolver', 'SteadyStateDiffusionSolver2D']])
     def handleSteadyStateDiffusionSolver(self, *args, **kwds):
 
-        pdeFieldData = {}
-
-        pdeFieldData['FIELD_NAME_1'] = 'SteadyStateDiffusionSolver'
-
-        pdeFieldData['FIELD_NAME_2'] = 'SteadyStateDiffusionSolver'
+        pdeFieldData = {'FIELD_NAME_1': 'SteadyStateDiffusionSolver',
+                        'FIELD_NAME_2': 'SteadyStateDiffusionSolver'}
 
         kwds['pdeFieldData'] = pdeFieldData
 
@@ -1233,8 +1052,6 @@ class SnippetUtils(object):
 
     @SnippetDecorator('Plugin', ['Name', ['CellType']])
     def handleCellType(self, *args, **kwds):
-
-        cellTypeData = kwds['data']
 
         editor = kwds['editor']
 
@@ -1256,15 +1073,9 @@ class SnippetUtils(object):
         return newSnippet
 
     @SnippetDecorator('Potts', ['', []], 'Potts', 'CPM Configuration')
-    # def handlePotts(self,*args,**kwds):
-
     def handlePottsCPMConfiguration(self, *args, **kwds):
 
-        cellTypeData = kwds['data']
-
         editor = kwds['editor']
-
-        newSnippet = ''
 
         gpd = self.generator.getCurrentPottsSection(*args, **kwds)
 
@@ -1274,14 +1085,10 @@ class SnippetUtils(object):
 
         ret = dlg.exec_()
 
-        newSnippet = ''
-
         if not ret:
             return
 
         newXMLElement = dlg.generateXML()
-
-        # newXMLElement = self.generator.generatePottsSection(*args,**kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
 
@@ -1289,12 +1096,6 @@ class SnippetUtils(object):
 
     @SnippetDecorator('Metadata', ['', []], 'Metadata', 'Simulation Properties')
     def handleMetadataSimulationProperties(self, *args, **kwds):
-
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
-        newSnippet = ''
 
         newXMLElement = self.generator.generateMetadataSimulationProperties(*args, **kwds)
 
@@ -1305,12 +1106,6 @@ class SnippetUtils(object):
     @SnippetDecorator('Metadata', ['', []], 'Metadata', 'Debug Output Frequency')
     def handleMetadataDebugOutputFrequency(self, *args, **kwds):
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
-        newSnippet = ''
-
         newXMLElement = self.generator.generateMetadataDebugOutputFrequency(*args, **kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
@@ -1320,12 +1115,6 @@ class SnippetUtils(object):
     @SnippetDecorator('Metadata', ['', []], 'Metadata', 'Parallel Execution')
     def handleMetadataParallelExecution(self, *args, **kwds):
 
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
-        newSnippet = ''
-
         newXMLElement = self.generator.generateMetadataParallelExecution(*args, **kwds)
 
         newSnippet = newXMLElement.getCC3DXMLElementString()
@@ -1334,12 +1123,6 @@ class SnippetUtils(object):
 
     @SnippetDecorator('Metadata', ['', []], 'Metadata', 'Parallel Execution Single CPU Potts')
     def handleMetadataParallelExecutionSingleCPUPotts(self, *args, **kwds):
-
-        cellTypeData = kwds['data']
-
-        editor = kwds['editor']
-
-        newSnippet = ''
 
         newXMLElement = self.generator.generateMetadataParallelExecutionSingleCPUPotts(*args, **kwds)
 
@@ -1355,8 +1138,6 @@ class SnippetUtils(object):
         neighborOrder = 1
 
         neighborOrderElement = _root_element.getFirstElement('NeighborOrder')
-
-        # print 'neighborOrderElement=',neighborOrderElement
 
         if neighborOrderElement:
             neighborOrder = neighborOrderElement.getUInt()
