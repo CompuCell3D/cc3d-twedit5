@@ -611,8 +611,11 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Specification of adhesion energies")
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
+        for i, type_name1 in enumerate(cell_type_data.keys()):
+            for j, type_name2 in enumerate(cell_type_data.keys()):
+                if j < i:
+                    continue
+
                 try:
                     attrDict = {"Type1": type_name1, "Type2": type_name2}
                 except LookupError:
