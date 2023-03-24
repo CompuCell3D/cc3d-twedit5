@@ -704,7 +704,7 @@ class CC3DMLGeneratorBase:
 
         m_element.ElementCC3D("NeighborOrder", {}, n_order)
 
-    @GenerateDecorator('Plugin', ['Name', 'Compartment'])
+    @GenerateDecorator('Plugin', ['Name', 'ContactCompartment'])
     def generateCompartmentPlugin(self, *args, **kwds):
 
         m_element = self.mElement
