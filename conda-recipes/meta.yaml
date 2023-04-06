@@ -2,10 +2,11 @@
 # {% set version = "4.3.1" %}
 # {% set build_number = "0" %}
 
-#{% set version = "4.3.2" %}
-#{% set build_number = "2" %}
-{% set python_version = "3.7" %}
+{% set versions = load_file_data('versions.yaml', from_recipe_dir=True) %}
 
+{% set version = versions.get('version') %}
+{% set build_number = versions.get('build_number',0) %}
+{% set numpy_version = versions.get('numpy_version') %}
 
 package:
   name: cc3d-twedit5
@@ -29,16 +30,16 @@ build:
 
 requirements:
   build:
-    - python={{ python_version }}
+    - python={{ python }}
     - setuptools
 
   run:
-    - python={{ python_version }}
+    - python={{ python }}
     # - numpy=1.18 # only when using conda mambabuild
     # - cc3d={{ version }}  # only when using conda mambabuild
     - cc3d-player5={{ version }}
     - chardet
-    - pyqtwebkit # [not osx]
+    - pyqtwebkit
     - sphinx
     - pywin32 # [win]
 

@@ -1,6 +1,7 @@
 from cc3d.twedit5.twedit.utils.global_imports import *
 from cc3d.twedit5 import ui_configurationdlg
 import sys
+from cc3d.twedit5.styles import tab_bar_style
 
 MAC = "qt_mac_set_native_menubar" in dir()
 
@@ -250,6 +251,7 @@ class ConfigurationDlg(QDialog, ui_configurationdlg.Ui_ConfigurationDlg):
 
     def updateUi(self):
 
+        self.tabWidget.tabBar().setStyleSheet(tab_bar_style)
         configuration = self.editorWindow.configuration
 
         self.tabSpacesCheckBox.setChecked(configuration.setting("UseTabSpaces"))
