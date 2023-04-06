@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 4.4.0
+-------------
+**2022-03-26**
+
+New features:
+- Another round of improvements to the  DeveloperZone
+- Improved  code snippets
+
+Bug fixes:
+- Fixing some code snippets
+
+
 Version 4.3.1
 -------------
 **2022-07-17**
