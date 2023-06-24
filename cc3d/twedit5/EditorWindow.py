@@ -359,6 +359,7 @@ class EditorWindow(QMainWindow):
                                      ".vhd": "VHDL",
                                      ".vhdl": "VHDL",
                                      ".yml": "YML",
+                                     ".yaml": "YML",
                                      ".bat": "Batch",
                                      ".sh": "Bash",
                                      ".html": "HTML",
