@@ -9,11 +9,13 @@ from cc3d.twedit5.twedit.utils.global_imports import *
 from cc3d.twedit5.twedit.CQt.CQApplication import CQApplication
 from cc3d.twedit5.EditorWindow import EditorWindow
 from cc3d.twedit5.DataSocketCommunicators import FileNameSender
+from cc3d.twedit5.logger import get_logger
 import sys
 from cc3d.twedit5.windowsUtils import *
 from cc3d.twedit5.Messaging import dbgMsg, setDebugging
 import argparse
 
+log = get_logger(__name__)
 
 # this globally enables/disables debug statements
 setDebugging(0)
@@ -67,12 +69,13 @@ class Twedit(object):
         return parsed_args, input_files
 
     def process_command_line_options(self):
-
-        print("TWEDIT++ process_command_line_options\n\n\n\n")
+        log.debug("TWEDIT++ process_command_line_options\n\n\n\n")
+        # print("TWEDIT++ process_command_line_options\n\n\n\n")
         args, self.fileList = self.process_cml(args=sys.argv[1:])
 
         print(args)
-        print("input_files=", self.fileList)
+        log.debug(f"input_files={self.fileList}")
+        # print("input_files=", self.fileList)
 
 
     def main(self, argv):
@@ -89,7 +92,8 @@ class Twedit(object):
 
         pixmap = QPixmap("icons/lizard-at-a-computer-small.png")
 
-        print("pixmap=", pixmap)
+        log.debug(f"pixmap={pixmap}")
+        # print("pixmap=", pixmap)
 
         splash = QSplashScreen(pixmap)
 
@@ -140,8 +144,8 @@ def main(argv=None):
         twedit.process_command_line_options()
 
     except OSError as e:
-
-        dbgMsg("GOT OS ERROR")
+        log.error("GOT OS ERROR")
+        # dbgMsg("GOT OS ERROR")
 
         # argvSendSocket=QUdpSocket()
 
@@ -166,8 +170,8 @@ def main(argv=None):
 
             # notice, on linux you may have to change "focus stealing prevention level" setting to None in
             # window behavior settings , to enable bringing window to foreground
-
-            dbgMsg("NON-WINDOWS PLATFORM - TRY TO ACTIVATE WINDOW")
+            log.info("NON-WINDOWS PLATFORM - TRY TO ACTIVATE WINDOW")
+            # dbgMsg("NON-WINDOWS PLATFORM - TRY TO ACTIVATE WINDOW")
 
     twedit.main(argv)
 
