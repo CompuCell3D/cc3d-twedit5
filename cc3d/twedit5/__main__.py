@@ -12,6 +12,7 @@ from cc3d.twedit5.DataSocketCommunicators import FileNameSender
 import sys
 from cc3d.twedit5.windowsUtils import *
 from cc3d.twedit5.Messaging import dbgMsg, setDebugging
+import argparse
 
 
 # this globally enables/disables debug statements
@@ -54,46 +55,83 @@ class Twedit(object):
     def getFileList(self):
         return self.fileList
 
+    def process_cml(self, args):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-p', '--port', type=int, help='Listening port number')
+        # parser.add_argument('-s', '--socket', type=int, help='Listening socket')
+
+        # parser.add_argument('-f', '--file', type=str, help='input file')
+        # Add more arguments as needed
+
+        # Parse the arguments
+        parsed_args, input_files = parser.parse_known_args(args)
+
+        # # Access the parsed arguments
+        # input_file = parsed_args.file
+        # output_file = parsed_args.output
+        # # Access more arguments as needed
+        #
+        # # Process the arguments...
+        # print('Input file:', input_file)
+        # print('Output file:', output_file)
+        # # Process more arguments as needed
+        #
+        # # Append extra files to the list of files
+        # # files = extra_files + parsed_args.file
+
+
+        # Process the list of files...
+        # print('Files:', files)
+
+        return parsed_args, input_files
+
     def processCommandLineOptions(self):
 
-        print("processCommandLineOptions\n\n\n\n")
+        print("TWEDIT++ processCommandLineOptions\n\n\n\n")
+        args, self.fileList = self.process_cml(args=sys.argv[1:])
 
-        opts = None
-        args = None
+        print(args)
+        print("input_files=", self.fileList)
+        #
 
-        try:
-            opts, args = getopt.getopt(sys.argv[1:], "p", ["file=", "port=", "socket="])
-            print("opts=", opts)
-            print("args=", args)
+        return
+        # opts = None
+        # args = None
+        #
+        # try:
+        #     opts, args = getopt.getopt(sys.argv[1:], "p", ["file=", "port=", "socket="])
+        #     print("opts=", opts)
+        #     print("args=", args)
+        #
+        # except getopt.GetoptError as err:
+        #
+        #     # print help information and exit:
+        #
+        #     print(str(err))  # will print something like "option -a not recognized"
+        #
+        #     # self.usage()
+        #
+        #     sys.exit(2)
+        #
+        # port = 47406
+        #
+        # for o, a in opts:
+        #
+        #     print("o=", o)
+        #     print("a=", a)
+        #     if o in ("--port"):
+        #         port = a
+        #         print("THIS IS PORT=", port)
+        #
+        #     if o in ("--file"):
+        #         file = a
+        #         print("THIS IS file=", file)
+        #
+        # for a in args:
+        #     self.fileList.append(a)
+        #
+        # print("FILE LIST=", self.fileList)
 
-        except getopt.GetoptError as err:
-
-            # print help information and exit:
-
-            print(str(err))  # will print something like "option -a not recognized"
-
-            # self.usage()
-
-            sys.exit(2)
-
-        port = 47406
-
-        for o, a in opts:
-
-            print("o=", o)
-            print("a=", a)
-            if o in ("--port"):
-                port = a
-                print("THIS IS PORT=", port)
-
-            if o in ("--file"):
-                file = a
-                print("THIS IS file=", file)
-
-        for a in args:
-            self.fileList.append(a)
-
-        print("FILE LIST=", self.fileList)
 
     def main(self, argv):
 
