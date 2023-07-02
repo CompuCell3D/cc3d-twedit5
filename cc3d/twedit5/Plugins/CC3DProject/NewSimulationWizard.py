@@ -796,8 +796,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.cellTypeTable.setItem(0, 1, medium_freeze_item)
 
         base_size = self.cellTypeTable.baseSize()
-        self.cellTypeTable.setColumnWidth(0, base_size.width() / 2)
-        self.cellTypeTable.setColumnWidth(1, base_size.width() / 2)
+        self.cellTypeTable.setColumnWidth(0, int(base_size.width() / 2))
+        self.cellTypeTable.setColumnWidth(1, int(base_size.width() / 2))
         self.cellTypeTable.horizontalHeader().setStretchLastSection(True)
 
         # general properties page
@@ -809,8 +809,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         base_size = self.fieldTable.baseSize()
 
-        self.fieldTable.setColumnWidth(0, base_size.width() / 2)
-        self.fieldTable.setColumnWidth(1, base_size.width() / 2)
+        self.fieldTable.setColumnWidth(0, int(base_size.width() / 2))
+        self.fieldTable.setColumnWidth(1, int(base_size.width() / 2))
         self.fieldTable.horizontalHeader().setStretchLastSection(True)
 
         self.satCoefLB.setHidden(True)
@@ -820,11 +820,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         base_size = self.secretionTable.baseSize()
 
-        self.secretionTable.setColumnWidth(0, base_size.width() / 5)
-        self.secretionTable.setColumnWidth(1, base_size.width() / 5)
-        self.secretionTable.setColumnWidth(2, base_size.width() / 5)
-        self.secretionTable.setColumnWidth(3, base_size.width() / 5)
-        self.secretionTable.setColumnWidth(4, base_size.width() / 5)
+        self.secretionTable.setColumnWidth(0, int(base_size.width() / 5))
+        self.secretionTable.setColumnWidth(1, int(base_size.width() / 5))
+        self.secretionTable.setColumnWidth(2, int(base_size.width() / 5))
+        self.secretionTable.setColumnWidth(3, int(base_size.width() / 5))
+        self.secretionTable.setColumnWidth(4, int(base_size.width() / 5))
         self.secretionTable.horizontalHeader().setStretchLastSection(True)
         self.secrAddOnContactPB.setHidden(True)
         self.secrOnContactCellTypeCB.setHidden(True)
