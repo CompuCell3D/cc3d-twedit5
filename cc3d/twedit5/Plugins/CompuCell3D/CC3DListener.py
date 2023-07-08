@@ -405,18 +405,16 @@ class CC3DListener(QTcpServer):
 
         print("TRY TO FIGURE OUT PORT\n\n\n\n\n\n")
 
-        port = -1
-
         for port in range(47406, 47506):
 
             print("CHECKING PORT=", port)
 
-            tcpServer = QTcpServer(self)
+            tcp_server = QTcpServer(self)
 
-            if tcpServer.listen(QHostAddress("127.0.0.1"), port):
+            if tcp_server.listen(QHostAddress("127.0.0.1"), port):
                 self.port = port
 
-                tcpServer.close()
+                tcp_server.close()
 
                 print("established empty port=", self.port)
 
@@ -429,7 +427,7 @@ class CC3DListener(QTcpServer):
             print("Player not found!")
             return
 
-        popen_args = [sys.executable, "-m", "cc3d.player5", "--port=%s" % self.port]
+        popen_args = [sys.executable, "-m", "cc3d.player5", f"--port={self.port}" ]
 
         if _simulationName != "":
             popen_args.append("-i")
