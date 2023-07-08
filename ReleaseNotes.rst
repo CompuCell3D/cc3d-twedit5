@@ -7,6 +7,7 @@ Version 4.4.1
 
 New features:
  - Added better conda builders that can utilize boa (mamba-based) builder
+ - Added support for all Python versions >= 3.7
 
 Bug fixes:
  - Fixed integration between Twedit and Player
