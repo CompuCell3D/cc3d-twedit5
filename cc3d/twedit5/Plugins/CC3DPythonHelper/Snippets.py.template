@@ -372,9 +372,9 @@ cell.lambdaVecY = 0.5  # force component pointing along Y axis - towards negativ
 cell.lambdaVecZ = 0.0  # force component pointing along Z axis
 
 ----------  # @Submenu@ Length Constraint By Cell Id
-# Make sure LengthConstraintLocalFlex plugin is loaded
+# Make sure LengthConstraint plugin is loaded
 # Argument Order: cell , lambdaLength, targetLength
-self.lengthConstraintLocalFlexPlugin.setLengthConstraintData(cell, 20, 20)
+self.lengthConstraint.setLengthConstraintData(cell, 20, 20)
 
 ----------  # @Submenu@ Connectivity Constraint By Cell Id
 # Make sure ConnectivityLocalFlex plugin is loaded

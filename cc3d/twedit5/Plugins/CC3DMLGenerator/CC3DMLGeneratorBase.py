@@ -254,11 +254,11 @@ class CC3DMLGeneratorBase:
         m_element.addComment("newline")
         m_element.addComment("Listing all cell types in the simulation")
 
-        for type_name, typeTuple in cell_type_data.items():
+        for type_id, typeTuple in cell_type_data.items():
 
+            type_name = typeTuple[0]
             cell_type_dict = {"TypeName": type_name}
 
-            type_id = typeTuple[0]
             if type_id >= 0:
                 cell_type_dict["TypeId"] = str(type_id)
 
