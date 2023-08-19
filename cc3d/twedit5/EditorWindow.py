@@ -1231,9 +1231,9 @@ class EditorWindow(QMainWindow):
 
             pGeom = self.cycleTabsPopup.geometry()
 
-            pCentered_x = geom.x() + (geom.width() - pGeom.width()) / 2
+            pCentered_x = int(geom.x() + (geom.width() - pGeom.width()) / 2)
 
-            pCentered_y = geom.y() + (geom.height() - pGeom.height()) / 2
+            pCentered_y = int(geom.y() + (geom.height() - pGeom.height()) / 2)
 
             self.cycleTabsPopup.move(pCentered_x, pCentered_y)
 
