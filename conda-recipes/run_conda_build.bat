@@ -5,4 +5,4 @@ IF "%1"=="" (
 )
 
 conda build -c local -c conda-forge -c compucell3d . --python=%PYTHON_VERSION%
-#conda render .
+@REM conda render .
