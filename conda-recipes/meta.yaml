@@ -40,6 +40,7 @@ requirements:
     - cc3d-player5={{ version }}
     - chardet
     - pyqtwebkit
+    - qscintilla2
     - sphinx
     - pywin32 # [win]
 
