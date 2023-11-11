@@ -211,13 +211,6 @@ class CC3DMLGeneratorBase:
             except KeyError:
                 m_element.ElementCC3D('Boundary_' + dim_name, {}, 'NoFlux')
 
-    @GenerateDecorator('PedroModule', ['', ''])
-    def generatePedroModule(self, *args, **kwds):
-
-        m_element = self.mElement
-        m_element.addComment("This is my dummy xml element")
-        m_element.ElementCC3D("Pedro_age", {'Date':'11_5_2023'}, 25)
-
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataSimulationProperties(self, *args, **kwds):
 
