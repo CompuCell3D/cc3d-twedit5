@@ -1164,7 +1164,7 @@ class CC3DXMLGenerator:
         """
 
         self.cc3d.addComment("newline")
-        self.cc3d.addComment("Initial layout of cells using PIFF file. Piff files can be generated using PIFGEnerator")
+        self.cc3d.addComment("Initial layout of cells using PIFF file. Piff files can be generated using PIFGenerator")
 
         ui_element = self.cc3d.ElementCC3D("Steppable", {"Type": "PIFInitializer"})
 

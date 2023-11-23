@@ -1115,7 +1115,7 @@ class CC3DMLGeneratorBase:
         gpd = self.gpd
 
         m_element.addComment("newline")
-        m_element.addComment("Initial layout of cells using PIFF file. Piff files can be generated using PIFGEnerator")
+        m_element.addComment("Initial layout of cells using PIFF file. Piff files can be generated using PIFGenerator")
 
         try:
             if gpd["Initializer"][0] == "piff":

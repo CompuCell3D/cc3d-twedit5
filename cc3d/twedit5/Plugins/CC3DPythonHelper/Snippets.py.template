@@ -483,7 +483,7 @@ for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
         print("Medium commonSurfaceArea=", common_surface_area)
 
 ----------  # @Submenu@ Cells In Cluster (compartments)
-fo cell in self.cell_list:
+for cell in self.cell_list:
     cluster_cell_list = self.get_cluster_cells(cell.clusterId)
     for cell_cmpt in cluster_cell_list:
         print('compartmental cell id=', cell_cmpt)
@@ -510,7 +510,7 @@ for x, y, z in self.every_pixel():
 for compartments in self.clusters:
     print('compartments=', compartments)
 
-----------  # @Submenu@ All Clusters and Cells Withing Clusters
+----------  # @Submenu@ All Cells Belonging to Any Cluster
 for compartments in self.clusters:
     for cell in compartments:
         print(cell.id)
