@@ -155,8 +155,8 @@ class CellTypeDlg(QDialog, ui_celltypedlg.Ui_CellTypeDlg):
 
         base_size = self.cellTypeTable.baseSize()
 
-        self.cellTypeTable.setColumnWidth(0, base_size.width() / 2)
+        self.cellTypeTable.setColumnWidth(0, int(base_size.width() / 2))
 
-        self.cellTypeTable.setColumnWidth(1, base_size.width() / 2)
+        self.cellTypeTable.setColumnWidth(1,int(base_size.width() / 2))
 
         self.cellTypeTable.horizontalHeader().setStretchLastSection(True)

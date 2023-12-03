@@ -52,9 +52,9 @@ class KeyboardShortcutsDlg(QDialog, ui_KeyboardShortcuts.Ui_KeyboardShortcutsDlg
 
         shortcut_table_size = self.shortcutTable.size()
 
-        self.shortcutTable.setColumnWidth(0, shortcut_table_size.width() / 2)
+        self.shortcutTable.setColumnWidth(0, int(shortcut_table_size.width() / 2))
 
-        self.shortcutTable.setColumnWidth(1, shortcut_table_size.width() / 2)
+        self.shortcutTable.setColumnWidth(1, int(shortcut_table_size.width() / 2))
 
         e.accept()
 

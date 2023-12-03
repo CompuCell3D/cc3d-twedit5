@@ -148,11 +148,24 @@ class Worker(QThread, QObject):
                   f'cd {build_dir}<br>' \
                   f'nmake<br>' \
                   f'nmake install'
+        elif sys.platform.startswith('darwin'):
+            msg = f'<br><br>Now open a terminal and do the following:<br><br>' \
+                  f'if you are on osx deactivate conda base env:<br>' \
+                  f'conda deactivate base<br>' \
+                  f'You also need to install SDK 10.10 (x86 processors) to /opt/MacOSX10.10.sdk<br>' \
+                  f'or SDK 11.3 (arm64 processors - M1, M2 etc...) to /opt/MacOSX11.3.sdk<br>' \
+                  f'get MacOSX10.10.sdk/MacOSX11.3.sdk ' \
+                  f'from https://github.com/phracker/MacOSX-SDKs only then you can run ' \
+                  f'compilation steps<br>' \
+                  f'cd {build_dir}<br>' \
+                  f'make<br>' \
+                  f'make install<br>'
         else:
             msg = f'<br><br>Now open a terminal and do the following:<br><br>' \
                   f'cd {build_dir}<br>' \
                   f'make<br>' \
                   f'make install'
+
 
         return msg
 

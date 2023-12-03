@@ -140,6 +140,7 @@ from cc3d.twedit5.twedit.utils.collection_utils import remove_duplicates
 # from codecs import BOM_UTF8, BOM_UTF16, BOM_UTF32
 from cc3d.twedit5.PluginManager.PluginManager import PluginManager
 from cc3d.twedit5.ThemeManager import ThemeManager
+from cc3d.twedit5.styles import tab_bar_style
 
 coding_regexps = [
     (2, re.compile(r'''coding[:=]\s*([-\w_.]+)''')),
@@ -207,7 +208,7 @@ class CustomTabBar(QTabBar):
 
         self.tabWidget = _parent
 
-        self.setStyleSheet("QTabBar::tab { height: 20px;}")
+        self.setStyleSheet("QTabBar::tab { height: 20px;} " + tab_bar_style)
 
         self.clickedTabPosition = -1
 
@@ -358,6 +359,7 @@ class EditorWindow(QMainWindow):
                                      ".vhd": "VHDL",
                                      ".vhdl": "VHDL",
                                      ".yml": "YML",
+                                     ".yaml": "YML",
                                      ".bat": "Batch",
                                      ".sh": "Bash",
                                      ".html": "HTML",
@@ -1229,9 +1231,9 @@ class EditorWindow(QMainWindow):
 
             pGeom = self.cycleTabsPopup.geometry()
 
-            pCentered_x = geom.x() + (geom.width() - pGeom.width()) / 2
+            pCentered_x = int(geom.x() + (geom.width() - pGeom.width()) / 2)
 
-            pCentered_y = geom.y() + (geom.height() - pGeom.height()) / 2
+            pCentered_y = int(geom.y() + (geom.height() - pGeom.height()) / 2)
 
             self.cycleTabsPopup.move(pCentered_x, pCentered_y)
 

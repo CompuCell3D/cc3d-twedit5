@@ -88,9 +88,9 @@ class GenerateDecorator(object):
 
             print('CELLTYPE DATA FROM DECORATOR=', cell_type_data)
 
-            obj.cellTypeData = cell_type_data
-            obj.mElement = m_element
-            obj.gpd = gpd
+            obj._cellTypeData = cell_type_data
+            obj._mElement = m_element
+            obj._gpd = gpd
             _decoratedFn(gpd=gpd, cellTypeData=cell_type_data, *args, **kwds)
 
             return m_element
@@ -114,6 +114,47 @@ class CC3DMLGeneratorBase:
 
         if self.simulationDir != '' and self.simulationName != '':
             self.fileName = os.path.join(str(self.simulationDir), str(self.simulationName) + ".xml")
+
+    @property
+    def mElement(self):
+        """Module element. Available in decorated functions"""
+        return self._mElement if hasattr(self, '_mElement') else None
+
+    @property
+    def cellTypeData(self):
+        """Cell type data. Available in decorated functions"""
+        return self._cellTypeData if hasattr(self, '_cellTypeData') else None
+
+    @property
+    def gpd(self):
+        """Generate properties data. Available in decorated functions"""
+
+        return self._gpd if hasattr(self, '_gpd') else None
+
+    @property
+    def decorated_cell_type_names(self):
+        """Cell type names, excluding "Medium". Available in decorated functions"""
+
+        if not hasattr(self, '_cellTypeData'):
+            return []
+
+        return [n for n in self.cellTypeData.keys() if n != "Medium"]
+
+    @property
+    def decorated_type_pairs(self):
+        """Unique pairs of type names. Available in decorated functions"""
+
+        result = []
+        if not hasattr(self, '_cellTypeData'):
+            return result
+
+        cell_type_data = self.cellTypeData
+        for i, t1 in enumerate(cell_type_data.keys()):
+            for j, t2 in enumerate(cell_type_data.keys()):
+                if j < i:
+                    continue
+                result.append((t1, t2))
+        return result
 
     def checkIfSim3D(self, _gpd):
 
@@ -144,7 +185,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Potts', ['', ''])
     def generatePottsSection(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         gpd = self.gpd
@@ -174,8 +214,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataSimulationProperties(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
-
         m_element = self.mElement
 
         m_element.addComment("newline")
@@ -191,21 +229,18 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataDebugOutputFrequency(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
         m_element.ElementCC3D("DebugOutputFrequency", {}, 100)
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataParallelExecution(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
         m_element.ElementCC3D("NumberOfProcessors", {}, 2)
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataParallelExecutionSingleCPUPotts(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
         m_element.ElementCC3D("NumberOfProcessors", {}, 2)
         m_element.ElementCC3D("NonParallelModule", {"Name": "Potts"})
@@ -215,16 +250,15 @@ class CC3DMLGeneratorBase:
 
         cell_type_data = self.cellTypeData
         m_element = self.mElement
-        gpd = self.gpd
 
         m_element.addComment("newline")
         m_element.addComment("Listing all cell types in the simulation")
 
         for type_name, typeTuple in cell_type_data.items():
 
+            type_id = typeTuple[0]
             cell_type_dict = {"TypeName": type_name}
 
-            type_id = typeTuple[0]
             if type_id >= 0:
                 cell_type_dict["TypeId"] = str(type_id)
 
@@ -266,7 +300,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'LengthConstraint'])
     def generateLengthConstraintPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
         gpd = self.gpd
 
@@ -291,9 +324,7 @@ class CC3DMLGeneratorBase:
 
         sim_3d_flag = self.checkIfSim3D(gpd)
 
-        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
-
-        for type_name in cell_type_names:
+        for type_name in self.decorated_cell_type_names:
             target_length = 25.0
             minor_target_length = 5.0
             lambda_val = 2.0
@@ -327,13 +358,6 @@ class CC3DMLGeneratorBase:
         except LookupError:
             ir_element = None
 
-        # existing root element
-
-        try:
-            r_element = kwds['root_element']
-        except LookupError:
-            r_element = None
-
         try:
             cell_type_data = kwds['data']
         except LookupError:
@@ -366,8 +390,8 @@ class CC3DMLGeneratorBase:
         if key_type == 'LocalFlex':
             return m_element
 
-        max_id = max(cell_type_data.keys())
-        for type_id in range(0, max_id + 1):
+        for type_name, type_data in cell_type_data.items():
+            type_id = type_data[0]
             target_val = 50.0
             lambda_val = 2.0
 
@@ -377,7 +401,7 @@ class CC3DMLGeneratorBase:
 
             # first see if entry for this type exists
             try:
-                data_list = constraint_data_dict[cell_type_data[type_id][0]]
+                data_list = constraint_data_dict[type_name]
             except LookupError:
 
                 data_list = [50, 2.0]
@@ -390,9 +414,9 @@ class CC3DMLGeneratorBase:
             except LookupError:
                 pass
 
-            attr_dict = {'CellType': cell_type_data[type_id][0], 'Target' + key_string: target_val,
-
-                        'Lambda' + key_string: lambda_val}
+            attr_dict = {'CellType': type_name,
+                         'Target' + key_string: target_val,
+                         'Lambda' + key_string: lambda_val}
 
             m_element.ElementCC3D(key_string + "EnergyParameters", attr_dict)
 
@@ -401,10 +425,7 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'LengthConstraintLocalFlex'])
     def generateLengthConstraintLocalFlexPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
-
         m_element = self.mElement
-        gpd = self.gpd
 
         m_element.addComment("newline")
         m_element.addComment("Applies elongation constraint to each cell. Users specify the length major axis "
@@ -422,7 +443,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'ExternalPotential'])
     def generateExternalPotentialPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         m_element.addComment("newline")
@@ -434,9 +454,7 @@ class CC3DMLGeneratorBase:
 
         m_element.ElementCC3D("Algorithm", {}, "PixelBased")
 
-        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
-
-        for type_name in cell_type_names:
+        for type_name in self.decorated_cell_type_names:
             cell_type_dict = {"CellType": type_name, "x": -0.5, "y": 0.0, "z": 0.0}
 
             m_element.ElementCC3D("ExternalPotentialParameters", cell_type_dict)
@@ -514,11 +532,7 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'ConnectivityGlobal'])
     def generateConnectivityGlobalPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
-
         m_element = self.mElement
-
-        gpd = self.gpd
 
         m_element.addComment("newline")
 
@@ -542,9 +556,7 @@ class CC3DMLGeneratorBase:
 
         precheck_elem.commentOutElement()
 
-        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
-
-        for type_name in cell_type_names:
+        for type_name in self.decorated_cell_type_names:
             attr = {"Type": type_name}
             m_element.ElementCC3D("Penalty", attr, 1000000)
 
@@ -594,8 +606,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'Contact'])
     def generateContactPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
-
         m_element = self.mElement
 
         try:
@@ -611,29 +621,28 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Specification of adhesion energies")
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
-                try:
-                    attrDict = {"Type1": type_name1, "Type2": type_name2}
+        for type_name1, type_name2 in self.decorated_type_pairs:
+            try:
+                attrDict = {"Type1": type_name1, "Type2": type_name2}
+            except LookupError:
+                continue
+
+            try:
+                # first see if energy exists
+
+                energy = contact_matrix[type_name1][type_name2][0]
+
+            except LookupError:
+
+                try:  # try reverse order
+
+                    energy = contact_matrix[type_name2][type_name1][0]
+
                 except LookupError:
-                    continue
+                    # use default value
+                    energy = 10.0
 
-                try:
-                    # first see if energy exists
-
-                    energy = contact_matrix[type_name1][type_name2][0]
-
-                except LookupError:
-
-                    try:  # try reverse order
-
-                        energy = contact_matrix[type_name2][type_name1][0]
-
-                    except LookupError:
-                        # use default value
-                        energy = 10.0
-
-                m_element.ElementCC3D("Energy", attrDict, energy)
+            m_element.ElementCC3D("Energy", attrDict, energy)
 
         m_element.ElementCC3D("NeighborOrder", {}, n_order)
 
@@ -659,7 +668,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'ContactInternal'])
     def generateContactInternalPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         try:
@@ -674,32 +682,31 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Specification of internal adhesion energies")
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
-                try:
-                    attr_dict = {"Type1": type_name1, "Type2": type_name2}
-                except LookupError:
-                    continue
+        for type_name1, type_name2 in self.decorated_type_pairs:
 
-                try:
-                    # first see if energy exists
-                    energy = contact_matrix[type_name1][type_name2][0]
-                except LookupError:
-                    try:
-                        # try reverse order
-                        energy = contact_matrix[type_name2][type_name1][0]
-                    except LookupError:
-                        # use default value
-                        energy = 10.0
+            try:
+                attr_dict = {"Type1": type_name1, "Type2": type_name2}
+            except LookupError:
+                continue
 
-                m_element.ElementCC3D("Energy", attr_dict, energy)
+            try:
+                # first see if energy exists
+                energy = contact_matrix[type_name1][type_name2][0]
+            except LookupError:
+                try:
+                    # try reverse order
+                    energy = contact_matrix[type_name2][type_name1][0]
+                except LookupError:
+                    # use default value
+                    energy = 10.0
+
+            m_element.ElementCC3D("Energy", attr_dict, energy)
 
         m_element.ElementCC3D("NeighborOrder", {}, n_order)
 
-    @GenerateDecorator('Plugin', ['Name', 'Compartment'])
+    @GenerateDecorator('Plugin', ['Name', 'ContactCompartment'])
     def generateCompartmentPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         try:
@@ -726,56 +733,54 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("to specify adhesions bewtween members of same cluster")
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
-                try:
-                    attr_dict = {"Type1": type_name1, "Type2": type_name2}
-                except LookupError:
-                    continue
+        for type_name1, type_name2 in self.decorated_type_pairs:
+
+            try:
+                attr_dict = {"Type1": type_name1, "Type2": type_name2}
+            except LookupError:
+                continue
+
+            try:
+                # first see if energy exists
+                energy = contact_matrix[type_name1][type_name2][0]
+            except LookupError:
 
                 try:
-                    # first see if energy exists
-                    energy = contact_matrix[type_name1][type_name2][0]
+                    # try reverse order
+                    energy = contact_matrix[type_name2][type_name1][0]
                 except LookupError:
+                    # use default value
+                    energy = 10.0
 
-                    try:
-                        # try reverse order
-                        energy = contact_matrix[type_name2][type_name1][0]
-                    except LookupError:
-                        # use default value
-                        energy = 10.0
-
-                m_element.ElementCC3D("Energy", attr_dict, energy)
+            m_element.ElementCC3D("Energy", attr_dict, energy)
 
         # energy between members of same clusters
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
+        for type_name1, type_name2 in self.decorated_type_pairs:
 
-                try:
-                    attr_dict = {"Type1": type_name1, "Type2": type_name2}
+            try:
+                attr_dict = {"Type1": type_name1, "Type2": type_name2}
+            except LookupError:
+                continue
+
+                # first see if energy exists
+            try:
+                internal_energy = internal_contact_matrix[type_name1][type_name2][0]
+            except LookupError:
+
+                try:  # try reverse order
+                    internal_energy = internal_contact_matrix[type_name2][type_name1][0]
                 except LookupError:
-                    continue
+                    # use default value
+                    internal_energy = 5.0
 
-                    # first see if energy exists
-                try:
-                    internal_energy = internal_contact_matrix[type_name1][type_name2][0]
-                except LookupError:
-
-                    try:  # try reverse order
-                        internal_energy = internal_contact_matrix[type_name2][type_name1][0]
-                    except LookupError:
-                        # use default value
-                        internal_energy = 5.0
-
-                m_element.ElementCC3D("InternalEnergy", attr_dict, internal_energy)
+            m_element.ElementCC3D("InternalEnergy", attr_dict, internal_energy)
 
         m_element.ElementCC3D("NeighborOrder", {}, n_order)
 
     @GenerateDecorator('Plugin', ['Name', 'ContactLocalProduct'])
     def generateContactLocalProductPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         try:
@@ -797,21 +802,21 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Please consider using more flexible version of this plugin - AdhesionFlex")
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
-                attr = {"Type1": type_name1, "Type2": type_name2}
+        for type_name1, type_name2 in self.decorated_type_pairs:
 
+            attr = {"Type1": type_name1, "Type2": type_name2}
+
+            try:
+                specificity = specificity_matrix[type_name1][type_name2][0]
+            except LookupError:
                 try:
-                    specificity = specificity_matrix[type_name1][type_name2][0]
+                    # try reverse order
+                    specificity = specificity_matrix[type_name2][type_name1][0]
                 except LookupError:
-                    try:
-                        # try reverse order
-                        specificity = specificity_matrix[type_name2][type_name1][0]
-                    except LookupError:
-                        # use default value
-                        specificity = -1.0
+                    # use default value
+                    specificity = -1.0
 
-                m_element.ElementCC3D("ContactSpecificity", attr, specificity)
+            m_element.ElementCC3D("ContactSpecificity", attr, specificity)
 
         m_element.ElementCC3D("ContactFunctionType", {}, "linear")
         m_element.ElementCC3D("EnergyOffset", {}, 0.0)
@@ -820,7 +825,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'FocalPointPlasticity'])
     def generateFocalPointPlasticityPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         try:
@@ -847,30 +851,30 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("See CC3D manual for details on FPP plugin ")
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
-                m_element.addComment("newline")
-                attr = {"Type1": type_name1, "Type2": type_name2}
+        for type_name1, type_name2 in self.decorated_type_pairs:
 
-                param_element = m_element.ElementCC3D("Parameters", attr)
-                param_element.ElementCC3D("Lambda", {}, 10)
-                param_element.ElementCC3D("ActivationEnergy", {}, -50)
-                param_element.ElementCC3D("TargetDistance", {}, 7)
-                param_element.ElementCC3D("MaxDistance", {}, 20)
-                param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
+            m_element.addComment("newline")
+            attr = {"Type1": type_name1, "Type2": type_name2}
 
-        for type_name1 in cell_type_data.keys():
-            for type_name2 in cell_type_data.keys():
-                m_element.addComment("newline")
+            param_element = m_element.ElementCC3D("Parameters", attr)
+            param_element.ElementCC3D("Lambda", {}, 10)
+            param_element.ElementCC3D("ActivationEnergy", {}, -50)
+            param_element.ElementCC3D("TargetDistance", {}, 7)
+            param_element.ElementCC3D("MaxDistance", {}, 20)
+            param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
 
-                attr = {"Type1": type_name1, "Type2": type_name2}
+        for type_name1, type_name2 in self.decorated_type_pairs:
 
-                param_element = m_element.ElementCC3D("InternalParameters", attr)
-                param_element.ElementCC3D("Lambda", {}, 10)
-                param_element.ElementCC3D("ActivationEnergy", {}, -50)
-                param_element.ElementCC3D("TargetDistance", {}, 7)
-                param_element.ElementCC3D("MaxDistance", {}, 20)
-                param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
+            m_element.addComment("newline")
+
+            attr = {"Type1": type_name1, "Type2": type_name2}
+
+            param_element = m_element.ElementCC3D("InternalParameters", attr)
+            param_element.ElementCC3D("Lambda", {}, 10)
+            param_element.ElementCC3D("ActivationEnergy", {}, -50)
+            param_element.ElementCC3D("TargetDistance", {}, 7)
+            param_element.ElementCC3D("MaxDistance", {}, 20)
+            param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
 
         m_element.addComment("newline")
 
@@ -879,7 +883,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Plugin', ['Name', 'ElasticityTracker'])
     def generateElasticityTrackerPlugin(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         m_element.addComment("newline")
@@ -894,9 +897,7 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Comment out cell types which should be unaffected by the constraint")
 
-        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
-
-        for type_name in cell_type_names:
+        for type_name in self.decorated_cell_type_names:
             m_element.ElementCC3D("IncludeType", {}, type_name)
 
     @GenerateDecorator('Plugin', ['Name', 'Elasticity'])
@@ -987,11 +988,6 @@ class CC3DMLGeneratorBase:
 
             chemotaxis_data = {}
 
-        try:
-            pde_field_data = kwds['pdeFieldData']
-        except LookupError:
-            pde_field_data = {}
-
         m_element.addComment("newline")
         m_element.addComment('You may repeat ChemicalField element for each chemical field declared in the PDE solvers')
         m_element.addComment("Specification of chemotaxis properties of select cell types.")
@@ -1001,14 +997,8 @@ class CC3DMLGeneratorBase:
             chem_field_element = m_element.ElementCC3D("ChemicalField", {"Name": chem_field_name})
 
             for chem_dict in chem_dict_list:
-                lambda_ = chem_dict["Lambda"]
-                chemotaxTowards = chem_dict["ChemotaxTowards"]
-                satCoef = chem_dict["SatCoef"]
-                chemotaxisType = chem_dict["ChemotaxisType"]
-
-                attribute_dict = {}
-                attribute_dict["Type"] = chem_dict["CellType"]
-                attribute_dict["Lambda"] = chem_dict["Lambda"]
+                attribute_dict = {"Type": chem_dict["CellType"],
+                                  "Lambda": chem_dict["Lambda"]}
 
                 if chem_dict["ChemotaxTowards"] != '':
                     attribute_dict["ChemotactTowards"] = chem_dict["ChemotaxTowards"]
@@ -1043,9 +1033,8 @@ class CC3DMLGeneratorBase:
             for secr_dict in secr_dict_list:
 
                 rate = secr_dict["Rate"]
-                attribute_dict = {}
+                attribute_dict = {"Type": secr_dict["CellType"]}
 
-                attribute_dict["Type"] = secr_dict["CellType"]
                 if secr_dict["SecretionType"] == 'uniform':
                     secr_field_element.ElementCC3D("Secretion", attribute_dict, rate)
 
@@ -1059,7 +1048,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Steppable', ['Type', 'UniformInitializer'])
     def generateUniformInitializerSteppable(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
 
         gpd = self.gpd
@@ -1094,12 +1082,11 @@ class CC3DMLGeneratorBase:
 
         region.ElementCC3D("Width", {}, 7)
 
-        region.ElementCC3D("Types", {}, ",".join([n for n in cell_type_data.keys() if n != "Medium"]))
+        region.ElementCC3D("Types", {}, ",".join(self.decorated_cell_type_names))
 
     @GenerateDecorator('Steppable', ['Type', 'BlobInitializer'])
     def generateBlobInitializerSteppable(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
         gpd = self.gpd
 
@@ -1119,7 +1106,7 @@ class CC3DMLGeneratorBase:
         region.ElementCC3D("Gap", {}, 0)
         region.ElementCC3D("Width", {}, 7)
 
-        region.ElementCC3D("Types", {}, ",".join([n for n in cell_type_data.keys() if n != "Medium"]))
+        region.ElementCC3D("Types", {}, ",".join(self.decorated_cell_type_names))
 
     @GenerateDecorator('Steppable', ['Type', 'PIFInitializer'])
     def generatePIFInitializerSteppable(self, *args, **kwds):
@@ -1170,7 +1157,6 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Steppable', ['Type', 'DiffusionSolverFE'])
     def generateDiffusionSolverFE(self, *args, **kwds):
 
-        cell_type_data = self.cellTypeData
         m_element = self.mElement
         gpd = self.gpd
 
@@ -1184,7 +1170,7 @@ class CC3DMLGeneratorBase:
         m_element.addComment("newline")
         m_element.addComment("Specification of PDE solvers")
 
-        cell_type_names = [n for n in cell_type_data.keys() if n != "Medium"]
+        cell_type_names = self.decorated_cell_type_names
 
         for field_name, solver in pde_field_data.items():
 
@@ -1234,8 +1220,9 @@ class CC3DMLGeneratorBase:
                     secrete_on_contact_with += type_name
                     example_type = type_name
 
-                secr_on_contact_elem = secr_data.ElementCC3D("SecretionOnContact", {'Type': example_type,
-                    "SecreteOnContactWith": secrete_on_contact_with}, 0.2)
+                secr_on_contact_elem = secr_data.ElementCC3D("SecretionOnContact",
+                                                             {'Type': example_type,
+                                                              "SecreteOnContactWith": secrete_on_contact_with}, 0.2)
 
                 secr_on_contact_elem.commentOutElement()
 
@@ -1247,39 +1234,39 @@ class CC3DMLGeneratorBase:
                 bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
 
                 plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
-                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 10.0})
-                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
                 plane_x_elem.addComment("Other options are (examples):")
 
                 periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
 
                 periodic_x_elem.commentOutElement()
 
-                cd_elem = plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+                cd_elem = plane_x_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 1.0})
 
                 cd_elem.commentOutElement()
 
                 plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
                 plane_y_elem.addComment("Other options are (examples):")
 
                 periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
                 periodic_y_elem.commentOutElement()
 
-                cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+                cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 1.0})
                 cv_elem.commentOutElement()
 
                 if sim_3d_flag:
                     plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
                     plane_z_elem.addComment("Other options are (examples):")
 
                     periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
                     periodic_z_elem.commentOutElement()
 
-                    cvz_elem = plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+                    cvz_elem = plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
 
                     cvz_elem.commentOutElement()
 
@@ -1321,7 +1308,8 @@ class CC3DMLGeneratorBase:
                 conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
                 conc_eqn_elem.commentOutElement()
 
-                conc_field_name_elem = diff_data.ElementCC3D("ConcentrationFileName", {},
+                conc_field_name_elem = diff_data.ElementCC3D(
+                    "ConcentrationFileName", {},
                     "INITIAL CONCENTRATION FIELD - typically a file with path Simulation/NAME_OF_THE_FILE.txt")
 
                 conc_field_name_elem.commentOutElement()
@@ -1350,8 +1338,8 @@ class CC3DMLGeneratorBase:
 
                 plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
 
-                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 10.0})
-                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_x_elem.ElementCC3D("ConstantDerivative", {'PlanePosition': 'Min', 'Value': 0.0})
+                plane_x_elem.ElementCC3D("ConstantDerivative", {'PlanePosition': 'Max', 'Value': 0.0})
                 plane_x_elem.addComment("Other options are (examples):")
 
                 periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
@@ -1361,8 +1349,8 @@ class CC3DMLGeneratorBase:
                 cd_elem.commentOutElement()
 
                 plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
                 plane_y_elem.addComment("Other options are (examples):")
 
                 periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
@@ -1373,8 +1361,8 @@ class CC3DMLGeneratorBase:
 
                 if sim_3d_flag:
                     plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
                     plane_z_elem.addComment("Other options are (examples):")
 
                     periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
@@ -1416,7 +1404,8 @@ class CC3DMLGeneratorBase:
                 conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
                 conc_eqn_elem.commentOutElement()
 
-                conc_field_name_elem = diff_data.ElementCC3D("ConcentrationFileName", {},
+                conc_field_name_elem = diff_data.ElementCC3D(
+                    "ConcentrationFileName", {},
                     "INITIAL CONCENTRATION FIELD - typically a file with path Simulation/NAME_OF_THE_FILE.txt")
 
                 conc_field_name_elem.commentOutElement()
@@ -1505,7 +1494,8 @@ class CC3DMLGeneratorBase:
                 conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
 
                 conc_eqn_elem.commentOutElement()
-                conc_field_name_elem = diff_data.ElementCC3D("ConcentrationFileName", {},
+                conc_field_name_elem = diff_data.ElementCC3D(
+                    "ConcentrationFileName", {},
                     "INITIAL CONCENTRATION FIELD - typically a file with path Simulation/NAME_OF_THE_FILE.txt")
 
                 conc_field_name_elem.commentOutElement()
@@ -1514,6 +1504,171 @@ class CC3DMLGeneratorBase:
 
                 diff_data.ElementCC3D("DeltaT", {}, 1.0)
 
+    @GenerateDecorator('Steppable', ['Type', 'ReactionDiffusionSolverFVM'])
+    def generateReactionDiffusionSolverFVM(self, *args, **kwargs):
+
+        m_element = self.mElement
+
+        try:
+            pde_field_data = kwargs['pdeFieldData']
+        except LookupError:
+            pde_field_data = {}
+
+        sim_3d_flag = self.checkIfSim3D(self.gpd)
+
+        m_element.addComment("newline")
+        m_element.addComment("Specification of PDE solvers")
+
+        cell_type_names = self.decorated_cell_type_names
+        example_type = cell_type_names[0] if cell_type_names else "CellType"
+
+        for field_name, solver in pde_field_data.items():
+
+            if solver == 'ReactionDiffusionSolverFVM':
+
+                diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": field_name})
+
+                diff_field_elem.addComment('Discretization length along X')
+                dx_elem = diff_field_elem.ElementCC3D('DeltaX', {}, 1.0)
+                dx_elem.commentOutElement()
+                diff_field_elem.addComment('Discretization length along Y')
+                dy_elem = diff_field_elem.ElementCC3D('DeltaY', {}, 1.0)
+                dy_elem.commentOutElement()
+                diff_field_elem.addComment('Discretization length along Z')
+                dz_elem = diff_field_elem.ElementCC3D('DeltaZ', {}, 1.0)
+                dz_elem.commentOutElement()
+
+                diff_field_elem.addComment('Optional automatic time sub-stepping. Safe, but conservative.')
+                auto_timestep_elem = diff_field_elem.ElementCC3D('AutoTimeSubStep')
+                auto_timestep_elem.commentOutElement()
+
+                # Diffusion data
+
+                diff_data = diff_field_elem.ElementCC3D("DiffusionData")
+                diff_data.ElementCC3D("FieldName", {}, field_name)
+                diff_data.ElementCC3D("DiffusionConstant", {}, 0.1)
+                diff_data.ElementCC3D("DecayConstant", {}, 0.00001)
+                diff_data.addComment("Additional options are:")
+
+                conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
+                conc_eqn_elem.commentOutElement()
+
+                for type_name in cell_type_names:
+                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': type_name}, 0.1)
+
+                for type_name in cell_type_names:
+                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': type_name}, 0.0001)
+
+                diff_data.addComment("Enables diffusion by cell type:")
+                diff_data.ElementCC3D('DiffusivityByType')
+
+                diff_data.addComment("Enables diffusion in the medium according to a settable diffusivity field")
+                diff_field_medium = diff_data.ElementCC3D('DiffusivityFieldInMedium')
+                diff_field_medium.commentOutElement()
+
+                diff_data.addComment("Enables diffusion everywhere according to a settable diffusivity field")
+                diff_field_everywhere = diff_data.ElementCC3D('DiffusivityFieldEverywhere')
+                diff_field_everywhere.commentOutElement()
+
+                diff_data.addComment('Simple permeable interface coefficient')
+                perm_int_cf = diff_data.ElementCC3D('PermIntCoefficient',
+                                                    {'Type1': example_type,
+                                                     'Type2': example_type},
+                                                    0.01)
+                perm_int_cf.commentOutElement()
+
+                diff_data.addComment('Simple permeable interface bias')
+                perm_int_bias = diff_data.ElementCC3D('PermIntBias',
+                                                      {'Type1': example_type,
+                                                       'Type2': example_type},
+                                                      0.001)
+                perm_int_bias.commentOutElement()
+
+                diff_data.addComment('Enables simple permeable interface modeling everywhere')
+                perm_int_flag = diff_data.ElementCC3D('SimplePermInt')
+                perm_int_flag.commentOutElement()
+
+                # Secretion data
+
+                secr_data = diff_field_elem.ElementCC3D("SecretionData")
+                secr_data.addComment('Uniform secretion Definition')
+
+                for type_name in cell_type_names:
+                    secr_data.ElementCC3D("Secretion", {"Type": type_name}, 0.1)
+
+                secrete_on_contact_with = ''
+
+                example_type = ''
+                for type_name in cell_type_names:
+                    if secrete_on_contact_with != '':
+                        secrete_on_contact_with += ','
+
+                    secrete_on_contact_with += type_name
+                    example_type = type_name
+
+                secr_on_contact_elem = secr_data.ElementCC3D("SecretionOnContact",
+                                                             {'Type': example_type,
+                                                              "SecreteOnContactWith": secrete_on_contact_with},
+                                                             0.2)
+                secr_on_contact_elem.commentOutElement()
+
+                const_conc_elem = secr_data.ElementCC3D("ConstantConcentration", {"Type": example_type}, 0.1)
+                const_conc_elem.commentOutElement()
+
+                # Reaction data
+
+                rx_data = diff_field_elem.ElementCC3D('ReactionData')
+
+                rx_data.addComment('Gives this field a symbol for usage in any expression for any field of this solver')
+                rx_data.ElementCC3D('ExpressionSymbol', {}, field_name)
+
+                rx_data.addComment('Rate proportional to local concentration')
+                rx_data.ElementCC3D('ExpressionMult', {}, 'x')
+
+                rx_data.addComment('Rate independent of local concentration')
+                rx_data.ElementCC3D('ExpressionIndep', {}, 'y')
+
+                # Boundary Conditions
+
+                bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
+
+                plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_x_elem.addComment("Other options are (examples):")
+
+                periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
+
+                periodic_x_elem.commentOutElement()
+
+                cd_elem = plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+
+                cd_elem.commentOutElement()
+
+                plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                plane_y_elem.addComment("Other options are (examples):")
+
+                periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
+                periodic_y_elem.commentOutElement()
+
+                cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+                cv_elem.commentOutElement()
+
+                if sim_3d_flag:
+                    plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
+                    plane_z_elem.addComment("Other options are (examples):")
+
+                    periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
+                    periodic_z_elem.commentOutElement()
+
+                    cvz_elem = plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+
+                    cvz_elem.commentOutElement()
+
     # @GenerateDecorator('Steppable',['Type','SteadyStateDiffusionSolver'])
     def generateSteadyStateDiffusionSolver(self, *args, **kwds):
 
@@ -1521,14 +1676,6 @@ class CC3DMLGeneratorBase:
             ir_element = kwds['insert_root_element']
         except LookupError:
             ir_element = None
-
-        # existing root element
-        try:
-
-            r_element = kwds['root_element']
-
-        except LookupError:
-            r_element = None
 
         try:
             general_properties_data = kwds['generalPropertiesData']
@@ -1559,11 +1706,6 @@ class CC3DMLGeneratorBase:
         except LookupError:
             pde_field_data = {}
 
-        try:
-            cell_type_data = kwds['data']
-        except LookupError:
-            cell_type_data = None
-
         m_element.addComment("newline")
 
         m_element.addComment("Specification of PDE solvers")
@@ -1581,7 +1723,8 @@ class CC3DMLGeneratorBase:
                 conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
                 conc_eqn_elem.commentOutElement()
 
-                conc_field_name_elem = diff_data.ElementCC3D("ConcentrationFileName", {},
+                conc_field_name_elem = diff_data.ElementCC3D(
+                    "ConcentrationFileName", {},
                     "INITIAL CONCENTRATION FIELD - typically a file with path Simulation/NAME_OF_THE_FILE.txt")
 
                 conc_field_name_elem.commentOutElement()

@@ -11,6 +11,7 @@ from cc3d.twedit5.twedit.utils.global_imports import *
 from cc3d.twedit5.twedit.utils.collection_utils import remove_duplicates
 from cc3d.twedit5.Messaging import stdMsg, dbgMsg, pd, errMsg, setDebugging
 from . import ui_findinfilesdlg
+from cc3d.twedit5.styles import tab_bar_style
 
 ALL_IN_FILES = 0
 ALL_IN_ALL_OPEN_DOCS = 1
@@ -889,7 +890,7 @@ class FindAndReplaceDlg(QDialog, ui_findinfilesdlg.Ui_FindInFiles):
 
 
     def updateUi(self):
-
+        self.tabWidget.tabBar().setStyleSheet(tab_bar_style)
         pass
 
     def text(self):
