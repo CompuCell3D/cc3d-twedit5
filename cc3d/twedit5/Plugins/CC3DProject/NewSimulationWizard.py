@@ -774,7 +774,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         #self.pageDict["ContactMultiCad Plugin"] = [self.page(8), 8]
         #self.pageDict["Configuration Complete!"] = [self.page(9), 9]
 
-        # the updated code
+        # the updated code that makes the function more modular
 
         for index in range(len (page_ids)):
             self.pageDict[self.page(index).title()] = [self.page(index), index]
