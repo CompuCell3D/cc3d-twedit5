@@ -73,7 +73,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["Diffusants"][0]:
+        elif self.currentPage() == self.pageDict["Chemical Fields (Diffusants)"][0]:
 
             field_name = str(self.fieldNameLE.text())
             field_name = field_name.strip()
@@ -90,7 +90,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["ContactMultiCad"][0]:
+        elif self.currentPage() == self.pageDict["ContactMultiCad Plugin"][0]:
 
             cadherin = str(self.cmcMoleculeLE.text()).strip()
 
@@ -107,7 +107,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["AdhesionFlex"][0]:
+        elif self.currentPage() == self.pageDict["AdhesionFlex Plugin"][0]:
 
             molecule = str(self.afMoleculeLE.text()).strip()
 
@@ -122,7 +122,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button.clicked.emit(True)
 
         # last page
-        elif self.currentPage() == self.pageDict["FinalPage"][0]:
+        elif self.currentPage() == self.pageDict["Configuration Complete!"][0]:
 
             if event.key() == Qt.Key_Return:
                 finish_button = self.button(QWizard.FinishButton)
@@ -748,6 +748,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         return self.pageDict[page_name][0]
 
     # initialize properties dialog
+
     def updateUi(self):
 
         self.setUpValidators()
@@ -760,22 +761,33 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         page_ids = self.pageIds()
 
-        self.pageDict["FinalPage"] = [self.page(page_ids[-1]), len(page_ids) - 1]
-        self.pageDict["SimulationDirectory"] = [self.page(0), 0]
-        self.pageDict["GeneralProperties"] = [self.page(1), 1]
-        self.pageDict["CellType"] = [self.page(2), 2]
-        self.pageDict["Diffusants"] = [self.page(3), 3]
-        self.pageDict["Plugins"] = [self.page(4), 4]
-        self.pageDict["Secretion"] = [self.page(5), 5]
-        self.pageDict["Chemotaxis"] = [self.page(6), 6]
-        self.pageDict["AdhesionFlex"] = [self.page(7), 7]
-        self.pageDict["ContactMultiCad"] = [self.page(8), 8]
-        self.pageDict["PythonScript"] = [self.page(9), 9]
+        # the original code for assigning the page dict indexes
 
-        self.removePage(self.get_page_id_by_name("Secretion"))
-        self.removePage(self.get_page_id_by_name("Chemotaxis"))
-        self.removePage(self.get_page_id_by_name("AdhesionFlex"))
-        self.removePage(self.get_page_id_by_name("ContactMultiCad"))
+        #self.pageDict["CompuCell3D Simulation Wizard"] = [self.page(0), 0]
+        #self.pageDict["General Simulation Properties"] = [self.page(1), 1]
+        #self.pageDict["Cell Type Specification"] = [self.page(2), 2]
+        #self.pageDict["Chemical Fields (Diffusants)"] = [self.page(3), 3]
+        #self.pageDict["Cell Properties and Behaviors"] = [self.page(4), 4]
+        #self.pageDict["Secretion Plugin"] = [self.page(5), 5]
+        #self.pageDict["Chemotaxis Plugin"] = [self.page(6), 6]
+        #self.pageDict["AdhesionFlex Plugin"] = [self.page(7), 7]
+        #self.pageDict["ContactMultiCad Plugin"] = [self.page(8), 8]
+        #self.pageDict["Configuration Complete!"] = [self.page(9), 9]
+
+        # the updated code
+
+        for index in range(len (page_ids)):
+            self.pageDict[self.page(index).title()] = [self.page(index), index]
+
+        #self.removePage(5)
+        #self.removePage(6)
+        #self.removePage(7)
+        #self.removePage(8)
+
+        self.removePage(self.get_page_id_by_name("Secretion Plugin"))
+        self.removePage(self.get_page_id_by_name("Chemotaxis Plugin"))
+        self.removePage(self.get_page_id_by_name("AdhesionFlex Plugin"))
+        self.removePage(self.get_page_id_by_name("ContactMultiCad Plugin"))
 
         self.nameLE.selectAll()
 
@@ -861,7 +873,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         for page_id in page_ids:
 
-            if self.page(page_id) == self.pageDict["FinalPage"]:
+            if self.page(page_id) == self.pageDict["Configuration Complete!"]:
                 final_id = page_id
 
                 break
@@ -889,11 +901,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         print("THIS IS VALIDATE FOR PAGE ", self.currentId)
 
-        if self.currentId() == self.get_page_id_by_name("SimulationDirectory"):
+        if self.currentId() == 0:
             directory = str(self.dirLE.text()).strip()
             name = str(self.nameLE.text()).strip()
 
-            self.setPage(self.get_page_id_by_name("PythonScript"), self.get_page_by_name("PythonScript"))
+            self.setPage(self.pageDict["Configuration Complete!"][1], self.pageDict["Configuration Complete!"][0])
 
             if directory == "" or name == "":
                 QMessageBox.warning(self, "Missing information",
@@ -938,8 +950,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                 return True
 
-        # general properties        
-        if self.currentId() == self.get_page_id_by_name("GeneralProperties"):
+        # general properties
+        if self.currentId() == 1:
 
             if self.piffRB.isChecked() and str(self.piffLE.text()).strip() == '':
                 QMessageBox.warning(self, "Missing information", "Please specify name of the PIFF file", QMessageBox.Ok)
@@ -968,7 +980,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == self.get_page_id_by_name("CellType"):
+        if self.currentId() == 2:
             # we only extract types from table here - it is not a validation strictly speaking
             # extract cell type information form the table
 
@@ -986,7 +998,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == self.get_page_id_by_name("Diffusants"):
+        if self.currentId() == self.get_page_id_by_name("Chemical Fields (Diffusants)"):
 
             # we only extract diffusants from table here - it is not a validation strictly speaking
             # extract diffusants information form the table
@@ -1035,36 +1047,36 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == self.get_page_id_by_name("Plugins"):
+        if self.currentId() == self.get_page_id_by_name("Cell Properties and Behaviors"):
             print(self.pageDict)
 
             if self.secretionCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("Secretion"), self.get_page_by_name("Secretion"))
+                self.setPage(self.get_page_id_by_name("Secretion Plugin"), self.get_page_by_name("Secretion Plugin"))
 
             else:
-                self.removePage(self.get_page_id_by_name("Secretion"))
+                self.removePage(self.get_page_id_by_name("Secretion Plugin"))
 
             if self.chemotaxisCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("Chemotaxis"), self.get_page_by_name("Chemotaxis"))
+                self.setPage(self.get_page_id_by_name("Chemotaxis Plugin"), self.get_page_by_name("Chemotaxis Plugin"))
 
             else:
-                self.removePage(self.get_page_id_by_name("Chemotaxis"))
+                self.removePage(self.get_page_id_by_name("Chemotaxis Plugin"))
 
             if self.contactMultiCadCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("ContactMultiCad"), self.get_page_by_name("ContactMultiCad"))
+                self.setPage(self.get_page_id_by_name("ContactMultiCad Plugin"), self.get_page_by_name("ContactMultiCad Plugin"))
 
             else:
-                self.removePage(self.get_page_id_by_name("ContactMultiCad"))
+                self.removePage(self.get_page_id_by_name("ContactMultiCad Plugin"))
 
             if self.adhesionFlexCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("AdhesionFlex"), self.get_page_by_name("AdhesionFlex"))
+                self.setPage(self.get_page_id_by_name("AdhesionFlex Plugin"), self.get_page_by_name("AdhesionFlex Plugin"))
 
             else:
-                self.removePage(self.get_page_id_by_name("AdhesionFlex"))
+                self.removePage(self.get_page_id_by_name("AdhesionFlex Plugin"))
 
             return True
 
-        if self.currentPage() == self.get_page_by_name("ContactMultiCad"):
+        if self.currentPage() == self.get_page_by_name("ContactMultiCad Plugin"):
             if not self.cmcTable.rowCount():
 
                 QMessageBox.warning(self, "Missing information",
@@ -1076,7 +1088,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 return True
 
-        if self.currentPage() == self.get_page_by_name("AdhesionFlex"):
+        if self.currentPage() == self.get_page_by_name("AdhesionFlex Plugin"):
 
             if not self.afTable.rowCount():
 
@@ -1296,7 +1308,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # before calling generateMainPythonScript we have to call generateSteppablesCode
             # that generates also steppable registration lines
             python_generator.generate_main_python_script()
-            simulation_element.ElementCC3D("PythonScript", {"Type": "PythonScript"},
+            simulation_element.ElementCC3D("Configuration Complete!", {"Type": "Configuration Complete!"},
                                            self.getRelativePathWRTProjectDir(python_generator.mainPythonFileName))
 
             simulation_element.ElementCC3D("Resource", {"Type": "Python"},

@@ -1234,39 +1234,39 @@ class CC3DMLGeneratorBase:
                 bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
 
                 plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
-                plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 5.0})
                 plane_x_elem.addComment("Other options are (examples):")
 
                 periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
 
                 periodic_x_elem.commentOutElement()
 
-                cd_elem = plane_x_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 1.0})
+                cd_elem = plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
 
                 cd_elem.commentOutElement()
 
                 plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
+                plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Max', 'Value': 5.0})
                 plane_y_elem.addComment("Other options are (examples):")
 
                 periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
                 periodic_y_elem.commentOutElement()
 
-                cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 1.0})
+                cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
                 cv_elem.commentOutElement()
 
                 if sim_3d_flag:
                     plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
+                    plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
+                    plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Max', 'Value': 5.0})
                     plane_z_elem.addComment("Other options are (examples):")
 
                     periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
                     periodic_z_elem.commentOutElement()
 
-                    cvz_elem = plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                    cvz_elem = plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 10.0})
 
                     cvz_elem.commentOutElement()
 
@@ -1338,8 +1338,8 @@ class CC3DMLGeneratorBase:
 
                 plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
 
-                plane_x_elem.ElementCC3D("ConstantDerivative", {'PlanePosition': 'Min', 'Value': 0.0})
-                plane_x_elem.ElementCC3D("ConstantDerivative", {'PlanePosition': 'Max', 'Value': 0.0})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 5.0})
                 plane_x_elem.addComment("Other options are (examples):")
 
                 periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
@@ -1349,8 +1349,8 @@ class CC3DMLGeneratorBase:
                 cd_elem.commentOutElement()
 
                 plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
                 plane_y_elem.addComment("Other options are (examples):")
 
                 periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
@@ -1361,8 +1361,8 @@ class CC3DMLGeneratorBase:
 
                 if sim_3d_flag:
                     plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 10.0})
+                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 5.0})
                     plane_z_elem.addComment("Other options are (examples):")
 
                     periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
