@@ -951,7 +951,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return True
 
         # general properties
-        if self.currentId() == 1:
+        if self.currentId() == self.get_page_id_by_name("GeneralProperties"):
 
             if self.piffRB.isChecked() and str(self.piffLE.text()).strip() == '':
                 QMessageBox.warning(self, "Missing information", "Please specify name of the PIFF file", QMessageBox.Ok)
@@ -980,7 +980,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == 2:
+        if self.currentId() == self.get_page_id_by_name("CellType"):
             # we only extract types from table here - it is not a validation strictly speaking
             # extract cell type information form the table
 
