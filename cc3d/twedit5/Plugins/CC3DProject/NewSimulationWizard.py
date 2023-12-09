@@ -64,7 +64,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     def keyPressEvent(self, event):
 
-        if self.currentPage() == self.self.get_page_by_name["CellType"][0]:
+        if self.currentPage() == self.get_page_id_by_name('Cell Type Specification'):
             cell_type = str(self.cellTypeLE.text())
             cell_type = cell_type.strip()
 
@@ -77,7 +77,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.get_page_by_name["Chemical Fields (Diffusants)"][0]:
+        elif self.currentPage() == self.get_page_id_by_name("Chemical Fields (Diffusants)"):
 
             field_name = str(self.fieldNameLE.text())
             field_name = field_name.strip()
@@ -94,7 +94,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.get_page_by_name["ContactMultiCad Plugin"][0]:
+        elif self.currentPage() == self.get_page_id_by_name("ContactMultiCad Plugin"):
 
             cadherin = str(self.cmcMoleculeLE.text()).strip()
 
@@ -111,7 +111,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.get_page_by_name["AdhesionFlex Plugin"][0]:
+        elif self.currentPage() == self.get_page_id_by_name("AdhesionFlex Plugin"):
 
             molecule = str(self.afMoleculeLE.text()).strip()
 
@@ -126,7 +126,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button.clicked.emit(True)
 
         # last page
-        elif self.currentPage() == self.get_page_by_name["Configuration Complete!"][0]:
+        elif self.currentPage() == self.get_page_id_by_name("Configuration Complete!"):
 
             if event.key() == Qt.Key_Return:
                 finish_button = self.button(QWizard.FinishButton)
@@ -772,7 +772,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.removePage(self.get_page_id_by_name("Chemotaxis Plugin"))
         self.removePage(self.get_page_id_by_name("AdhesionFlex Plugin"))
         self.removePage(self.get_page_id_by_name("ContactMultiCad Plugin"))
-        self.removePage(self.get_page_id_by_name("PDESolvers"))
+        self.removePage(self.get_page_id_by_name("PDE Solvers Specification"))
 
         self.nameLE.selectAll()
 
@@ -933,7 +933,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         print("THIS IS VALIDATE FOR PAGE ", self.currentId)
 
-        if self.currentId() == self.get_page_id_by_name("SimulationDirectory"):
+        if self.currentId() == self.get_page_id_by_name("CompuCell3D Simulation Wizard"):
             directory = str(self.dirLE.text()).strip()
             name = str(self.nameLE.text()).strip()
 
@@ -983,7 +983,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return True
 
         # general properties
-        if self.currentId() == self.get_page_id_by_name("GeneralProperties"):
+        if self.currentId() == self.get_page_id_by_name("General Simulation Properties"):
 
             if self.piffRB.isChecked() and str(self.piffLE.text()).strip() == '':
                 QMessageBox.warning(self, "Missing information", "Please specify name of the PIFF file", QMessageBox.Ok)
@@ -1012,7 +1012,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == self.get_page_id_by_name("CellType"):
+        if self.currentId() == self.get_page_id_by_name("Cell Type Specification"):
             # we only extract types from table here - it is not a validation strictly speaking
             # extract cell type information form the table
 
@@ -1107,10 +1107,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.removePage(self.get_page_id_by_name("AdhesionFlex Plugin"))
 
             if len(self.diffusantDict.items()) > 0:
-                self.setPage(self.get_page_id_by_name("PDESolvers"), self.get_page_by_name("PDESolvers"))
+                self.setPage(self.get_page_id_by_name("PDE Solvers Specification"), self.get_page_by_name("PDE Solvers Specification"))
                 self.populate_pde_solver_entries()
             else:
-                self.removePage(self.get_page_id_by_name("PDESolvers"))
+                self.removePage(self.get_page_id_by_name("PDE Solvers Specification"))
             return True
 
         if self.currentPage() == self.get_page_by_name("ContactMultiCad Plugin"):
@@ -1125,7 +1125,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 return True
 
-        if self.currentId() == self.get_page_id_by_name("PDESolvers"):
+        if self.currentId() == self.get_page_id_by_name("PDE Solvers Specification"):
             # we only extract types from table here - it is not a validation strictly speaking
             # extract cell type information form the table
 
@@ -1362,7 +1362,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # before calling generateMainPythonScript we have to call generateSteppablesCode
             # that generates also steppable registration lines
             python_generator.generate_main_python_script()
-            simulation_element.ElementCC3D("Configuration Complete!", {"Type": "Configuration Complete!"},
+            simulation_element.ElementCC3D("PythonScript", {},
                                            self.getRelativePathWRTProjectDir(python_generator.mainPythonFileName))
 
             simulation_element.ElementCC3D("Resource", {"Type": "Python"},
