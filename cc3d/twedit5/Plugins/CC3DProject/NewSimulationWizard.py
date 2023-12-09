@@ -60,7 +60,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     def keyPressEvent(self, event):
 
-        if self.currentPage() == self.pageDict["CellType"][0]:
+        if self.currentPage() == self.self.get_page_by_name["CellType"][0]:
             cell_type = str(self.cellTypeLE.text())
             cell_type = cell_type.strip()
 
@@ -73,7 +73,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["Chemical Fields (Diffusants)"][0]:
+        elif self.currentPage() == self.get_page_by_name["Chemical Fields (Diffusants)"][0]:
 
             field_name = str(self.fieldNameLE.text())
             field_name = field_name.strip()
@@ -90,7 +90,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["ContactMultiCad Plugin"][0]:
+        elif self.currentPage() == self.get_page_by_name["ContactMultiCad Plugin"][0]:
 
             cadherin = str(self.cmcMoleculeLE.text()).strip()
 
@@ -107,7 +107,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["AdhesionFlex Plugin"][0]:
+        elif self.currentPage() == self.get_page_by_name["AdhesionFlex Plugin"][0]:
 
             molecule = str(self.afMoleculeLE.text()).strip()
 
@@ -122,7 +122,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button.clicked.emit(True)
 
         # last page
-        elif self.currentPage() == self.pageDict["Configuration Complete!"][0]:
+        elif self.currentPage() == self.get_page_by_name["Configuration Complete!"][0]:
 
             if event.key() == Qt.Key_Return:
                 finish_button = self.button(QWizard.FinishButton)
@@ -853,7 +853,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         for page_id in page_ids:
 
-            if self.page(page_id) == self.pageDict["Configuration Complete!"]:
+            if self.page(page_id) == self.get_page_by_name["Configuration Complete!"]:
                 final_id = page_id
 
                 break
@@ -881,7 +881,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         print("THIS IS VALIDATE FOR PAGE ", self.currentId)
 
-        if self.currentId() == 0:
+        if self.currentId() == self.get_page_id_by_name("SimulationDirectory"):
             directory = str(self.dirLE.text()).strip()
             name = str(self.nameLE.text()).strip()
 
@@ -1028,7 +1028,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             return True
 
         if self.currentId() == self.get_page_id_by_name("Cell Properties and Behaviors"):
-            print(self.pageDict)
+            print(self.get_page_by_name)
 
             if self.secretionCHB.isChecked():
                 self.setPage(self.get_page_id_by_name("Secretion Plugin"), self.get_page_by_name("Secretion Plugin"))
