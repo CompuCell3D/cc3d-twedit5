@@ -1892,6 +1892,20 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
+  <widget class="QWizardPage" name="wizardPage_5">
+   <layout class="QVBoxLayout" name="verticalLayout_22">
+    <item>
+     <widget class="QLabel" name="label_46">
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; font-weight:600;&quot;&gt;PDE Solvers Specifications&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="field_tab"/>
+    </item>
+   </layout>
+  </widget>
   <widget class="QWizardPage" name="wizardPage_3">
    <property name="title">
     <string>Configuration Complete!</string>

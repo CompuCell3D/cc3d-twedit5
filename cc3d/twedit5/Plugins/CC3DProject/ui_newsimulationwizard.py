@@ -735,6 +735,17 @@ class Ui_NewSimulationWizard(object):
         self.horizontalLayout_9.addWidget(self.cmcMoleculeAddPB)
         self.verticalLayout_8.addLayout(self.horizontalLayout_9)
         NewSimulationWizard.addPage(self.wizardPage_4)
+        self.wizardPage_5 = QtWidgets.QWizardPage()
+        self.wizardPage_5.setObjectName("wizardPage_5")
+        self.verticalLayout_22 = QtWidgets.QVBoxLayout(self.wizardPage_5)
+        self.verticalLayout_22.setObjectName("verticalLayout_22")
+        self.label_46 = QtWidgets.QLabel(self.wizardPage_5)
+        self.label_46.setObjectName("label_46")
+        self.verticalLayout_22.addWidget(self.label_46)
+        self.field_tab = QtWidgets.QTabWidget(self.wizardPage_5)
+        self.field_tab.setObjectName("field_tab")
+        self.verticalLayout_22.addWidget(self.field_tab)
+        NewSimulationWizard.addPage(self.wizardPage_5)
         self.wizardPage_3 = QtWidgets.QWizardPage()
         self.wizardPage_3.setObjectName("wizardPage_3")
         self.verticalLayout_21 = QtWidgets.QVBoxLayout(self.wizardPage_3)
@@ -1143,11 +1154,16 @@ class Ui_NewSimulationWizard(object):
         self.label_11.setText(_translate("NewSimulationWizard", "Cadherin"))
         self.cmcMoleculeLE.setToolTip(_translate("NewSimulationWizard", "Specify names of the adhesion molecules you want to use int he simulation"))
         self.cmcMoleculeAddPB.setText(_translate("NewSimulationWizard", "Add"))
-        self.wizardPage_3.setTitle(_translate("NewSimulationWizard", "Configuration Complete!"))
+        self.label_46.setText(_translate("NewSimulationWizard", "<html><head/><body><p><span style=\" font-size:24pt; font-weight:600;\">PDE Solvers Specifications</span></p></body></html>"))
+        self.label_7.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">Configuration Complete!</span></p></body></html>"))
         self.textBrowser.setHtml(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:7.875pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt;\">CC3D project will be generated now</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:12pt;\"><br /></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600; color:#0000ff;\">NOTE:</span><span style=\" font-size:12pt;\"> The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters</span></p></body></html>"))
+"</style></head><body style=\" font-family:\'.AppleSystemUIFont\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'MS Shell Dlg 2\'; font-size:12pt;\">CC3D project will be generated now</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'MS Shell Dlg 2\'; font-size:12pt;\"><br /></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'MS Shell Dlg 2\'; font-size:12pt; font-weight:600; color:#0000ff;\">NOTE:</span><span style=\" font-family:\'MS Shell Dlg 2\'; font-size:12pt;\"> The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters</span></p></body></html>"))
