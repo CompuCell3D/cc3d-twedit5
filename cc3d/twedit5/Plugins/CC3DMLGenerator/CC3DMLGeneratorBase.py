@@ -1164,6 +1164,10 @@ class CC3DMLGeneratorBase:
             pde_field_data = kwds['pdeFieldData']
         except LookupError as e:
             pde_field_data = {}
+        try:
+            diffusant_data = kwds['diffusantData']
+        except LookupError:
+            diffusant_data = []
 
         sim_3d_flag = self.checkIfSim3D(gpd)
 
@@ -1172,7 +1176,7 @@ class CC3DMLGeneratorBase:
 
         cell_type_names = self.decorated_cell_type_names
 
-        for field_name, solver in pde_field_data.items():
+        for x, (field_name, solver) in enumerate(pde_field_data.items()):
 
             if solver == 'DiffusionSolverFE':
 
@@ -1180,8 +1184,8 @@ class CC3DMLGeneratorBase:
 
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
-                diff_data.ElementCC3D("GlobalDiffusionConstant", {}, 0.1)
-                diff_data.ElementCC3D("GlobalDecayConstant", {}, 0.00001)
+                diff_data.ElementCC3D("GlobalDiffusionConstant", {}, diffusant_data[x][0][0])
+                diff_data.ElementCC3D("GlobalDecayConstant", {}, diffusant_data[x][1][0])
                 diff_data.addComment("Additional options are:")
 
                 conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
@@ -1192,11 +1196,11 @@ class CC3DMLGeneratorBase:
 
                 conc_field_name_elem.commentOutElement()
 
-                for type_name in cell_type_names:
-                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': type_name}, 0.1)
+                for y, type_name in enumerate(cell_type_names):
+                    diff_data.ElementCC3D('DiffusionCoefficient', {'CellType': type_name}, diffusant_data[x][0][y+1])
 
-                for type_name in cell_type_names:
-                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': type_name}, 0.0001)
+                for y, type_name in enumerate(cell_type_names):
+                    diff_data.ElementCC3D('DecayCoefficient', {'CellType': type_name}, diffusant_data[x][1][y+1])
 
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
                 secr_data.addComment(

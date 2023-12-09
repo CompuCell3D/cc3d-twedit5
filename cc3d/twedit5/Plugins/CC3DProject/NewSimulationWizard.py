@@ -44,6 +44,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.typeTable = []
         self.diffusantDict = {}
         self.chemotaxisData = {}
+        self.cellTypeData = {}
+        self.tabs_arguments = []
+        self.field_table_dict = {}
+        #
 
         if sys.platform.startswith('win'):
             self.setWizardStyle(QWizard.ClassicStyle)
@@ -770,12 +774,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.pageDict["Chemotaxis"] = [self.page(6), 6]
         self.pageDict["AdhesionFlex"] = [self.page(7), 7]
         self.pageDict["ContactMultiCad"] = [self.page(8), 8]
-        self.pageDict["PythonScript"] = [self.page(9), 9]
+        self.pageDict["PDESolvers"] = [self.page(9), 9]
+        self.pageDict["PythonScript"] = [self.page(10), 10]
+
 
         self.removePage(self.get_page_id_by_name("Secretion"))
         self.removePage(self.get_page_id_by_name("Chemotaxis"))
         self.removePage(self.get_page_id_by_name("AdhesionFlex"))
         self.removePage(self.get_page_id_by_name("ContactMultiCad"))
+        self.removePage(self.get_page_id_by_name("PDESolvers"))
 
         self.nameLE.selectAll()
 
@@ -884,6 +891,53 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             if self.page(page_id) == _page:
                 self.removePage(page_id)
                 break
+
+    def populate_pde_solver_entries(self):
+        self.field_tab.clear() # clear the stuff
+        self.cellTypeData = {}
+        print(self.cellTypeTable.rowCount(), "hi")
+        for row in range(self.cellTypeTable.rowCount()):
+
+            cell_type = str(self.cellTypeTable.item(row, 0).text())
+            print(cell_type, "hello")
+            freeze = False
+
+            if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
+                print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                freeze = True
+
+            self.cellTypeData[cell_type] = [row, freeze]
+        # self.field_table_widget_dict = {} # put in constructor
+
+
+        for solver_name, fields in self.diffusantDict.items():
+            for idx, field in enumerate(fields):
+
+                table_widget = QTableWidget()# have a global dictionary storing.self.field_table_dictionary = QTableWidget()
+                # self.field_table_widget_dict[field] = table_widget#
+                table_widget.setColumnCount(2)
+                table_widget.setHorizontalHeaderLabels(["Diffusion coefficient", "Decay coefficient"])
+                width = table_widget.width()
+                # print("size", width)
+                table_widget.setColumnWidth(0, int(width / 2))
+                table_widget.setColumnWidth(1, int(width / 2))
+                table_widget.horizontalHeader().setStretchLastSection(True)
+
+
+                for row, (type_name, type_data) in enumerate(self.cellTypeData.items()):
+                    table_widget.insertRow(table_widget.rowCount())
+                    default_value_diffusion_coefficient = '0.1'
+                    default_value_decay_coefficient = '0.001'
+                    if type_name == [type_name for type_name, type_data in self.cellTypeData.items()][0]:
+                        type_name = 'Global'
+                        default_value_decay_coefficient = '0.00001'
+                    item = QTableWidgetItem(type_name)
+                    table_widget.setVerticalHeaderItem(row, item)
+                    table_widget.setItem(row, 0, QTableWidgetItem(default_value_diffusion_coefficient))
+                    table_widget.setItem(row, 1, QTableWidgetItem(default_value_decay_coefficient))
+                self.field_tab.insertTab(idx, table_widget, field)
+                self.field_table_dict[field] = table_widget
+
 
     def validateCurrentPage(self):
 
@@ -1062,6 +1116,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 self.removePage(self.get_page_id_by_name("AdhesionFlex"))
 
+            if len(self.diffusantDict.items()) > 0:
+                self.setPage(self.get_page_id_by_name("PDESolvers"), self.get_page_by_name("PDESolvers"))
+                self.populate_pde_solver_entries()
+            else:
+                self.removePage(self.get_page_id_by_name("PDESolvers"))
             return True
 
         if self.currentPage() == self.get_page_by_name("ContactMultiCad"):
@@ -1075,6 +1134,23 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             else:
                 return True
+
+        if self.currentId() == self.get_page_id_by_name("PDESolvers"):
+            # we only extract types from table here - it is not a validation strictly speaking
+            # extract cell type information form the table
+
+            self.tabs_arguments = []
+            for field, table_widget in self.field_table_dict.items():
+                lst1 = []
+                lst2 = []
+                for row in range(table_widget.rowCount()):
+                    coef = table_widget.item(row, 0).text()
+                    decay = table_widget.item(row, 1).text()
+                    lst1.append(coef)
+                    lst2.append(decay)
+                self.tabs_arguments.append([lst1, lst2])
+
+
 
         if self.currentPage() == self.get_page_by_name("AdhesionFlex"):
 
@@ -1350,6 +1426,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         kwds['chemotaxisData'] = self.chemotaxisData
         kwds['pdeFieldData'] = self.pde_field_data
         kwds['secretionData'] = self.secretion_data
+        kwds['diffusantData'] = self.tabs_arguments
 
         generator.generateMetadataSimulationProperties(*args, **kwds)
 
@@ -1453,7 +1530,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             # generator.generateDiffusionSolverFE(*args,**kwds)            
 
-            # generator.generateFlexibleDiffusionSolverFE(*args,**kwds)            
+            # generator.generateFlexibleDiffusionSolverFE(*args,**kwds)
 
             # generator.generateFastDiffusionSolver2DFE(*args,**kwds)            
 
