@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'NewSimulationWizard.ui'
+# Form implementation generated from reading ui file '/Users/lbp/Documents/CompuCell3D/cc3d-twedit5/cc3d/twedit5/Plugins/CC3DProject/NewSimulationWizard.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -19,9 +19,6 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage1.setObjectName("wizardPage1")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.wizardPage1)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.label = QtWidgets.QLabel(self.wizardPage1)
-        self.label.setObjectName("label")
-        self.verticalLayout_3.addWidget(self.label)
         spacerItem = QtWidgets.QSpacerItem(20, 9, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_3.addItem(spacerItem)
         self.gridLayout = QtWidgets.QGridLayout()
@@ -72,9 +69,6 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage_9.setObjectName("wizardPage_9")
         self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.wizardPage_9)
         self.verticalLayout_10.setObjectName("verticalLayout_10")
-        self.label_27 = QtWidgets.QLabel(self.wizardPage_9)
-        self.label_27.setObjectName("label_27")
-        self.verticalLayout_10.addWidget(self.label_27)
         spacerItem3 = QtWidgets.QSpacerItem(238, 54, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.verticalLayout_10.addItem(spacerItem3)
         self.verticalLayout_19 = QtWidgets.QVBoxLayout()
@@ -216,9 +210,6 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage2.setObjectName("wizardPage2")
         self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.wizardPage2)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
-        self.label_5 = QtWidgets.QLabel(self.wizardPage2)
-        self.label_5.setObjectName("label_5")
-        self.verticalLayout_4.addWidget(self.label_5)
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.cellTypeTable = QtWidgets.QTableWidget(self.wizardPage2)
@@ -258,9 +249,6 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage_7.setObjectName("wizardPage_7")
         self.verticalLayout_11 = QtWidgets.QVBoxLayout(self.wizardPage_7)
         self.verticalLayout_11.setObjectName("verticalLayout_11")
-        self.label_17 = QtWidgets.QLabel(self.wizardPage_7)
-        self.label_17.setObjectName("label_17")
-        self.verticalLayout_11.addWidget(self.label_17)
         self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
         self.fieldTable = QtWidgets.QTableWidget(self.wizardPage_7)
@@ -312,9 +300,81 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage.setObjectName("wizardPage")
         self.gridLayout_8 = QtWidgets.QGridLayout(self.wizardPage)
         self.gridLayout_8.setObjectName("gridLayout_8")
-        self.label_6 = QtWidgets.QLabel(self.wizardPage)
-        self.label_6.setObjectName("label_6")
-        self.gridLayout_8.addWidget(self.label_6, 0, 0, 1, 2)
+        self.groupBox_2 = QtWidgets.QGroupBox(self.wizardPage)
+        self.groupBox_2.setObjectName("groupBox_2")
+        self.verticalLayout_13 = QtWidgets.QVBoxLayout(self.groupBox_2)
+        self.verticalLayout_13.setObjectName("verticalLayout_13")
+        self.label_40 = QtWidgets.QLabel(self.groupBox_2)
+        self.label_40.setObjectName("label_40")
+        self.verticalLayout_13.addWidget(self.label_40)
+        self.volumeFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.volumeFlexCHB.setObjectName("volumeFlexCHB")
+        self.verticalLayout_13.addWidget(self.volumeFlexCHB)
+        self.volumeLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.volumeLocalFlexCHB.setObjectName("volumeLocalFlexCHB")
+        self.verticalLayout_13.addWidget(self.volumeLocalFlexCHB)
+        self.label_41 = QtWidgets.QLabel(self.groupBox_2)
+        self.label_41.setObjectName("label_41")
+        self.verticalLayout_13.addWidget(self.label_41)
+        self.surfaceFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.surfaceFlexCHB.setObjectName("surfaceFlexCHB")
+        self.verticalLayout_13.addWidget(self.surfaceFlexCHB)
+        self.surfaceLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.surfaceLocalFlexCHB.setObjectName("surfaceLocalFlexCHB")
+        self.verticalLayout_13.addWidget(self.surfaceLocalFlexCHB)
+        self.label_42 = QtWidgets.QLabel(self.groupBox_2)
+        self.label_42.setObjectName("label_42")
+        self.verticalLayout_13.addWidget(self.label_42)
+        self.extPotCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.extPotCHB.setObjectName("extPotCHB")
+        self.verticalLayout_13.addWidget(self.extPotCHB)
+        self.extPotLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.extPotLocalFlexCHB.setObjectName("extPotLocalFlexCHB")
+        self.verticalLayout_13.addWidget(self.extPotLocalFlexCHB)
+        self.label_43 = QtWidgets.QLabel(self.groupBox_2)
+        self.label_43.setObjectName("label_43")
+        self.verticalLayout_13.addWidget(self.label_43)
+        self.connectGlobalCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.connectGlobalCHB.setObjectName("connectGlobalCHB")
+        self.verticalLayout_13.addWidget(self.connectGlobalCHB)
+        self.connectGlobalByIdCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.connectGlobalByIdCHB.setObjectName("connectGlobalByIdCHB")
+        self.verticalLayout_13.addWidget(self.connectGlobalByIdCHB)
+        self.connect2DCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.connect2DCHB.setObjectName("connect2DCHB")
+        self.verticalLayout_13.addWidget(self.connect2DCHB)
+        self.label_45 = QtWidgets.QLabel(self.groupBox_2)
+        self.label_45.setObjectName("label_45")
+        self.verticalLayout_13.addWidget(self.label_45)
+        self.lengthConstraintCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.lengthConstraintCHB.setObjectName("lengthConstraintCHB")
+        self.verticalLayout_13.addWidget(self.lengthConstraintCHB)
+        self.lengthConstraintLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
+        self.lengthConstraintLocalFlexCHB.setObjectName("lengthConstraintLocalFlexCHB")
+        self.verticalLayout_13.addWidget(self.lengthConstraintLocalFlexCHB)
+        self.gridLayout_8.addWidget(self.groupBox_2, 0, 1, 2, 1)
+        self.groupBox_4 = QtWidgets.QGroupBox(self.wizardPage)
+        self.groupBox_4.setObjectName("groupBox_4")
+        self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.groupBox_4)
+        self.verticalLayout_5.setObjectName("verticalLayout_5")
+        self.comCHB = QtWidgets.QCheckBox(self.groupBox_4)
+        self.comCHB.setChecked(True)
+        self.comCHB.setObjectName("comCHB")
+        self.verticalLayout_5.addWidget(self.comCHB)
+        self.neighborCHB = QtWidgets.QCheckBox(self.groupBox_4)
+        self.neighborCHB.setChecked(True)
+        self.neighborCHB.setObjectName("neighborCHB")
+        self.verticalLayout_5.addWidget(self.neighborCHB)
+        self.momentOfInertiaCHB = QtWidgets.QCheckBox(self.groupBox_4)
+        self.momentOfInertiaCHB.setObjectName("momentOfInertiaCHB")
+        self.verticalLayout_5.addWidget(self.momentOfInertiaCHB)
+        self.pixelTrackerCHB = QtWidgets.QCheckBox(self.groupBox_4)
+        self.pixelTrackerCHB.setObjectName("pixelTrackerCHB")
+        self.verticalLayout_5.addWidget(self.pixelTrackerCHB)
+        self.boundaryPixelTrackerCHB = QtWidgets.QCheckBox(self.groupBox_4)
+        self.boundaryPixelTrackerCHB.setObjectName("boundaryPixelTrackerCHB")
+        self.verticalLayout_5.addWidget(self.boundaryPixelTrackerCHB)
+        self.gridLayout_8.addWidget(self.groupBox_4, 0, 2, 1, 1)
         self.groupBox_9 = QtWidgets.QGroupBox(self.wizardPage)
         self.groupBox_9.setObjectName("groupBox_9")
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.groupBox_9)
@@ -377,82 +437,7 @@ class Ui_NewSimulationWizard(object):
         self.deathCHB = QtWidgets.QCheckBox(self.groupBox_9)
         self.deathCHB.setObjectName("deathCHB")
         self.verticalLayout_6.addWidget(self.deathCHB)
-        self.gridLayout_8.addWidget(self.groupBox_9, 1, 0, 2, 1)
-        self.groupBox_2 = QtWidgets.QGroupBox(self.wizardPage)
-        self.groupBox_2.setObjectName("groupBox_2")
-        self.verticalLayout_13 = QtWidgets.QVBoxLayout(self.groupBox_2)
-        self.verticalLayout_13.setObjectName("verticalLayout_13")
-        self.label_40 = QtWidgets.QLabel(self.groupBox_2)
-        self.label_40.setObjectName("label_40")
-        self.verticalLayout_13.addWidget(self.label_40)
-        self.volumeFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.volumeFlexCHB.setObjectName("volumeFlexCHB")
-        self.verticalLayout_13.addWidget(self.volumeFlexCHB)
-        self.volumeLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.volumeLocalFlexCHB.setObjectName("volumeLocalFlexCHB")
-        self.verticalLayout_13.addWidget(self.volumeLocalFlexCHB)
-        self.label_41 = QtWidgets.QLabel(self.groupBox_2)
-        self.label_41.setObjectName("label_41")
-        self.verticalLayout_13.addWidget(self.label_41)
-        self.surfaceFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.surfaceFlexCHB.setObjectName("surfaceFlexCHB")
-        self.verticalLayout_13.addWidget(self.surfaceFlexCHB)
-        self.surfaceLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.surfaceLocalFlexCHB.setObjectName("surfaceLocalFlexCHB")
-        self.verticalLayout_13.addWidget(self.surfaceLocalFlexCHB)
-        self.label_42 = QtWidgets.QLabel(self.groupBox_2)
-        self.label_42.setObjectName("label_42")
-        self.verticalLayout_13.addWidget(self.label_42)
-        self.extPotCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.extPotCHB.setObjectName("extPotCHB")
-        self.verticalLayout_13.addWidget(self.extPotCHB)
-        self.extPotLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.extPotLocalFlexCHB.setObjectName("extPotLocalFlexCHB")
-        self.verticalLayout_13.addWidget(self.extPotLocalFlexCHB)
-        self.label_43 = QtWidgets.QLabel(self.groupBox_2)
-        self.label_43.setObjectName("label_43")
-        self.verticalLayout_13.addWidget(self.label_43)
-        self.connectGlobalCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.connectGlobalCHB.setObjectName("connectGlobalCHB")
-        self.verticalLayout_13.addWidget(self.connectGlobalCHB)
-        self.connectGlobalByIdCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.connectGlobalByIdCHB.setObjectName("connectGlobalByIdCHB")
-        self.verticalLayout_13.addWidget(self.connectGlobalByIdCHB)
-        self.connect2DCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.connect2DCHB.setObjectName("connect2DCHB")
-        self.verticalLayout_13.addWidget(self.connect2DCHB)
-        self.label_45 = QtWidgets.QLabel(self.groupBox_2)
-        self.label_45.setObjectName("label_45")
-        self.verticalLayout_13.addWidget(self.label_45)
-        self.lengthConstraintCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.lengthConstraintCHB.setObjectName("lengthConstraintCHB")
-        self.verticalLayout_13.addWidget(self.lengthConstraintCHB)
-        self.lengthConstraintLocalFlexCHB = QtWidgets.QCheckBox(self.groupBox_2)
-        self.lengthConstraintLocalFlexCHB.setObjectName("lengthConstraintLocalFlexCHB")
-        self.verticalLayout_13.addWidget(self.lengthConstraintLocalFlexCHB)
-        self.gridLayout_8.addWidget(self.groupBox_2, 1, 1, 2, 1)
-        self.groupBox_4 = QtWidgets.QGroupBox(self.wizardPage)
-        self.groupBox_4.setObjectName("groupBox_4")
-        self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.groupBox_4)
-        self.verticalLayout_5.setObjectName("verticalLayout_5")
-        self.comCHB = QtWidgets.QCheckBox(self.groupBox_4)
-        self.comCHB.setChecked(True)
-        self.comCHB.setObjectName("comCHB")
-        self.verticalLayout_5.addWidget(self.comCHB)
-        self.neighborCHB = QtWidgets.QCheckBox(self.groupBox_4)
-        self.neighborCHB.setChecked(True)
-        self.neighborCHB.setObjectName("neighborCHB")
-        self.verticalLayout_5.addWidget(self.neighborCHB)
-        self.momentOfInertiaCHB = QtWidgets.QCheckBox(self.groupBox_4)
-        self.momentOfInertiaCHB.setObjectName("momentOfInertiaCHB")
-        self.verticalLayout_5.addWidget(self.momentOfInertiaCHB)
-        self.pixelTrackerCHB = QtWidgets.QCheckBox(self.groupBox_4)
-        self.pixelTrackerCHB.setObjectName("pixelTrackerCHB")
-        self.verticalLayout_5.addWidget(self.pixelTrackerCHB)
-        self.boundaryPixelTrackerCHB = QtWidgets.QCheckBox(self.groupBox_4)
-        self.boundaryPixelTrackerCHB.setObjectName("boundaryPixelTrackerCHB")
-        self.verticalLayout_5.addWidget(self.boundaryPixelTrackerCHB)
-        self.gridLayout_8.addWidget(self.groupBox_4, 1, 2, 1, 1)
+        self.gridLayout_8.addWidget(self.groupBox_9, 0, 0, 2, 1)
         self.groupBox_10 = QtWidgets.QGroupBox(self.wizardPage)
         self.groupBox_10.setObjectName("groupBox_10")
         self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.groupBox_10)
@@ -463,15 +448,12 @@ class Ui_NewSimulationWizard(object):
         self.pifDumperCHB = QtWidgets.QCheckBox(self.groupBox_10)
         self.pifDumperCHB.setObjectName("pifDumperCHB")
         self.verticalLayout_12.addWidget(self.pifDumperCHB)
-        self.gridLayout_8.addWidget(self.groupBox_10, 2, 2, 1, 1)
+        self.gridLayout_8.addWidget(self.groupBox_10, 1, 2, 1, 1)
         NewSimulationWizard.addPage(self.wizardPage)
         self.wizardPage_8 = QtWidgets.QWizardPage()
         self.wizardPage_8.setObjectName("wizardPage_8")
         self.verticalLayout_17 = QtWidgets.QVBoxLayout(self.wizardPage_8)
         self.verticalLayout_17.setObjectName("verticalLayout_17")
-        self.label_24 = QtWidgets.QLabel(self.wizardPage_8)
-        self.label_24.setObjectName("label_24")
-        self.verticalLayout_17.addWidget(self.label_24)
         self.secretionTable = QtWidgets.QTableWidget(self.wizardPage_8)
         self.secretionTable.setBaseSize(QtCore.QSize(580, 0))
         self.secretionTable.setObjectName("secretionTable")
@@ -570,9 +552,6 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage_6.setObjectName("wizardPage_6")
         self.verticalLayout_15 = QtWidgets.QVBoxLayout(self.wizardPage_6)
         self.verticalLayout_15.setObjectName("verticalLayout_15")
-        self.label_16 = QtWidgets.QLabel(self.wizardPage_6)
-        self.label_16.setObjectName("label_16")
-        self.verticalLayout_15.addWidget(self.label_16)
         self.chamotaxisTable = QtWidgets.QTableWidget(self.wizardPage_6)
         self.chamotaxisTable.setObjectName("chamotaxisTable")
         self.chamotaxisTable.setColumnCount(6)
@@ -681,9 +660,6 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage_2.setObjectName("wizardPage_2")
         self.verticalLayout_7 = QtWidgets.QVBoxLayout(self.wizardPage_2)
         self.verticalLayout_7.setObjectName("verticalLayout_7")
-        self.label_8 = QtWidgets.QLabel(self.wizardPage_2)
-        self.label_8.setObjectName("label_8")
-        self.verticalLayout_7.addWidget(self.label_8)
         self.horizontalLayout_8 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_8.setObjectName("horizontalLayout_8")
         self.afTable = QtWidgets.QTableWidget(self.wizardPage_2)
@@ -728,9 +704,6 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage_4.setObjectName("wizardPage_4")
         self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.wizardPage_4)
         self.verticalLayout_8.setObjectName("verticalLayout_8")
-        self.label_12 = QtWidgets.QLabel(self.wizardPage_4)
-        self.label_12.setObjectName("label_12")
-        self.verticalLayout_8.addWidget(self.label_12)
         self.horizontalLayout_10 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_10.setObjectName("horizontalLayout_10")
         self.cmcTable = QtWidgets.QTableWidget(self.wizardPage_4)
@@ -779,9 +752,6 @@ class Ui_NewSimulationWizard(object):
         self.verticalLayout_21.setObjectName("verticalLayout_21")
         self.verticalLayout_20 = QtWidgets.QVBoxLayout()
         self.verticalLayout_20.setObjectName("verticalLayout_20")
-        self.label_7 = QtWidgets.QLabel(self.wizardPage_3)
-        self.label_7.setObjectName("label_7")
-        self.verticalLayout_20.addWidget(self.label_7)
         self.textBrowser = QtWidgets.QTextBrowser(self.wizardPage_3)
         self.textBrowser.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.textBrowser.setFrameShadow(QtWidgets.QFrame.Plain)
@@ -798,11 +768,7 @@ class Ui_NewSimulationWizard(object):
     def retranslateUi(self, NewSimulationWizard):
         _translate = QtCore.QCoreApplication.translate
         NewSimulationWizard.setWindowTitle(_translate("NewSimulationWizard", "Simulation Wizard"))
-        self.label.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:18pt; font-weight:600; color:#0000ff;\">CompuCell3D Simulation Wizard</span></p></body></html>"))
+        self.wizardPage1.setTitle(_translate("NewSimulationWizard", "CompuCell3D Simulation Wizard"))
         self.label_2.setText(_translate("NewSimulationWizard", "Simulation Name"))
         self.nameLE.setText(_translate("NewSimulationWizard", "NewSimulation"))
         self.label_3.setText(_translate("NewSimulationWizard", "Simulation Directory"))
@@ -828,11 +794,7 @@ class Ui_NewSimulationWizard(object):
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">2. Python Steppable File</span></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p></body></html>"))
         self.pythonOnlyRB.setText(_translate("NewSimulationWizard", "Python only"))
-        self.label_27.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">General Simulation Properties</span></p></body></html>"))
+        self.wizardPage_9.setTitle(_translate("NewSimulationWizard", "General Simulation Properties"))
         self.groupBox_7.setTitle(_translate("NewSimulationWizard", "Lattice Dimensions"))
         self.label_28.setText(_translate("NewSimulationWizard", "x"))
         self.label_29.setText(_translate("NewSimulationWizard", "y"))
@@ -860,11 +822,7 @@ class Ui_NewSimulationWizard(object):
         self.blobRB.setText(_translate("NewSimulationWizard", "Blob"))
         self.piffRB.setText(_translate("NewSimulationWizard", "Custom Layout (PIFF file)"))
         self.piffPB.setText(_translate("NewSimulationWizard", "PIFF file..."))
-        self.label_5.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">Cell Type Specification</span></p></body></html>"))
+        self.wizardPage2.setTitle(_translate("NewSimulationWizard", "Cell Type Specification"))
         item = self.cellTypeTable.horizontalHeaderItem(0)
         item.setText(_translate("NewSimulationWizard", "Cell Type"))
         item = self.cellTypeTable.horizontalHeaderItem(1)
@@ -878,11 +836,7 @@ class Ui_NewSimulationWizard(object):
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Indicates whether cells of this type should remain frozen during simulation</span></p></body></html>"))
         self.freezeCHB.setText(_translate("NewSimulationWizard", "Freeze"))
         self.cellTypeAddPB.setText(_translate("NewSimulationWizard", "Add"))
-        self.label_17.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">Chemical Fields (diffusants)</span></p></body></html>"))
+        self.wizardPage_7.setTitle(_translate("NewSimulationWizard", "Chemical Fields (Diffusants)"))
         item = self.fieldTable.horizontalHeaderItem(0)
         item.setText(_translate("NewSimulationWizard", "Field Name"))
         item = self.fieldTable.horizontalHeaderItem(1)
@@ -898,118 +852,7 @@ class Ui_NewSimulationWizard(object):
         self.solverCB.setItemText(3, _translate("NewSimulationWizard", "KernelDiffusionSolver"))
         self.solverCB.setItemText(4, _translate("NewSimulationWizard", "SteadyStateDiffusionSolver"))
         self.fieldAddPB.setText(_translate("NewSimulationWizard", "Add"))
-        self.label_6.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">Cell Properties and Behaviors</span></p></body></html>"))
-        self.groupBox_9.setTitle(_translate("NewSimulationWizard", "Cellular Behaviors"))
-        self.label_34.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Adhesion</span></p></body></html>"))
-        self.contactCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Most commonly used energy term for contact (adhesive) cell-cell/cell-Medium interactions</span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Note (when using compartmental cells): it calculates energy between members (compartments) belonging to different clusters (compartmental cells).</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p></body></html>"))
-        self.contactCHB.setText(_translate("NewSimulationWizard", "Contact"))
-        self.internalContactCB.setToolTip(_translate("NewSimulationWizard", "Adhesion energy term - calculated betwee members (compartments) of the same cluster (compartmental cell)\n"
-"You may use it together with Contact energy term"))
-        self.internalContactCB.setText(_translate("NewSimulationWizard", "ContactInternal"))
-        self.adhesionFlexCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Calculates adhesion energy based on concentration of adhesion moolecules on the cell membrane. Works fine for complartmental and non compartmental cells. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Users can specifymultiple adhesion molecules and customize interactions between them. Adhesion molecules concentrations can be modified/accessed using Python scripting</span></p></body></html>"))
-        self.adhesionFlexCHB.setText(_translate("NewSimulationWizard", "AdhesionFlex"))
-        self.contactLocalProductCHB.setToolTip(_translate("NewSimulationWizard", "Older version of AdhesionFlex. Please consider switching to AdhesionFlex plugin"))
-        self.contactLocalProductCHB.setText(_translate("NewSimulationWizard", "ContactLocalProduct"))
-        self.compartmentCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Combined Contact and ContactInternal plugin.</span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Allows users to specify adhesions between members of same and different clusters at the same time.</span></p></body></html>"))
-        self.compartmentCHB.setText(_translate("NewSimulationWizard", "Compartments"))
-        self.fppCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Emulates focal junctions by dynamically linking (via elastic constraint) center of masses of neighboring cells. Elastic constraint is based on the distance between linked cells. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links\' parameters can be accessed and modified through Python.</span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links can be brokeneither due to exceeding max distance between cells or manually.</span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links are established when two cells come in contact and max number of links for the two cells is smaller than the number of links they have already formed.</span></p></body></html>"))
-        self.fppCHB.setText(_translate("NewSimulationWizard", "FocalPointPlasticity"))
-        self.elasticityCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Applies elastic constraint between cell\'s center of masses of participating cells. Elastic constraint is based on the distance between linked cells. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Elastic links are initially formed between those cells which touch each other when first pixel copy is about to happen. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links can be later modified, added/removed using Python scripting. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">The list of links is static i.e. once two cells are linked they will remain linked until one of them disappears or the linkis broken manually by Python script.</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p></body></html>"))
-        self.elasticityCHB.setText(_translate("NewSimulationWizard", "Elasticity"))
-        self.contactMultiCadCHB.setToolTip(_translate("NewSimulationWizard", "Deprecetad plauing. Please use AdhesionFlex"))
-        self.contactMultiCadCHB.setText(_translate("NewSimulationWizard", "ContactMultiCad (deprecated)"))
-        self.label_35.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Chemotaxis</span></p></body></html>"))
-        self.chemotaxisCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Implements energy term which emulates Chemotaxis. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Note, you need to define chemical fields for this plugin to work.</span></p></body></html>"))
-        self.chemotaxisCHB.setText(_translate("NewSimulationWizard", "Chemotaxis"))
-        self.label_36.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Secretion</span></p></body></html>"))
-        self.secretionCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">A module which implements secretion. You need to make sure you have defined chemical fields to which you are trying to secrete. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Secretion can be deinied for particular cell types using XML/Python configureSim  or on a cell-by-cell basis using Python </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Notice it implicitely calls PixelTracker and BoundaryPixelTracker plugins</span></p></body></html>"))
-        self.secretionCHB.setText(_translate("NewSimulationWizard", "Secretion"))
-        self.label_37.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Growth</span></p></body></html>"))
-        self.growthCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Example of a Python steppable which implements cell growth.</span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\"> Users can modify the code to refine cell growth behavior. </span></p></body></html>"))
-        self.growthCHB.setText(_translate("NewSimulationWizard", "Growth (Python)"))
-        self.label_38.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Mitosis</span></p></body></html>"))
-        self.mitosisCHB.setToolTip(_translate("NewSimulationWizard", "Python Steppable implementing cell division. "))
-        self.mitosisCHB.setText(_translate("NewSimulationWizard", "Mitosis (Python)"))
-        self.label_39.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Death</span></p></body></html>"))
-        self.deathCHB.setToolTip(_translate("NewSimulationWizard", "Python Steppable implementing cell death"))
-        self.deathCHB.setText(_translate("NewSimulationWizard", "Death (Python)"))
+        self.wizardPage.setTitle(_translate("NewSimulationWizard", "Cell Properties and Behaviors"))
         self.groupBox_2.setTitle(_translate("NewSimulationWizard", "Constraints and Forces"))
         self.label_40.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -1129,6 +972,113 @@ class Ui_NewSimulationWizard(object):
         self.pixelTrackerCHB.setText(_translate("NewSimulationWizard", "Cell Pixel Tracker"))
         self.boundaryPixelTrackerCHB.setToolTip(_translate("NewSimulationWizard", "Module tracking and storing those pixels of a cell which are at the cell boundary"))
         self.boundaryPixelTrackerCHB.setText(_translate("NewSimulationWizard", "Cell Boundary Pixel Tracker"))
+        self.groupBox_9.setTitle(_translate("NewSimulationWizard", "Cellular Behaviors"))
+        self.label_34.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Adhesion</span></p></body></html>"))
+        self.contactCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Most commonly used energy term for contact (adhesive) cell-cell/cell-Medium interactions</span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Note (when using compartmental cells): it calculates energy between members (compartments) belonging to different clusters (compartmental cells).</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p></body></html>"))
+        self.contactCHB.setText(_translate("NewSimulationWizard", "Contact"))
+        self.internalContactCB.setToolTip(_translate("NewSimulationWizard", "Adhesion energy term - calculated betwee members (compartments) of the same cluster (compartmental cell)\n"
+"You may use it together with Contact energy term"))
+        self.internalContactCB.setText(_translate("NewSimulationWizard", "ContactInternal"))
+        self.adhesionFlexCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Calculates adhesion energy based on concentration of adhesion moolecules on the cell membrane. Works fine for complartmental and non compartmental cells. </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Users can specifymultiple adhesion molecules and customize interactions between them. Adhesion molecules concentrations can be modified/accessed using Python scripting</span></p></body></html>"))
+        self.adhesionFlexCHB.setText(_translate("NewSimulationWizard", "AdhesionFlex"))
+        self.contactLocalProductCHB.setToolTip(_translate("NewSimulationWizard", "Older version of AdhesionFlex. Please consider switching to AdhesionFlex plugin"))
+        self.contactLocalProductCHB.setText(_translate("NewSimulationWizard", "ContactLocalProduct"))
+        self.compartmentCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Combined Contact and ContactInternal plugin.</span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Allows users to specify adhesions between members of same and different clusters at the same time.</span></p></body></html>"))
+        self.compartmentCHB.setText(_translate("NewSimulationWizard", "Compartments"))
+        self.fppCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Emulates focal junctions by dynamically linking (via elastic constraint) center of masses of neighboring cells. Elastic constraint is based on the distance between linked cells. </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links\' parameters can be accessed and modified through Python.</span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links can be brokeneither due to exceeding max distance between cells or manually.</span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links are established when two cells come in contact and max number of links for the two cells is smaller than the number of links they have already formed.</span></p></body></html>"))
+        self.fppCHB.setText(_translate("NewSimulationWizard", "FocalPointPlasticity"))
+        self.elasticityCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Applies elastic constraint between cell\'s center of masses of participating cells. Elastic constraint is based on the distance between linked cells. </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Elastic links are initially formed between those cells which touch each other when first pixel copy is about to happen. </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Links can be later modified, added/removed using Python scripting. </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">The list of links is static i.e. once two cells are linked they will remain linked until one of them disappears or the linkis broken manually by Python script.</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"></p></body></html>"))
+        self.elasticityCHB.setText(_translate("NewSimulationWizard", "Elasticity"))
+        self.contactMultiCadCHB.setToolTip(_translate("NewSimulationWizard", "Deprecetad plauing. Please use AdhesionFlex"))
+        self.contactMultiCadCHB.setText(_translate("NewSimulationWizard", "ContactMultiCad (deprecated)"))
+        self.label_35.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Chemotaxis</span></p></body></html>"))
+        self.chemotaxisCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Implements energy term which emulates Chemotaxis. </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Note, you need to define chemical fields for this plugin to work.</span></p></body></html>"))
+        self.chemotaxisCHB.setText(_translate("NewSimulationWizard", "Chemotaxis"))
+        self.label_36.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Secretion</span></p></body></html>"))
+        self.secretionCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">A module which implements secretion. You need to make sure you have defined chemical fields to which you are trying to secrete. </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Secretion can be deinied for particular cell types using XML/Python configureSim  or on a cell-by-cell basis using Python </span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Notice it implicitely calls PixelTracker and BoundaryPixelTracker plugins</span></p></body></html>"))
+        self.secretionCHB.setText(_translate("NewSimulationWizard", "Secretion"))
+        self.label_37.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Growth</span></p></body></html>"))
+        self.growthCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Example of a Python steppable which implements cell growth.</span></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\"> Users can modify the code to refine cell growth behavior. </span></p></body></html>"))
+        self.growthCHB.setText(_translate("NewSimulationWizard", "Growth (Python)"))
+        self.label_38.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Mitosis</span></p></body></html>"))
+        self.mitosisCHB.setToolTip(_translate("NewSimulationWizard", "Python Steppable implementing cell division. "))
+        self.mitosisCHB.setText(_translate("NewSimulationWizard", "Mitosis (Python)"))
+        self.label_39.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; font-weight:600; text-decoration: underline;\">Death</span></p></body></html>"))
+        self.deathCHB.setToolTip(_translate("NewSimulationWizard", "Python Steppable implementing cell death"))
+        self.deathCHB.setText(_translate("NewSimulationWizard", "Death (Python)"))
         self.groupBox_10.setTitle(_translate("NewSimulationWizard", "Aux. Modules"))
         self.boxWatcherCHB.setToolTip(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -1139,11 +1089,7 @@ class Ui_NewSimulationWizard(object):
         self.boxWatcherCHB.setText(_translate("NewSimulationWizard", "BoxWatcher"))
         self.pifDumperCHB.setToolTip(_translate("NewSimulationWizard", "Module which outputs periodically cell lattice in thee PIFF format"))
         self.pifDumperCHB.setText(_translate("NewSimulationWizard", "PIFDumper"))
-        self.label_24.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">Secretion Plugin</span></p></body></html>"))
+        self.wizardPage_8.setTitle(_translate("NewSimulationWizard", "Secretion Plugin"))
         item = self.secretionTable.horizontalHeaderItem(0)
         item.setText(_translate("NewSimulationWizard", "Field"))
         item = self.secretionTable.horizontalHeaderItem(1)
@@ -1165,11 +1111,7 @@ class Ui_NewSimulationWizard(object):
         self.secrAddRowPB.setText(_translate("NewSimulationWizard", "Add Entry"))
         self.secrRemoveRowsPB.setText(_translate("NewSimulationWizard", "Remove Rows"))
         self.secrClearTablePB.setText(_translate("NewSimulationWizard", "Clear Table"))
-        self.label_16.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">Chemotaxis Plugin</span></p></body></html>"))
+        self.wizardPage_6.setTitle(_translate("NewSimulationWizard", "Chemotaxis Plugin"))
         item = self.chamotaxisTable.horizontalHeaderItem(0)
         item.setText(_translate("NewSimulationWizard", "Field"))
         item = self.chamotaxisTable.horizontalHeaderItem(1)
@@ -1195,11 +1137,7 @@ class Ui_NewSimulationWizard(object):
         self.chemotaxisAddRowPB.setText(_translate("NewSimulationWizard", "Add Entry"))
         self.chemotaxisRemoveRowsPB.setText(_translate("NewSimulationWizard", "Remove Rows"))
         self.chemotaxisClearTablePB.setText(_translate("NewSimulationWizard", "Clear Table"))
-        self.label_8.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">AdhesionFlex Plugin</span></p></body></html>"))
+        self.wizardPage_2.setTitle(_translate("NewSimulationWizard", "AdhesionFlex Plugin"))
         item = self.afTable.horizontalHeaderItem(0)
         item.setText(_translate("NewSimulationWizard", "Adhesion Molecule"))
         self.clearAFTablePB.setText(_translate("NewSimulationWizard", "Clear Table"))
@@ -1209,11 +1147,7 @@ class Ui_NewSimulationWizard(object):
         self.label_10.setText(_translate("NewSimulationWizard", "Binding Formula"))
         self.bindingFormulaLE.setToolTip(_translate("NewSimulationWizard", "This is binary function that takes atwo arguments -  Molecule1 and Molecule2. The allowed functions are those given by muParser - see http://muparser.sourceforge.net/"))
         self.bindingFormulaLE.setText(_translate("NewSimulationWizard", "min(Molecule1,Molecule2)"))
-        self.label_12.setText(_translate("NewSimulationWizard", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt; color:#0000ff;\">ContactMultiCad Plugin</span></p></body></html>"))
+        self.wizardPage_4.setTitle(_translate("NewSimulationWizard", "ContactMultiCad Plugin"))
         item = self.cmcTable.horizontalHeaderItem(0)
         item.setText(_translate("NewSimulationWizard", "Cadherin"))
         self.clearCMCTablePB.setText(_translate("NewSimulationWizard", "Clear Table"))
