@@ -761,28 +761,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         page_ids = self.pageIds()
 
-        # the original code for assigning the page dict indexes
-
-        #self.pageDict["CompuCell3D Simulation Wizard"] = [self.page(0), 0]
-        #self.pageDict["General Simulation Properties"] = [self.page(1), 1]
-        #self.pageDict["Cell Type Specification"] = [self.page(2), 2]
-        #self.pageDict["Chemical Fields (Diffusants)"] = [self.page(3), 3]
-        #self.pageDict["Cell Properties and Behaviors"] = [self.page(4), 4]
-        #self.pageDict["Secretion Plugin"] = [self.page(5), 5]
-        #self.pageDict["Chemotaxis Plugin"] = [self.page(6), 6]
-        #self.pageDict["AdhesionFlex Plugin"] = [self.page(7), 7]
-        #self.pageDict["ContactMultiCad Plugin"] = [self.page(8), 8]
-        #self.pageDict["Configuration Complete!"] = [self.page(9), 9]
-
-        # the updated code that makes the function more modular
-
         for index in range(len (page_ids)):
             self.pageDict[self.page(index).title()] = [self.page(index), index]
-
-        #self.removePage(5)
-        #self.removePage(6)
-        #self.removePage(7)
-        #self.removePage(8)
 
         self.removePage(self.get_page_id_by_name("Secretion Plugin"))
         self.removePage(self.get_page_id_by_name("Chemotaxis Plugin"))
