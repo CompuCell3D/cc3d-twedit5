@@ -64,7 +64,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     def keyPressEvent(self, event):
 
-        if self.currentPage() == self.get_page_id_by_name('Cell Type Specification'):
+        if self.currentId() == self.get_page_id_by_name('Cell Type Specification'):
             cell_type = str(self.cellTypeLE.text())
             cell_type = cell_type.strip()
 
@@ -77,7 +77,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.get_page_id_by_name("Chemical Fields (Diffusants)"):
+        elif self.currentId() == self.get_page_id_by_name("Chemical Fields (Diffusants)"):
 
             field_name = str(self.fieldNameLE.text())
             field_name = field_name.strip()
@@ -94,7 +94,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.get_page_id_by_name("ContactMultiCad Plugin"):
+        elif self.currentId() == self.get_page_id_by_name("ContactMultiCad Plugin"):
 
             cadherin = str(self.cmcMoleculeLE.text()).strip()
 
@@ -111,7 +111,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.get_page_id_by_name("AdhesionFlex Plugin"):
+        elif self.currentId() == self.get_page_id_by_name("AdhesionFlex Plugin"):
 
             molecule = str(self.afMoleculeLE.text()).strip()
 
@@ -126,7 +126,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button.clicked.emit(True)
 
         # last page
-        elif self.currentPage() == self.get_page_id_by_name("Configuration Complete!"):
+        elif self.currentId() == self.get_page_id_by_name("Configuration Complete!"):
 
             if event.key() == Qt.Key_Return:
                 finish_button = self.button(QWizard.FinishButton)
@@ -1113,7 +1113,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.removePage(self.get_page_id_by_name("PDE Solvers Specification"))
             return True
 
-        if self.currentPage() == self.get_page_by_name("ContactMultiCad Plugin"):
+        if self.currentId() == self.get_page_by_name("ContactMultiCad Plugin"):
             if not self.cmcTable.rowCount():
 
                 QMessageBox.warning(self, "Missing information",
@@ -1142,7 +1142,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
 
 
-        if self.currentPage() == self.get_page_by_name("AdhesionFlex Plugin"):
+        if self.currentId() == self.get_page_by_name("AdhesionFlex Plugin"):
 
             if not self.afTable.rowCount():
 
