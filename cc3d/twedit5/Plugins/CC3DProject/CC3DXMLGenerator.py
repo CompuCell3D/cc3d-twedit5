@@ -1060,6 +1060,98 @@ class CC3DXMLGenerator:
         bw_elem.ElementCC3D("YMargin", {}, 7)
         bw_elem.ElementCC3D("ZMargin", {}, 7)
 
+    def generateTubeInitializerSteppable(self):
+        self.cc3d.addComment("newline")
+        self.cc3d.addComment("Initial layout of cells in the form of a 3D tube")
+
+        ui_element = self.cc3d.ElementCC3D("Steppable", {"Type": "TubeInitializer"})
+        region = ui_element.ElementCC3D("Region")
+
+        gpd = self.generalPropertiesDict
+
+        x_start = int(gpd["Dim"][0] * 0.2)
+        x_end = int(gpd["Dim"][0] * 0.8)
+        y_center = int(gpd["Dim"][1] * 0.5)
+        z_center = int(gpd["Dim"][2] * 0.5)
+
+        max_dim = max([x_start, x_end, y_center, z_center])
+
+        region.ElementCC3D("InnerRadius", {}, int(max_dim / 4))
+        region.ElementCC3D("OuterRadius", {}, int(max_dim / 2.5))
+        region.ElementCC3D("Gap", {}, 0)
+        region.ElementCC3D("Width", {}, 4)
+        region.ElementCC3D("NumSlices", {}, 8)
+        region.ElementCC3D("CellShape", {}, "Wedge")
+
+        extrude = region.ElementCC3D("Extrude")
+        extrude.ElementCC3D("From", {"x": x_start, "y": y_center, "z": z_center})
+        extrude.ElementCC3D("To", {"x": x_end, "y": y_center, "z": z_center})
+
+        types_string = ""
+
+        max_id = max(self.idToTypeTupleDict.keys())
+
+        for id1 in range(0, max_id + 1):
+            if self.idToTypeTupleDict[id1][0] == "Medium":
+                continue
+
+            types_string += self.idToTypeTupleDict[id1][0]
+
+            if id1 < max_id:
+                types_string += ","
+
+        region.ElementCC3D("Types", {}, types_string)
+
+    def generatePolygonInitializerSteppable(self):
+        self.cc3d.addComment("newline")
+        self.cc3d.addComment("Initial layout of cells in the form of any arbitrary polygon you desire")
+
+        ui_element = self.cc3d.ElementCC3D("Steppable", {"Type": "PolygonInitializer"})
+        region = ui_element.ElementCC3D("Region")
+
+        gpd = self.generalPropertiesDict
+
+        z_min = int(0)
+        z_max = int(gpd["Dim"][2] * 0.33)
+        region.ElementCC3D("Extrude", {"zMin": z_min, "zMax": z_max})
+
+        region.ElementCC3D("Gap", {}, 0)
+        region.ElementCC3D("Width", {}, 4)
+
+        x_dim = gpd["Dim"][0]
+        y_dim = gpd["Dim"][1]
+        extrude = region.ElementCC3D("EdgeList")
+        edgeList = [
+            [0.10, 0.90, 0.10, 0.10],
+            [0.10, 0.10, 0.90, 0.10],
+            [0.90, 0.10, 0.90, 0.90],
+            [0.90, 0.90, 0.70, 0.90],
+            [0.70, 0.90, 0.70, 0.30],
+            [0.70, 0.30, 0.30, 0.30],
+            [0.30, 0.30, 0.30, 0.90],
+            [0.30, 0.90, 0.10, 0.90],
+        ]
+
+        for edge in edgeList:
+            edgeXml = extrude.ElementCC3D("Edge")
+            edgeXml.ElementCC3D("From", {"x": x_dim * edge[0], "y": y_dim * edge[1]})
+            edgeXml.ElementCC3D("To", {"x": x_dim * edge[2], "y": y_dim * edge[3]})
+
+        types_string = ""
+
+        max_id = max(self.idToTypeTupleDict.keys())
+
+        for id1 in range(0, max_id + 1):
+            if self.idToTypeTupleDict[id1][0] == "Medium":
+                continue
+
+            types_string += self.idToTypeTupleDict[id1][0]
+
+            if id1 < max_id:
+                types_string += ","
+
+        region.ElementCC3D("Types", {}, types_string)
+
     def generateUniformInitializerSteppable(self):
         """
 
