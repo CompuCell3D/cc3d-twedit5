@@ -741,8 +741,13 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.lambdaChemLE.setValidator(QDoubleValidator())
         self.satChemLE.setValidator(QDoubleValidator())
 
-    # initialize properties dialog
+    def get_page_id_by_name(self, page_name: str):
+        return self.pageDict[page_name][1]
 
+    def get_page_by_name(self, page_name: str):
+        return self.pageDict[page_name][0]
+
+    # initialize properties dialog
     def updateUi(self):
 
         self.setUpValidators()
@@ -756,19 +761,21 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         page_ids = self.pageIds()
 
         self.pageDict["FinalPage"] = [self.page(page_ids[-1]), len(page_ids) - 1]
+        self.pageDict["SimulationDirectory"] = [self.page(0), 0]
         self.pageDict["GeneralProperties"] = [self.page(1), 1]
         self.pageDict["CellType"] = [self.page(2), 2]
         self.pageDict["Diffusants"] = [self.page(3), 3]
+        self.pageDict["Plugins"] = [self.page(4), 4]
         self.pageDict["Secretion"] = [self.page(5), 5]
         self.pageDict["Chemotaxis"] = [self.page(6), 6]
         self.pageDict["AdhesionFlex"] = [self.page(7), 7]
         self.pageDict["ContactMultiCad"] = [self.page(8), 8]
         self.pageDict["PythonScript"] = [self.page(9), 9]
 
-        self.removePage(5)
-        self.removePage(6)
-        self.removePage(7)
-        self.removePage(8)
+        self.removePage(self.get_page_id_by_name("Secretion"))
+        self.removePage(self.get_page_id_by_name("Chemotaxis"))
+        self.removePage(self.get_page_id_by_name("AdhesionFlex"))
+        self.removePage(self.get_page_id_by_name("ContactMultiCad"))
 
         self.nameLE.selectAll()
 
@@ -882,11 +889,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         print("THIS IS VALIDATE FOR PAGE ", self.currentId)
 
-        if self.currentId() == 0:
+        if self.currentId() == self.get_page_id_by_name("SimulationDirectory"):
             directory = str(self.dirLE.text()).strip()
             name = str(self.nameLE.text()).strip()
 
-            self.setPage(self.pageDict["PythonScript"][1], self.pageDict["PythonScript"][0])
+            self.setPage(self.get_page_id_by_name("PythonScript"), self.get_page_by_name("PythonScript"))
 
             if directory == "" or name == "":
                 QMessageBox.warning(self, "Missing information",
@@ -932,7 +939,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return True
 
         # general properties        
-        if self.currentId() == 1:
+        if self.currentId() == self.get_page_id_by_name("GeneralProperties"):
 
             if self.piffRB.isChecked() and str(self.piffLE.text()).strip() == '':
                 QMessageBox.warning(self, "Missing information", "Please specify name of the PIFF file", QMessageBox.Ok)
@@ -961,7 +968,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == 2:
+        if self.currentId() == self.get_page_id_by_name("CellType"):
             # we only extract types from table here - it is not a validation strictly speaking
             # extract cell type information form the table
 
@@ -979,7 +986,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == 3:
+        if self.currentId() == self.get_page_id_by_name("Diffusants"):
 
             # we only extract diffusants from table here - it is not a validation strictly speaking
             # extract diffusants information form the table
@@ -1028,36 +1035,36 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return True
 
-        if self.currentId() == 4:
+        if self.currentId() == self.get_page_id_by_name("Plugins"):
             print(self.pageDict)
 
             if self.secretionCHB.isChecked():
-                self.setPage(self.pageDict["Secretion"][1], self.pageDict["Secretion"][0])
+                self.setPage(self.get_page_id_by_name("Secretion"), self.get_page_by_name("Secretion"))
 
             else:
-                self.removePage(self.pageDict["Secretion"][1])
+                self.removePage(self.get_page_id_by_name("Secretion"))
 
             if self.chemotaxisCHB.isChecked():
-                self.setPage(self.pageDict["Chemotaxis"][1], self.pageDict["Chemotaxis"][0])
+                self.setPage(self.get_page_id_by_name("Chemotaxis"), self.get_page_by_name("Chemotaxis"))
 
             else:
-                self.removePage(self.pageDict["Chemotaxis"][1])
+                self.removePage(self.get_page_id_by_name("Chemotaxis"))
 
             if self.contactMultiCadCHB.isChecked():
-                self.setPage(self.pageDict["ContactMultiCad"][1], self.pageDict["ContactMultiCad"][0])
+                self.setPage(self.get_page_id_by_name("ContactMultiCad"), self.get_page_by_name("ContactMultiCad"))
 
             else:
-                self.removePage(self.pageDict["ContactMultiCad"][1])
+                self.removePage(self.get_page_id_by_name("ContactMultiCad"))
 
             if self.adhesionFlexCHB.isChecked():
-                self.setPage(self.pageDict["AdhesionFlex"][1], self.pageDict["AdhesionFlex"][0])
+                self.setPage(self.get_page_id_by_name("AdhesionFlex"), self.get_page_by_name("AdhesionFlex"))
 
             else:
-                self.removePage(self.pageDict["AdhesionFlex"][1])
+                self.removePage(self.get_page_id_by_name("AdhesionFlex"))
 
             return True
 
-        if self.currentPage() == self.pageDict["ContactMultiCad"][0]:
+        if self.currentPage() == self.get_page_by_name("ContactMultiCad"):
             if not self.cmcTable.rowCount():
 
                 QMessageBox.warning(self, "Missing information",
@@ -1069,7 +1076,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 return True
 
-        if self.currentPage() == self.pageDict["AdhesionFlex"][0]:
+        if self.currentPage() == self.get_page_by_name("AdhesionFlex"):
 
             if not self.afTable.rowCount():
 

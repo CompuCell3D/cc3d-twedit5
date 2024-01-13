@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 4.5.0
+-------------
+**2022-12-09**
+
+New features:
+
+Bug fixes:
+ - Fixes to wizard code to prevent crashes
+
+
 Version 4.4.1
 -------------
 **2022-07-01**
