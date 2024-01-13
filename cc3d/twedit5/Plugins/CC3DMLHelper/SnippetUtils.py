@@ -932,6 +932,24 @@ class SnippetUtils(object):
 
         return newSnippet
 
+    @SnippetDecorator('Steppable', ['Type', ['TubeInitializer']])
+    def handleTubeInitializer(self, *args, **kwds):
+
+        newXMLElement = self.generator.generateTubeInitializerSteppable(*args, **kwds)
+
+        newSnippet = newXMLElement.getCC3DXMLElementString()
+
+        return newSnippet
+
+    @SnippetDecorator('Steppable', ['Type', ['PolygonInitializer']])
+    def handlePolygonInitializer(self, *args, **kwds):
+
+        newXMLElement = self.generator.generatePolygonInitializerSteppable(*args, **kwds)
+
+        newSnippet = newXMLElement.getCC3DXMLElementString()
+
+        return newSnippet
+
     @SnippetDecorator('Steppable', ['Type', ['UniformInitializer']])
     def handleUniformInitializer(self, *args, **kwds):
 
