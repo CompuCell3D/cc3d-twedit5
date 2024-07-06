@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 4.6.0
+-------------
+**2022-06-08**
+
+New features:
+
+Bug fixes:
+
+
+
 Version 4.5.0
 -------------
 **2022-12-09**
