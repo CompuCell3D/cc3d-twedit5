@@ -13,8 +13,27 @@ from cc3d.core.XMLUtils import ElementCC3D
 from cc3d.core.Validation.sanity_checkers import validate_cc3d_entity_identifier
 from cc3d.twedit5.Plugins.CC3DMLGenerator.CC3DMLGeneratorBase import CC3DMLGeneratorBase
 from .CC3DPythonGenerator import CC3DPythonGenerator
+from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
 
 MAC = "qt_mac_set_native_menubar" in dir()
+SIMULATION_DIR_PAGE_NAME = "CompuCell3D Simulation Wizard"
+SIMULATION_PROPERTIES_PAGE_NAME = "General Simulation Properties"
+CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME = "Chemical Fields (Diffusants)"
+DIFFUSION_FE_WIZARD_PAGE_NAME = "Chemical field diffusion coefficients and boundary conditions (PDE Solvers Specification)"
+CELL_PROPS_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
+SECRETION_DIFFUSION_FE_PAGE_NAME = "Secretion in DiffusionFE plugin"  #  DO not use
+CELL_TYPE_SPEC_PAGE_NAME = "Cell Type Specification"
+CELL_PROP_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
+SECRETION_PAGE_NAME = "Secretion Plugin"
+CHEMOTAXIS_PAGE_NAME = "Chemotaxis Plugin"
+CONTACT_MULTICAD_PAGE_NAME = "ContactMultiCad Plugin"
+ADHESION_FLEX_PAGE_NAME = "AdhesionFlex Plugin"
+CONFIG_COMPLETE_PAGE_NAME = "Configuration Complete!"
+
+CONSTANT_BC = "Constant value (Dirichlet) "
+CONSTANT_DERIVATIVE_BC = "Constant derivative value (von Neumann)"
+PERIODIC_BC = "Periodic BC"
+GLOBAL_DIFFUSION_LABEL = "Global (default value)"
 
 
 class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard):
@@ -33,10 +52,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.simulationFilesDir = ""
         self.projectPath = ""
         self.setupUi(self)
+        self.diff_secretion = None  # Holds DiffusionFE secretion info
 
         # This dictionary holds references to certain pages e.g. plugin configuration pages are inserted on demand
         # and access to those pages is facilitated via self.pageDict
-
         self.pageDict = {}
 
         self.updateUi()
@@ -44,7 +63,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.typeTable = []
         self.diffusantDict = {}
         self.chemotaxisData = {}
-
+        self.cellTypeData = {}
+        self.field_ic_fileDict = {}  # field_name -> ic file name
+        self.diffusionFE_vals_dict = {}
+        self.field_table_dict = {}  # {field -> QTableWidget}
+        self.diff_solver_info_textBrowser.clear()
+        self.diff_solver_info_textBrowser.setHtml(get_diffusion_solv_description_html())
         if sys.platform.startswith('win'):
             self.setWizardStyle(QWizard.ClassicStyle)
 
@@ -54,13 +78,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         :param error_message:
         :return:
         """
-
         QMessageBox.warning(self, 'Invalid Identifier', error_message)
-
 
     def keyPressEvent(self, event):
 
-        if self.currentPage() == self.pageDict["CellType"][0]:
+        if self.currentId() == self.get_page_id_by_name(CELL_TYPE_SPEC_PAGE_NAME):
             cell_type = str(self.cellTypeLE.text())
             cell_type = cell_type.strip()
 
@@ -68,29 +90,23 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 if cell_type != "":
                     self.on_cellTypeAddPB_clicked()
                     event.accept()
-
                 else:
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["Diffusants"][0]:
+        elif self.currentId() == self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME):
 
             field_name = str(self.fieldNameLE.text())
             field_name = field_name.strip()
-
             if event.key() == Qt.Key_Return:
-
                 if field_name != "":
                     self.on_fieldAddPB_clicked()
-
                     event.accept()
-
                 else:
-
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["ContactMultiCad"][0]:
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME):
 
             cadherin = str(self.cmcMoleculeLE.text()).strip()
 
@@ -98,16 +114,14 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 if cadherin != "":
 
                     self.on_cmcMoleculeAddPB_clicked()
-
                     event.accept()
 
                 else:
 
                     next_button = self.button(QWizard.NextButton)
-
                     next_button.clicked.emit(True)
 
-        elif self.currentPage() == self.pageDict["AdhesionFlex"][0]:
+        elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
 
             molecule = str(self.afMoleculeLE.text()).strip()
 
@@ -122,7 +136,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     next_button.clicked.emit(True)
 
         # last page
-        elif self.currentPage() == self.pageDict["FinalPage"][0]:
+        elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
 
             if event.key() == Qt.Key_Return:
                 finish_button = self.button(QWizard.FinishButton)
@@ -513,6 +527,93 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         for idx in range(rows - 1, -1, -1):
             self.secretionTable.removeRow(idx)
 
+    # DiffusionFE Secretion, remove if separate page not needed
+    @pyqtSlot(bool)  # signature of the signal emited by the button
+    def on_secrConstConcRB_2_toggled(self, _flag):
+        if _flag:
+            self.secrRateLB_2.setText("Const. Concentration")
+        else:
+            self.secrRateLB_2.setText("Secretion Rate")
+
+    @pyqtSlot(bool)  # signature of the signal emited by the button
+    def on_secrOnContactRB_2_toggled(self, _flag):
+        if _flag:
+            self.secrAddOnContactPB_2.setHidden(False)
+            self.secrOnContactCellTypeCB_2.setHidden(False)
+            self.secrOnContactLE_2.setHidden(False)
+
+        else:
+            self.secrAddOnContactPB_2.setHidden(True)
+            self.secrOnContactCellTypeCB_2.setHidden(True)
+            self.secrOnContactLE_2.setHidden(True)
+
+    @pyqtSlot()  # signature of the signal emited by the button
+    def on_secrAddOnContactPB_2_clicked(self):
+
+        cell_type = str(self.secrOnContactCellTypeCB_2.currentText())
+        current_text = str(self.secrOnContactLE_2.text())
+        current_types = current_text.split(',')
+
+        if current_text != "":
+            if cell_type not in current_types:
+                self.secrOnContactLE_2.setText(current_text + "," + cell_type)
+        else:
+            self.secrOnContactLE_2.setText(cell_type)
+
+    @pyqtSlot()  # signature of the signal emited by the button
+    def on_secrAddRowPB_2_clicked(self):
+        field = str(self.secrFieldCB_2.currentText()).strip()
+        cell_type = str(self.secrCellTypeCB_2.currentText()).strip()
+
+        try:
+            secr_rate = float(str(self.secrRateLE_2.text()))
+        except Exception:
+            secr_rate = 0.0
+
+        secr_on_contact = str(self.secrOnContactLE_2.text())
+
+        secr_type = "uniform"
+        if self.secrOnContactRB_2.isChecked():
+            secr_type = "on contact"
+
+        elif self.secrConstConcRB_2.isChecked():
+            secr_type = "constant concentration"
+
+        rows = self.secretion_DiffusionFE_Table.rowCount()
+        self.secretion_DiffusionFE_Table.insertRow(rows)
+        self.secretion_DiffusionFE_Table.setItem(rows, 0, QTableWidgetItem(field))
+        self.secretion_DiffusionFE_Table.setItem(rows, 1, QTableWidgetItem(cell_type))
+        self.secretion_DiffusionFE_Table.setItem(rows, 2, QTableWidgetItem(str(secr_rate)))
+        self.secretion_DiffusionFE_Table.setItem(rows, 3, QTableWidgetItem(secr_on_contact))
+        self.secretion_DiffusionFE_Table.setItem(rows, 4, QTableWidgetItem(str(secr_type)))
+
+        # reset entry lines
+        self.secrOnContactLE_2.setText('')
+
+    @pyqtSlot()  # signature of the signal emited by the button
+    def on_secrRemoveRowsPB_2_clicked(self):
+        selected_items = self.secretion_DiffusionFE_Table.selectedItems()
+        row_dict = {}
+        for item in selected_items:
+            row_dict[item.row()] = 0
+
+        rows = list(row_dict.keys())
+        rows.sort()
+        rows_size = len(rows)
+        for idx in range(rows_size - 1, -1, -1):
+            row = rows[idx]
+            self.secretion_DiffusionFE_Table.removeRow(row)
+
+    @pyqtSlot()  # signature of the signal emited by the button
+    def on_secrClearTablePB_2_clicked(self):
+        rows = self.secretion_DiffusionFE_Table.rowCount()
+
+        for idx in range(rows - 1, -1, -1):
+            self.secretion_DiffusionFE_Table.removeRow(idx)
+
+
+
+
     # CHEMOTAXIS
     @pyqtSlot(bool)  # signature of the signal emited by the button
     def on_chemSatRB_toggled(self, _flag):
@@ -748,6 +849,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         return self.pageDict[page_name][0]
 
     # initialize properties dialog
+
     def updateUi(self):
 
         self.setUpValidators()
@@ -760,22 +862,31 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         page_ids = self.pageIds()
 
-        self.pageDict["FinalPage"] = [self.page(page_ids[-1]), len(page_ids) - 1]
-        self.pageDict["SimulationDirectory"] = [self.page(0), 0]
-        self.pageDict["GeneralProperties"] = [self.page(1), 1]
-        self.pageDict["CellType"] = [self.page(2), 2]
-        self.pageDict["Diffusants"] = [self.page(3), 3]
-        self.pageDict["Plugins"] = [self.page(4), 4]
-        self.pageDict["Secretion"] = [self.page(5), 5]
-        self.pageDict["Chemotaxis"] = [self.page(6), 6]
-        self.pageDict["AdhesionFlex"] = [self.page(7), 7]
-        self.pageDict["ContactMultiCad"] = [self.page(8), 8]
-        self.pageDict["PythonScript"] = [self.page(9), 9]
+        # order pages explicitedly ?
+   #     self.pageDict[CONFIG_COMPLETE_PAGE_NAME] = [self.page(page_ids[-1]), len(page_ids) - 1]
+   #     self.pageDict[SIMULATION_DIR_PAGE_NAME] = [self.page(0), 0]
+   #     self.pageDict[SIMULATION_PROPERTIES_PAGE_NAME] = [self.page(1), 1]
+   #     self.pageDict[CELL_TYPE_SPEC_PAGE_NAME] = [self.page(2), 2]
+   #     self.pageDict[CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME] = [self.page(3), 3]
+   #     self.pageDict[CELL_PROPS_BEHAVIORS_PAGE_NAME] = [self.page(4), 4]
+   #     self.pageDict[DIFFUSION_FE_WIZARD_PAGE_NAME] = [self.page(5), 5]
+   #     self.pageDict[SECRETION_DIFFUSION_FE_PAGE_NAME] = [self.page(6), 6]  # not in use
+   #     self.pageDict[SECRETION_PAGE_NAME] = [self.page(7), 7]  # Not in use
+   #     self.pageDict[CHEMOTAXIS_PAGE_NAME] = [self.page(8), 8]
+   #     self.pageDict[ADHESION_FLEX_PAGE_NAME] = [self.page(9), 9]
+   #     self.pageDict[CONTACT_MULTICAD_PAGE_NAME] = [self.page(10), 10]
+   #     self.pageDict[CONFIG_COMPLETE_PAGE_NAME] = [self.page(11), 11]
 
-        self.removePage(self.get_page_id_by_name("Secretion"))
-        self.removePage(self.get_page_id_by_name("Chemotaxis"))
-        self.removePage(self.get_page_id_by_name("AdhesionFlex"))
-        self.removePage(self.get_page_id_by_name("ContactMultiCad"))
+        #  just iterate through ids in order:
+        for index in range(len(page_ids)):
+            self.pageDict[self.page(index).title()] = [self.page(index), index]
+        # remove pages not always needed:
+        self.removePage(self.get_page_id_by_name(SECRETION_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME))  # Do not use.
 
         self.nameLE.selectAll()
 
@@ -837,6 +948,18 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.secrOnContactCellTypeCB.setHidden(True)
         self.secrOnContactLE.setHidden(True)
 
+        # DiffusionFE Secretion table:
+        base_size = self.secretion_DiffusionFE_Table.baseSize()
+        self.secretion_DiffusionFE_Table.setColumnWidth(0, int(base_size.width() / 5))
+        self.secretion_DiffusionFE_Table.setColumnWidth(1, int(base_size.width() / 5))
+        self.secretion_DiffusionFE_Table.setColumnWidth(2, int(base_size.width() / 5))
+        self.secretion_DiffusionFE_Table.setColumnWidth(3, int(base_size.width() / 5))
+        self.secretion_DiffusionFE_Table.setColumnWidth(4, int(base_size.width() / 5))
+        self.secretion_DiffusionFE_Table.horizontalHeader().setStretchLastSection(True)
+        self.secrAddOnContactPB_2.setHidden(True)
+        self.secrOnContactCellTypeCB_2.setHidden(True)
+        self.secrOnContactLE_2.setHidden(True)
+
         # AF molecule table
         self.afTable.horizontalHeader().setStretchLastSection(True)
 
@@ -861,7 +984,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         for page_id in page_ids:
 
-            if self.page(page_id) == self.pageDict["FinalPage"]:
+            if self.page(page_id) == self.get_page_by_name[CONFIG_COMPLETE_PAGE_NAME]:
                 final_id = page_id
 
                 break
@@ -885,15 +1008,635 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.removePage(page_id)
                 break
 
+    def checkIfNumber(self, value):
+        if value == ".":
+            return True
+        if value.isdecimal():
+            return True
+        try:
+            float(value)
+            return True
+        except ValueError:
+            QMessageBox.warning(self, "Not a number",
+                                    "Please specify a number for the value",
+                                    QMessageBox.Ok)
+            return False
+
+    def x_bcTypeChanged(self, index):
+        tab_idx = self.bcs_tab.currentIndex()
+        xc = "x_combo" + str(tab_idx)
+        xmin_le = "x_min" + str(tab_idx)
+        xmax_le = "x_max" + str(tab_idx)
+        current_combo = self.bcs_tab.findChild(QComboBox, xc)
+        cur_text = current_combo.itemText(index)
+        if index == 0:  # periodic boundary
+            xMin = self.bcs_tab.findChild(QLineEdit, xmin_le)
+            xMin.setDisabled(True)
+            xMax = self.bcs_tab.findChild(QLineEdit, xmax_le)
+            xMax.setDisabled(True)
+        else:
+            if index == 1:  # Constant value
+                xMin = self.bcs_tab.findChild(QLineEdit, xmin_le)
+                xMin.setDisabled(False)
+                xMax = self.bcs_tab.findChild(QLineEdit, xmax_le)
+                xMax.setDisabled(False)
+            else:       # constant derivative
+                xMin = self.bcs_tab.findChild(QLineEdit, xmin_le)
+                xMin.setDisabled(False)
+                xMax = self.bcs_tab.findChild(QLineEdit, xmax_le)
+                xMax.setDisabled(False)
+
+
+    def y_bcTypeChanged(self, index):
+        tab_idx = self.bcs_tab.currentIndex()
+        ymin_le = "y_min" + str(tab_idx)
+        ymax_le = "y_max" + str(tab_idx)
+        if index == 0:  # periodic boundary
+            yMin = self.bcs_tab.findChild(QLineEdit, ymin_le)
+            yMin.setDisabled(True)
+            yMax = self.bcs_tab.findChild(QLineEdit, ymax_le)
+            yMax.setDisabled(True)
+        else:
+            if index == 1:  # Constant value
+                yMin = self.bcs_tab.findChild(QLineEdit, ymin_le)
+                yMin.setDisabled(False)
+                yMax = self.bcs_tab.findChild(QLineEdit, ymax_le)
+                yMax.setDisabled(False)
+            else:  # constant derivative
+                yMin = self.bcs_tab.findChild(QLineEdit, ymin_le)
+                yMin.setDisabled(False)
+                yMax = self.bcs_tab.findChild(QLineEdit, ymax_le)
+                yMax.setDisabled(False)
+
+    def z_bcTypeChanged(self, index):
+        tab_idx = self.bcs_tab.currentIndex()
+        zmin_le = "z_min" + str(tab_idx)
+        zmax_le = "z_max" + str(tab_idx)
+       # zc = "z_combo" + str(tab_idx)
+       # current_combo = self.bcs_tab.findChild(QComboBox, zc)
+
+       # cur_text = current_combo.itemText(index)
+        if index == 0:  # periodic boundary
+            zMin = self.bcs_tab.findChild(QLineEdit, zmin_le)
+            zMin.setDisabled(True)
+            zMax = self.bcs_tab.findChild(QLineEdit, zmax_le)
+            zMax.setDisabled(True)
+        else:
+            if index == 1:  # Constant value
+                zMin = self.bcs_tab.findChild(QLineEdit, zmin_le)
+                zMin.setDisabled(False)
+                zMax = self.bcs_tab.findChild(QLineEdit, zmax_le)
+                zMax.setDisabled(False)
+            else:  # constant derivative
+                zMin = self.bcs_tab.findChild(QLineEdit, zmin_le)
+                zMin.setDisabled(False)
+                zMax = self.bcs_tab.findChild(QLineEdit, zmax_le)
+                zMax.setDisabled(False)
+
+    def field_tab_changed(self, index):
+        if self.bcs_tab.currentIndex() != index:
+            self.bcs_tab.setCurrentIndex(index)
+        if self.ics_tab.currentIndex() != index:
+            self.ics_tab.setCurrentIndex(index)
+        if self.field_tab.currentIndex() != index:
+            self.field_tab.setCurrentIndex(index)
+
+    def ics_file_path_changed(self):
+        tab_idx = self.ics_tab.currentIndex()
+        field = self.ics_tab.tabText(tab_idx)
+        icfe = "ic_file_edt_" + str(tab_idx)
+        current_fe = self.ics_tab.findChild(QLineEdit, icfe)
+        ic_file = current_fe.text()  # contains full (absolute) file path
+        print(ic_file)
+        #  check if valid file location:
+        if self.is_path_exists_or_creatable(ic_file):
+            self.field_ic_fileDict[field] = ic_file
+        else:
+            # put prev file path back:
+            current_fe.setText(self.field_ic_fileDict[field])
+
+
+    def use_ics_file(self, index):
+        tab_idx = self.ics_tab.currentIndex()
+        icr = "ic_radio_btn_" + str(tab_idx)
+        current_rb = self.ics_tab.findChild(QRadioButton, icr)
+        icf = "ic_file_edt_" + str(tab_idx)
+        current_fi = self.ics_tab.findChild(QLineEdit, icf)
+        icle = "ic_val_" + str(tab_idx)
+        current_le = self.ics_tab.findChild(QLineEdit, icle)
+        if current_rb.isChecked():
+            current_fi.setDisabled(False)
+            current_le.setDisabled(True)
+        else:
+            current_fi.setDisabled(True)
+            current_le.setDisabled(False)
+
+    def getIC_Dialog(self, idx):
+        ic_group = QGroupBox("")
+        ic_group.setObjectName("ic_group_" + str(idx))
+        ic_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        # Initial Val:
+        ic_val_group = QGroupBox("Initial value")
+        ic_val_layout = QBoxLayout(QBoxLayout.TopToBottom, ic_val_group)
+        ic_val_label = QLabel("Diffusant initial concentration or expression:")
+        ic_val_edit = QLineEdit("0.0")
+        icv = "ic_val_" + str(idx)
+        ic_val_edit.setObjectName(icv)
+        ic_val_edit.textChanged.connect(self.checkIfNumber)
+        ic_val_layout.addWidget(ic_val_label)
+        ic_val_layout.addWidget(ic_val_edit)
+        ic_val_group.setLayout(ic_val_layout)
+        ic_layout.addWidget(ic_val_group)
+        # inital conc file:
+        ic_file_group = QGroupBox("Initial values file")
+        ic_file_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        icfr = "ic_radio_btn_" + str(idx)
+        ic_file_radio_btn = QRadioButton("Use Initial Concentrations file")
+        ic_file_radio_btn.setObjectName(icfr)
+        ic_file_radio_btn.toggled.connect(self.use_ics_file)
+        field_name = self.bcs_tab.tabText(idx)  # ics and bcs use same field names
+        default_file = str(self.dirLE.text()).strip() + str(self.nameLE.text()).strip() + "/"
+      #  if sys.platform.startswith("win"): Python takes care of this?
+      #      default_file = default_file + "\\"
+        default_file = default_file + "init_conditions_" + field_name + ".txt"
+        self.field_ic_fileDict[field_name] = default_file
+        ic_file_edit = QLineEdit(default_file)
+        ic_file_edit.setObjectName("ic_file_edt_" + str(idx))
+        ic_file_edit.setDisabled(True)
+        ic_file_edit.editingFinished.connect(self.ics_file_path_changed)
+        ic_file_info_label = QLabel("Format of file is rows of numbers corresponding to position of each pixel and concentration: x y z c")
+        ic_file_layout.addWidget(ic_file_radio_btn)
+        ic_file_layout.addWidget(ic_file_edit)
+        ic_file_layout.addWidget(ic_file_info_label)
+        ic_file_group.setLayout(ic_file_layout)
+
+        ic_layout.addWidget(ic_file_group)
+        ic_group.setLayout(ic_layout)
+        return ic_group
+    def getBC_Dialog(self, idx):
+        bc_group = QGroupBox("")
+        bc_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        # X axis:
+        x_group = QGroupBox("Along X axis", bc_group)
+        x_group.setObjectName("x_group_" + str(idx))
+        x_layout = QBoxLayout(QBoxLayout.TopToBottom, x_group)
+        x_new_combo_bx = QComboBox(x_group)
+        xc = "x_combo" + str(idx)
+        x_new_combo_bx.setObjectName(xc)
+        x_new_combo_bx.addItem(PERIODIC_BC)
+        x_new_combo_bx.addItem(CONSTANT_BC)
+        x_new_combo_bx.addItem(CONSTANT_DERIVATIVE_BC)
+        x_new_combo_bx.setCurrentIndex(2) # set to Constant derivative
+        x_new_combo_bx.currentIndexChanged.connect(self.x_bcTypeChanged)
+        x_layout.addWidget(x_new_combo_bx, 0)
+        xmin_label = QLabel("Value at x = x.min")
+        xmin_line_edit = QLineEdit("0.0")
+        xmin_le = "x_min" + str(idx)
+        xmin_line_edit.setObjectName(xmin_le)
+        xmin_line_edit.textChanged.connect(self.checkIfNumber)
+        xmax_label = QLabel("Value at x = x.max")
+        xmax_line_edit = QLineEdit("0.0")
+        xmax_le = "x_max" + str(idx)
+        xmax_line_edit.setObjectName(xmax_le)
+        xmax_line_edit.textChanged.connect(self.checkIfNumber)
+        xmin_group = QGroupBox("")
+        xmin_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        xmin_layout.addWidget(xmin_label)
+        xmin_layout.addWidget(xmin_line_edit)
+        xmin_group.setLayout(xmin_layout)
+        xmax_group = QGroupBox("")
+        xmax_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        xmax_layout.addWidget(xmax_label)
+        xmax_layout.addWidget(xmax_line_edit)
+        xmax_group.setLayout(xmax_layout)
+        x_layout.addWidget(xmin_group, 0)
+        x_layout.addWidget(xmax_group, 0)
+        x_group.setLayout(x_layout)
+
+        # Y axis:
+        y_group = QGroupBox("Along Y axis")
+        y_group.setObjectName("y_group_" + str(idx))
+        y_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        y_new_combo_by = QComboBox()
+        yc = "y_combo" + str(idx)
+        y_new_combo_by.setObjectName(yc)
+        y_new_combo_by.addItem(PERIODIC_BC)
+        y_new_combo_by.addItem(CONSTANT_BC)
+        y_new_combo_by.addItem(CONSTANT_DERIVATIVE_BC)
+        y_new_combo_by.setCurrentIndex(2)  # set to Constant derivative
+        y_new_combo_by.currentIndexChanged.connect(self.y_bcTypeChanged)
+        y_layout.addWidget(y_new_combo_by, 0)
+        ymin_label = QLabel("Value at y = y.min")
+        ymin_line_edit = QLineEdit("0.0")
+        ymin_le = "y_min" + str(idx)
+        ymin_line_edit.setObjectName(ymin_le)
+        ymin_line_edit.textChanged.connect(self.checkIfNumber)
+        ymax_label = QLabel("Value at y = y.max")
+        ymax_line_edit = QLineEdit("0.0")
+        ymax_line_edit.textChanged.connect(self.checkIfNumber)
+        ymax_le = "y_max" + str(idx)
+
+        if self.yDimSB.value() > 1:  # Check if lattice has y dir
+            y_new_combo_by.setDisabled(False)
+            ymin_line_edit.setDisabled(False)
+            ymax_line_edit.setDisabled(False)
+        else:
+            y_new_combo_by.setDisabled(True)
+            ymin_line_edit.setDisabled(True)
+            ymax_line_edit.setDisabled(True)
+
+        ymax_line_edit.setObjectName(ymax_le)
+        ymin_group = QGroupBox("")
+        ymin_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        ymin_layout.addWidget(ymin_label)
+        ymin_layout.addWidget(ymin_line_edit)
+        ymin_group.setLayout(ymin_layout)
+        ymax_group = QGroupBox("")
+        ymax_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        ymax_layout.addWidget(ymax_label)
+        ymax_layout.addWidget(ymax_line_edit)
+        ymax_group.setLayout(ymax_layout)
+        y_layout.addWidget(ymin_group, 0)
+        y_layout.addWidget(ymax_group, 0)
+        y_group.setLayout(y_layout)
+
+        # Z axis:
+        z_group = QGroupBox("Along Z axis")
+        z_group.setObjectName("z_group_" + str(idx))
+        z_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        z_new_combo_bz = QComboBox()
+        zc = "z_combo" + str(idx)
+        z_new_combo_bz.setObjectName(zc)
+        z_new_combo_bz.addItem(PERIODIC_BC)
+        z_new_combo_bz.addItem(CONSTANT_BC)
+        z_new_combo_bz.addItem(CONSTANT_DERIVATIVE_BC)
+        z_new_combo_bz.setCurrentIndex(2)  # set to Constant derivative
+        z_new_combo_bz.currentIndexChanged.connect(self.z_bcTypeChanged)
+        z_layout.addWidget(z_new_combo_bz, 0)
+        zmin_label = QLabel("Value at z = z.min")
+        zmin_line_edit = QLineEdit("0.0")
+        zmin_le = "z_min" + str(idx)
+        zmin_line_edit.setObjectName(zmin_le)
+        zmin_line_edit.textChanged.connect(self.checkIfNumber)
+        zmax_label = QLabel("Value at z = z.max")
+        zmax_line_edit = QLineEdit("0.0")
+        zmax_line_edit.textChanged.connect(self.checkIfNumber)
+        xmax_le = "z_max" + str(idx)
+        z_val = self.zDimSB.value()  # Check if lattice has z dir
+        if z_val > 1:
+            z_new_combo_bz.setDisabled(False)
+            zmin_line_edit.setDisabled(False)
+            zmax_line_edit.setDisabled(False)
+        else:
+            z_new_combo_bz.setDisabled(True)
+            zmin_line_edit.setDisabled(True)
+            zmax_line_edit.setDisabled(True)
+
+        zmax_line_edit.setObjectName(xmax_le)
+        zmin_group = QGroupBox("")
+        zmin_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        zmin_layout.addWidget(zmin_label)
+        zmin_layout.addWidget(zmin_line_edit)
+        zmin_group.setLayout(zmin_layout)
+        zmax_group = QGroupBox("")
+        zmax_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        zmax_layout.addWidget(zmax_label)
+        zmax_layout.addWidget(zmax_line_edit)
+        zmax_group.setLayout(zmax_layout)
+        z_layout.addWidget(zmin_group, 0)
+        z_layout.addWidget(zmax_group, 0)
+        z_group.setLayout(z_layout)
+
+        bc_layout.addWidget(x_group, 0)
+        bc_layout.addWidget(y_group, 0)
+        bc_layout.addWidget(z_group, 0)
+        bc_group.setLayout(bc_layout)
+        return bc_group
+
+    def populate_pde_solver_entries(self):
+        self.field_tab.clear() # clear the stuff
+        self.cellTypeData = {}
+
+        self.bcs_tab.clear()
+        self.ics_tab.clear()
+
+        for row in range(self.cellTypeTable.rowCount()):
+            cell_type = str(self.cellTypeTable.item(row, 0).text())
+           # print(cell_type, "hello")
+            freeze = False
+            if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
+                print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                freeze = True
+
+            self.cellTypeData[cell_type] = [row, freeze]
+
+        for solver_name, fields in self.diffusantDict.items():
+            for idx, field in enumerate(fields):
+                new_bc_dialog = self.getBC_Dialog(idx)  # Set BCs
+                self.bcs_tab.insertTab(idx, new_bc_dialog, field)
+                self.bcs_tab.currentChanged.connect(self.field_tab_changed)
+                new_ic_dialog = self.getIC_Dialog(idx)  # Set ICs:
+                self.ics_tab.insertTab(idx, new_ic_dialog, field)
+                self.ics_tab.currentChanged.connect(self.field_tab_changed)
+                table_widget = QTableWidget()
+                vh = QHeaderView(Qt.Vertical)
+                vh.hide()
+                table_widget.setVerticalHeader(vh)  # Hide row numbers
+                table_widget.setColumnCount(8)  # was 3
+                cell_type_header = QTableWidgetItem("Cell or\n Area/Volume")
+                cell_type_header.setToolTip("Chemical field behavior in Cell type or volume.")
+                diff_coeff_header = QTableWidgetItem("Diffusion coeff\n (pixels^2 /mcs)")
+                diff_decay_header = QTableWidgetItem("Decay coefficient\n (1/mcs)")
+                const_sec_header = QTableWidgetItem("Secretion rate\n (amt/mcs/voxel)")
+                const_sec_header.setToolTip("Constant Secretion rate or rate of secretion on contact with another cell.")
+                const_conc_sec_header = QTableWidgetItem("Constant conc\n field (amt/voxel)")
+                const_conc_sec_header.setToolTip("Chemical field kept at constant concentration.")
+                sec_on_contact_header = QTableWidgetItem("Secrete on contact\n with cell/vol")
+                sec_on_contact_header.setToolTip("Secrete on contact with another cell or volume: 'cell_type1, cell_type2' ")
+                max_up_header = QTableWidgetItem("Max uptake by cell\n (amt/mcs/voxel)")
+                max_up_header.setToolTip("Maximum uptake of the field chemical by cell or volume")
+                rel_up_header = QTableWidgetItem("Relative uptake\n by cell/vol")
+                rel_up_header.setToolTip("Typical value between 0.0 and 1.0")
+                table_widget.setHorizontalHeaderItem(0, cell_type_header)
+                table_widget.setHorizontalHeaderItem(1, diff_coeff_header)
+                table_widget.setHorizontalHeaderItem(2, diff_decay_header)
+                table_widget.setHorizontalHeaderItem(3, const_sec_header)
+                table_widget.setHorizontalHeaderItem(4, const_conc_sec_header)
+                table_widget.setHorizontalHeaderItem(5, sec_on_contact_header)
+                table_widget.setHorizontalHeaderItem(6, max_up_header)
+                table_widget.setHorizontalHeaderItem(7, rel_up_header)
+
+              #  table_widget.horizontalHeader().setStretchLastSection(True)
+                table_widget.horizontalHeader().setSectionResizeMode(
+                    QHeaderView.Stretch)
+                # Global diffusion settings in first row:
+                table_widget.insertRow(table_widget.rowCount())
+                global_name = GLOBAL_DIFFUSION_LABEL
+                global_val_decay_coefficient = '0.00001'
+                item = QTableWidgetItem(global_name)
+                item.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 0, item)
+                default_value_diffusion_coefficient = '0.01'
+                diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
+                diff_item.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 1, diff_item)
+                decay_item = QTableWidgetItem(global_val_decay_coefficient)
+                decay_item.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 2, decay_item)
+                const_sec_item = QTableWidgetItem("n/a")
+                const_sec_item.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 3, const_sec_item)
+                const_item = QTableWidgetItem("n/a")
+                const_item.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 4, const_item)
+                const_item2 = QTableWidgetItem("n/a")
+                const_item2.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 5, const_item2)
+                const_item3 = QTableWidgetItem("n/a")
+                const_item3.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 6, const_item3)
+                const_item4 = QTableWidgetItem("n/a")
+                const_item4.setTextAlignment(Qt.AlignCenter)
+                table_widget.setItem(0, 7, const_item4)
+
+                # now list all cell types:
+                for row, (type_name, type_data) in enumerate(self.cellTypeData.items()):
+                    table_widget.insertRow(table_widget.rowCount())
+                    #default_value_diffusion_coefficient = '0.1'
+                    default_value_decay_coefficient = '0.001'
+                    default_value_const_secretion = '-'
+                    default_value_const_conc_secretion = '-'
+                    default_value_sec_on_contact = '-'
+                    default_value_max_uptake = '1.0'
+                    default_value_rel_uptake = '1.0'
+              #      if type_name == [type_name for type_name, type_data in self.cellTypeData.items()][0]:
+              #          type_name = GLOBAL_DIFFUSION_LABEL
+              #          default_value_decay_coefficient = '0.00001'
+                    item = QTableWidgetItem(type_name)
+                    item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row + 1, 0, item)
+                    diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
+                    diff_item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row + 1, 1, diff_item)
+                    decay_item = QTableWidgetItem(default_value_decay_coefficient)
+                    decay_item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row +1, 2, decay_item)
+                    const_sec_item = QTableWidgetItem(default_value_const_secretion)
+                    const_sec_item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row +1, 3, const_sec_item)
+                    const_conc_sec_item = QTableWidgetItem(default_value_const_conc_secretion)
+                    const_conc_sec_item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row + 1, 4, const_conc_sec_item)
+                    sec_on_contact_item = QTableWidgetItem(default_value_sec_on_contact)
+                    sec_on_contact_item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row + 1, 5, sec_on_contact_item)
+                    max_uptake_item = QTableWidgetItem(default_value_max_uptake)
+                    max_uptake_item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row + 1, 6, max_uptake_item)
+                    rel_uptake_item = QTableWidgetItem(default_value_rel_uptake)
+                    rel_uptake_item.setTextAlignment(Qt.AlignCenter)
+                    table_widget.setItem(row + 1, 7, rel_uptake_item)
+
+                self.field_tab.insertTab(idx, table_widget, field)
+                self.field_tab.currentChanged.connect(self.field_tab_changed)
+                self.field_table_dict[field] = table_widget
+
+    # Expect a comma separated string of cell types to check: 'cell1, cell2, cell3'
+    def checkIfValidCellType(self, cell_types_str):
+        type_list = cell_types_str.split(",")
+        for new_type in type_list:
+            found = False
+            for row in range(self.cellTypeTable.rowCount()):
+                valid_cell_type = str(self.cellTypeTable.item(row, 0).text())
+                if new_type.strip().lower() == valid_cell_type.strip().lower():
+                    found = True
+            if not found:
+                print("Cell type not found: " + str(new_type))
+                return False
+        return True
+
+    #  Returns dictionary of chemical field secretion values, returns False if data bad
+    def getDiffusionSecretion_Values(self, field_table, field_str):
+        secretion_diffusionFE_data = {}  # format {field:[secrDict1,secrDict2,...]}
+        for row in range(field_table.rowCount()):
+            secretion_type = "-"
+            rate = 0.0  # holds value of secretion rate for all three types of field secretion
+            cell_type = str(field_table.item(row, 0).text())
+            if not row == 0 and not cell_type == GLOBAL_DIFFUSION_LABEL:  # first row contains default diffusion values
+                const_conc_sec = str(field_table.item(row, 4).text())
+                on_contact_with = str(field_table.item(row, 5).text())
+                try:
+                    if not const_conc_sec == "-":
+                        rate = float(const_conc_sec)  # value stored in rate var even though it is a constant conc.
+                        secretion_type = "constant concentration"
+                except Exception:
+                    rate = 0.0
+                try:
+                    uniform_rate = str(field_table.item(row, 3).text())
+                    if not uniform_rate == "-":
+                        rate = float(str(field_table.item(row, 3).text()))
+                        secretion_type = "uniform"
+                except Exception:
+                    rate = 0.0
+                try:
+                    max_uptake = float(str(field_table.item(row, 6).text()))
+                except Exception:
+                    max_uptake = 0.0
+                try:
+                    rel_uptake = float(str(field_table.item(row, 7).text()))
+                except Exception:
+                    rel_uptake = 0.0
+
+                diff_fe_secr_dict = {}
+                diff_fe_secr_dict["CellType"] = cell_type
+                diff_fe_secr_dict["MaxUptake"] = max_uptake
+                diff_fe_secr_dict["RelativeUptakeRate"] = rel_uptake
+                diff_fe_secr_dict["Rate"] = rate
+                if not on_contact_with == "-":
+                    if self.checkIfValidCellType(on_contact_with):
+                        diff_fe_secr_dict["OnContactWith"] = on_contact_with
+                        secretion_type = "on contact"
+                    else:
+                        msg = '''
+                        For 'Secrete on contact': one of the cell types listed is invalid. 
+                        Make sure cell type list is comma separated.
+                        '''
+                        QMessageBox.warning(self, "Invalid Cell type", msg, QMessageBox.Ok)
+                        print("msg")
+                        return False
+                    if uniform_rate == "-":
+                        msg = '''
+                        For 'Secrete on contact': Please add a value to 
+                        the 'Secretion rate' column.
+                        '''
+                        QMessageBox.warning(self, "Invalid Secretion rate", msg, QMessageBox.Ok)
+                        return False
+                diff_fe_secr_dict["SecretionType"] = secretion_type
+                try:
+                    secretion_diffusionFE_data[field_str].append(diff_fe_secr_dict)
+                except LookupError:
+                    secretion_diffusionFE_data[field_str] = [diff_fe_secr_dict]
+        return secretion_diffusionFE_data
+
+    #  Returns diffusion values dict
+    def getCurrentDiffusionFE_Values(self):
+        diffusion_vals_dict = {}
+        for solver_name, fields in self.diffusantDict.items():
+            for idx, field in enumerate(fields):
+                diff_table = self.field_table_dict[field]
+                diffusant_data = {}
+                vol_coeffs = {}
+                for row in range(diff_table.rowCount()):
+                    vol = diff_table.item(row, 0).text()
+                    coef = diff_table.item(row, 1).text()
+                    decay = diff_table.item(row, 2).text()
+                    if row == 0:
+                        vol_coeffs.update({vol: {"GlobalDiffusionCoefficient": coef, "GlobalDecayCoefficient": decay}})
+                    else:
+                        vol_coeffs.update({vol: {"DiffusionCoefficient": coef, "DecayCoefficient": decay}})
+                diffusant_data["Coefficients"] = vol_coeffs
+                for widget in self.bcs_tab.children():  # Get BCs
+                    group_boxes = widget.findChildren(QGroupBox)
+                    all_bcs = {}
+                    for child in group_boxes:
+                        group_bx_name = ""
+                        if isinstance(child, QGroupBox):
+                            combo_boxes = child.findChildren(QComboBox)
+                            group_bx_name = child.objectName()
+                            if group_bx_name.endswith("_" + str(idx)):
+                                for c_box in combo_boxes:
+                                    bcs = {}
+                                    boundary_type = ''
+                                    axis_dir = ""
+                                    if "x" in c_box.objectName():
+                                        axis_dir = "x_"
+                                    else:
+                                        if "y" in c_box.objectName():
+                                            axis_dir = "y_"
+                                        else:
+                                            axis_dir = "z_"
+                                    if c_box.currentIndex() == 0:  # periodic boundary
+                                        boundary_type = "Periodic"
+                                    else:
+                                        if c_box.currentIndex() == 1:  # constant value boundary
+                                            boundary_type = "ConstantValue"  # (Dirichlet)
+                                        else:                          # Constant derivative boundary
+                                            boundary_type = "ConstantDerivative"  # (von Neumann)
+                                    lines = child.findChildren(QLineEdit)
+                                    axis_vals = {}
+                                    for new_line in lines:
+                                        if axis_dir in new_line.objectName():
+                                            axis_vals.update({new_line.objectName(): new_line.text()})
+                                    bcs[boundary_type] = axis_vals
+                                    axial_bc = {group_bx_name: bcs}
+                                    all_bcs.update(axial_bc)
+
+                        diffusant_bcs = {"BoundaryConditions": all_bcs}
+                    diffusant_data.update(diffusant_bcs)
+
+                for widget in self.ics_tab.children():  # Get ICs
+                    group_boxes = widget.findChildren(QGroupBox)
+                    all_ics = {}
+                    for group in group_boxes:
+                        ic_file = False
+                        diffusant_ic = {}
+                        group_bx_name = group.objectName()
+                        if group_bx_name.endswith("_" + str(idx)):
+                            radio_buttons = group.findChildren(QRadioButton)
+                            for rb in radio_buttons:
+                                if rb.isChecked():
+                                    ic_file = True
+                            lines = group.findChildren(QLineEdit)
+                            for line in lines:
+                                if ic_file:
+                                    if "ic_file" in line.objectName():
+                                        diffusant_ic = {"ConcentrationFileName": line.text()}
+                                else:
+                                    if "ic_val" in line.objectName():
+                                        diffusant_ic = {"InitialConcentrationExpression": line.text()}
+                                all_ics.update(diffusant_ic)
+                        diffusant_ic = {"InitialConditions": all_ics}
+                    diffusant_data.update(diffusant_ic)
+                diffusion_vals_dict[field] = diffusant_data
+
+            print(diffusion_vals_dict)
+        return diffusion_vals_dict
+
+
+    def is_path_creatable(self, pathname: str) -> bool:
+        '''
+        `True` if the current user has sufficient permissions to create the passed
+        pathname; `False` otherwise.
+        '''
+        # Parent directory of the passed path. If empty, we substitute the current
+        # working directory (CWD) instead.
+        dirname = os.path.dirname(pathname) or os.getcwd()
+        return os.access(dirname, os.W_OK)
+
+    def is_path_exists_or_creatable(self, pathname: str) -> bool:
+        '''
+        `True` if the passed pathname is a valid pathname for the current OS _and_
+        either currently exists or is hypothetically creatable; `False` otherwise.
+        '''
+        try:
+            path = os.path.dirname(pathname)  # confirm there is no filename appended to the end of dir path
+            return (os.path.exists(path) or self.is_path_creatable(path))
+        # Report failure on non-fatal filesystem complaints (e.g., connection
+        # timeouts, permissions issues) implying this path to be inaccessible. All
+        # other exceptions are unrelated fatal issues and should not be caught here.
+        except OSError:
+            return False
+
     def validateCurrentPage(self):
 
         print("THIS IS VALIDATE FOR PAGE ", self.currentId)
 
-        if self.currentId() == self.get_page_id_by_name("SimulationDirectory"):
+        if self.currentId() == self.get_page_id_by_name("CompuCell3D Simulation Wizard"):
             directory = str(self.dirLE.text()).strip()
             name = str(self.nameLE.text()).strip()
 
-            self.setPage(self.get_page_id_by_name("PythonScript"), self.get_page_by_name("PythonScript"))
+#            self.setPage(self.get_page_id_by_name("PythonScript"), self.get_page_by_name("PythonScript"))  # TODO ???
+            self.setPage(self.pageDict["Configuration Complete!"][1], self.pageDict["Configuration Complete!"][0])
 
             if directory == "" or name == "":
                 QMessageBox.warning(self, "Missing information",
@@ -938,8 +1681,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                 return True
 
-        # general properties        
-        if self.currentId() == self.get_page_id_by_name("GeneralProperties"):
+        # general properties
+        if self.currentId() == self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME):
 
             if self.piffRB.isChecked() and str(self.piffLE.text()).strip() == '':
                 QMessageBox.warning(self, "Missing information", "Please specify name of the PIFF file", QMessageBox.Ok)
@@ -967,8 +1710,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.connect2DCHB.setChecked(False)
 
             return True
-
-        if self.currentId() == self.get_page_id_by_name("CellType"):
+        if self.currentId() == self.get_page_id_by_name(CELL_TYPE_SPEC_PAGE_NAME):
             # we only extract types from table here - it is not a validation strictly speaking
             # extract cell type information form the table
 
@@ -984,23 +1726,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                 self.typeTable.append([cell_type, freeze])
 
-            return True
-
-        if self.currentId() == self.get_page_id_by_name("Diffusants"):
-
-            # we only extract diffusants from table here - it is not a validation strictly speaking
-            # extract diffusants information form the table
-            self.diffusantDict = {}
-
-            for row in range(self.fieldTable.rowCount()):
-                field = str(self.fieldTable.item(row, 0).text())
-                solver = str(self.fieldTable.item(row, 1).text())
-
-                try:
-                    self.diffusantDict[solver].append(field)
-                except LookupError:
-                    self.diffusantDict[solver] = [field]
-
             # at this point we can fill all the cell types and fields widgets on subsequent pages
 
             self.chemCellTypeCB.clear()
@@ -1015,13 +1740,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                 self.chemTowardsCellTypeCB.addItem(cell_type_tuple[0])
 
-            for solver_name, fields in self.diffusantDict.items():
-
-                for field_name in fields:
-                    self.chemFieldCB.addItem(field_name)
-
             # secretion plugin
-
             self.secrFieldCB.clear()
             self.secrCellTypeCB.clear()
             self.secrOnContactCellTypeCB.clear()
@@ -1029,42 +1748,83 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             for cell_type_tuple in self.typeTable:
                 self.secrCellTypeCB.addItem(cell_type_tuple[0])
                 self.secrOnContactCellTypeCB.addItem(cell_type_tuple[0])
+
+            return True
+
+        if self.currentId() == self.get_page_id_by_name(CELL_PROP_BEHAVIORS_PAGE_NAME):
+            print(self.get_page_by_name)
+
+         #   if self.secretionCHB.isChecked():  # Remove if no longer needed
+         #       self.setPage(self.get_page_id_by_name("Secretion Plugin"), self.get_page_by_name("Secretion Plugin"))
+
+         #   else:
+            self.removePage(self.get_page_id_by_name(SECRETION_PAGE_NAME))
+
+            if self.chemotaxisCHB.isChecked():
+                self.setPage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME), self.get_page_by_name(CHEMOTAXIS_PAGE_NAME))
+
+            else:
+                self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
+
+            if self.contactMultiCadCHB.isChecked():
+                self.setPage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME), self.get_page_by_name(CONTACT_MULTICAD_PAGE_NAME))
+
+            else:
+                self.removePage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME))
+
+            if self.adhesionFlexCHB.isChecked():
+                self.setPage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME), self.get_page_by_name(ADHESION_FLEX_PAGE_NAME))
+            else:
+                self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
+            return True
+    #    sec_id = self.currentId()
+    #    chem_field_id = self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME)
+        if self.currentId() == self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME):
+            # we only extract diffusants from table here - it is not a validation strictly speaking
+            self.diffusantDict = {}
+            for row in range(self.fieldTable.rowCount()):
+                field = str(self.fieldTable.item(row, 0).text())
+                solver = str(self.fieldTable.item(row, 1).text())
+
+                try:
+                    self.diffusantDict[solver].append(field)
+                except LookupError:
+                    self.diffusantDict[solver] = [field]
+
+            for solver_name, fields in self.diffusantDict.items():
+                for field_name in fields:
+                    self.chemFieldCB.addItem(field_name)
+
             for solver_name, fields in self.diffusantDict.items():
                 for field_name in fields:
                     self.secrFieldCB.addItem(field_name)
 
+             # DiffusionFE secretion plugin ( _2 )
+            self.secrFieldCB_2.clear()
+            self.secrCellTypeCB_2.clear()
+            self.secrOnContactCellTypeCB_2.clear()
+
+            for cell_type_tuple in self.typeTable:
+                self.secrCellTypeCB_2.addItem(cell_type_tuple[0])
+                self.secrOnContactCellTypeCB_2.addItem(cell_type_tuple[0])
+        #    for solver_name, fields in self.diffusantDict.items():  # remove if do not need anymore
+        #        for field_name in fields:
+        #            self.secrFieldCB_2.addItem(field_name)
+
+            if len(self.diffusantDict.items()) > 0:  # VALIDATE ICs and BCs,
+                solver_found = False
+                for solver_name, fields in self.diffusantDict.items():  # Check for use of DiffusionSolverFE
+                    if solver_name == "DiffusionSolverFE" and not solver_found:
+                        solver_found = True
+                        self.setPage(self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME), self.get_page_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME))
+                       # self.setPage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME), self.get_page_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME))
+                self.populate_pde_solver_entries()
+            else:
+                self.removePage(self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME))
+              #  self.removePage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME)) # remove if do not need anymore
             return True
 
-        if self.currentId() == self.get_page_id_by_name("Plugins"):
-            print(self.pageDict)
-
-            if self.secretionCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("Secretion"), self.get_page_by_name("Secretion"))
-
-            else:
-                self.removePage(self.get_page_id_by_name("Secretion"))
-
-            if self.chemotaxisCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("Chemotaxis"), self.get_page_by_name("Chemotaxis"))
-
-            else:
-                self.removePage(self.get_page_id_by_name("Chemotaxis"))
-
-            if self.contactMultiCadCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("ContactMultiCad"), self.get_page_by_name("ContactMultiCad"))
-
-            else:
-                self.removePage(self.get_page_id_by_name("ContactMultiCad"))
-
-            if self.adhesionFlexCHB.isChecked():
-                self.setPage(self.get_page_id_by_name("AdhesionFlex"), self.get_page_by_name("AdhesionFlex"))
-
-            else:
-                self.removePage(self.get_page_id_by_name("AdhesionFlex"))
-
-            return True
-
-        if self.currentPage() == self.get_page_by_name("ContactMultiCad"):
+        if self.currentId() == self.get_page_by_name(CONTACT_MULTICAD_PAGE_NAME):
             if not self.cmcTable.rowCount():
 
                 QMessageBox.warning(self, "Missing information",
@@ -1076,7 +1836,21 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 return True
 
-        if self.currentPage() == self.get_page_by_name("AdhesionFlex"):
+        if self.currentId() == self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME):
+            # we only extract data from page here - it is not a validation strictly speaking
+            self.diffusionFE_vals_dict = self.getCurrentDiffusionFE_Values()
+            # Get secretion values and uptake values
+            for solver_name, fields in self.diffusantDict.items():
+                for field_name in fields:
+                    results = self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name)
+                    if results == False:
+                        return False   # secretion values bad
+                    else:
+                        self.diffusionFE_vals_dict[field_name]["Secretion"] = results
+                    #self.diffusionFE_vals_dict[field_name]["Secretion"] = \
+                    #    self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name)
+
+        if self.currentId() == self.get_page_by_name("AdhesionFlex Plugin"):
 
             if not self.afTable.rowCount():
 
@@ -1196,14 +1970,48 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             cmc_table.append(cadherin)
 
-        self.pde_field_data = {}
-
+        self.pde_field_data = {}  # Need to add all the new settings/values to this
+        #  Work through table then get ICs and BCs, finally secretion table
         for row in range(self.fieldTable.rowCount()):
             chem_field_name = str(self.fieldTable.item(row, 0).text())
 
             solver_name = str(self.fieldTable.item(row, 1).text())
 
             self.pde_field_data[chem_field_name] = solver_name
+
+        try:
+            solver_name
+        except NameError:
+            solver_name = None
+    #    if solver_name == "DiffusionSolverFE":  # Remove this section if do not need anymore
+            #  DiffusionFE Secretion:
+
+     #       secretion_diffusionFE_data = {}  # format {field:[secrDict1,secrDict2,...]}
+     #       for row in range(self.secretion_DiffusionFE_Table.rowCount()):
+
+     #           secr_field_name = str(self.secretion_DiffusionFE_Table.item(row, 0).text())
+     #           cell_type = str(self.secretion_DiffusionFE_Table.item(row, 1).text())
+
+     #           try:
+     #               rate = float(str(self.secretion_DiffusionFE_Table.item(row, 2).text()))
+     #           except Exception:
+     #               rate = 0.0
+
+     #           on_contact_with = str(self.secretion_DiffusionFE_Table.item(row, 3).text())
+     #           secretion_type = str(self.secretion_DiffusionFE_Table.item(row, 4).text())
+
+      #          diff_fe_secr_dict = {}
+      #          diff_fe_secr_dict["CellType"] = cell_type
+      #          diff_fe_secr_dict["Rate"] = rate
+      #          diff_fe_secr_dict["OnContactWith"] = on_contact_with
+      #          diff_fe_secr_dict["SecretionType"] = secretion_type
+
+      #          try:
+      #              secretion_diffusionFE_data[secr_field_name].append(diff_fe_secr_dict)
+      #          except LookupError:
+      #              secretion_diffusionFE_data[secr_field_name] = [diff_fe_secr_dict]
+      #      for field in secretion_diffusionFE_data:
+      #          self.diffusionFE_vals_dict[field]["Secretion"] = secretion_diffusionFE_data[field]
 
         self.secretion_data = {}  # format {field:[secrDict1,secrDict2,...]}
 
@@ -1218,11 +2026,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 rate = 0.0
 
             on_contact_with = str(self.secretionTable.item(row, 3).text())
-
             secretion_type = str(self.secretionTable.item(row, 4).text())
 
             secr_dict = {}
-
             secr_dict["CellType"] = cell_type
             secr_dict["Rate"] = rate
             secr_dict["OnContactWith"] = on_contact_with
@@ -1254,7 +2060,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             chemotaxis_type = str(self.chamotaxisTable.item(row, 5).text())
             chem_dict = {}
-
             chem_dict["CellType"] = cell_type
             chem_dict["Lambda"] = lambda_
             chem_dict["ChemotaxTowards"] = chemotax_towards
@@ -1277,7 +2082,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if self.pythonXMLRB.isChecked():
             xml_file_name = os.path.join(self.simulationFilesDir, name + ".xml")
             xml_generator.saveCC3DXML(xml_file_name)
-
             simulation_element.ElementCC3D("XMLScript", {"Type": "XMLScript"},
 
                                           self.getRelativePathWRTProjectDir(xml_file_name))
@@ -1288,7 +2092,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # generate Python ------------------------------------------------------------------------------------
 
             python_generator = CC3DPythonGenerator(xml_generator)
-
             python_generator.set_python_only_flag(self.pythonOnlyRB.isChecked())
 
             self.generateSteppablesCode(python_generator)
@@ -1336,7 +2139,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         pythonGenerator.generate_steppable_registration_lines()
 
     def generateXML(self, generator):
-
         cell_type_dict = self.cellTypeData
         args = []
 
@@ -1350,6 +2152,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         kwds['chemotaxisData'] = self.chemotaxisData
         kwds['pdeFieldData'] = self.pde_field_data
         kwds['secretionData'] = self.secretion_data
+        kwds['diffusantData'] = self.diffusionFE_vals_dict
 
         generator.generateMetadataSimulationProperties(*args, **kwds)
 
@@ -1431,7 +2234,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if self.connect2DCHB.isChecked():
             generator.generateConnectivityPlugin(*args, **kwds)
 
-        if self.secretionCHB.isChecked():
+     #   if self.secretionCHB.isChecked():  # remove if not needed anymore (was in Cell Properties and Behaviors page
+     #       generator.generateSecretionPlugin(*args, **kwds)
+
+        if self.pythonControlSecretionCHB.isChecked():
+            args.append("pythonControl")
             generator.generateSecretionPlugin(*args, **kwds)
 
             # if self.pdeSolverCallerCHB.isChecked():
@@ -1453,7 +2260,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             # generator.generateDiffusionSolverFE(*args,**kwds)            
 
-            # generator.generateFlexibleDiffusionSolverFE(*args,**kwds)            
+            # generator.generateFlexibleDiffusionSolverFE(*args,**kwds)
 
             # generator.generateFastDiffusionSolver2DFE(*args,**kwds)            
 

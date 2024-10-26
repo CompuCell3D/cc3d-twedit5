@@ -889,7 +889,7 @@ class CC3DXMLGenerator:
         self.cc3d.addComment("newline")
         self.cc3d.addComment("Specification of PDE solvers")
 
-        # first translte chem field table into dictionary sorted by solver type
+        # first translate chem field table into dictionary sorted by solver type
         solver_dict = {}
 
         for field_tuple in self.chemFieldsTable:
