@@ -862,7 +862,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         page_ids = self.pageIds()
 
-        # order pages explicitedly ?
+        # order pages explicitly ?
    #     self.pageDict[CONFIG_COMPLETE_PAGE_NAME] = [self.page(page_ids[-1]), len(page_ids) - 1]
    #     self.pageDict[SIMULATION_DIR_PAGE_NAME] = [self.page(0), 0]
    #     self.pageDict[SIMULATION_PROPERTIES_PAGE_NAME] = [self.page(1), 1]
