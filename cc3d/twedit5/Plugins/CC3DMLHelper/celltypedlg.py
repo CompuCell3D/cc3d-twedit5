@@ -133,7 +133,7 @@ class CellTypeDlg(QDialog, ui_celltypedlg.Ui_CellTypeDlg):
 
                 freeze = True
 
-            cell_type_dict[row] = [cell_type, freeze]
+            cell_type_dict[cell_type] = [row, freeze]
 
         return cell_type_dict
 
