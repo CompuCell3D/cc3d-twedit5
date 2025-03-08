@@ -46,6 +46,11 @@ class ContactGUI(CC3DModelToolGUIBase, Ui_ContactPluginGUI):
 
     def handle_accept(self):
         self.user_decision = True
+        # reading off NeighborOrder because it is not handled by the Table Model data
+        self.contact_plugin_data.neighbor_order = self.spinBox.value()
+
+        # print("self.contact_plugin_data=", self.contact_plugin_data)
+        # print("self.contact_plugin_data.neighbor_order=", self.contact_plugin_data.neighbor_order)
         self.close()
 
     def handle_reject(self):
