@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>679</width>
-    <height>804</height>
+    <width>948</width>
+    <height>797</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -24,7 +24,7 @@
     <string>CompuCell3D Simulation Wizard</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">0</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
@@ -166,12 +166,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_general_sim_properties">
+  <widget class="QWizardPage" name="wizardPage_9">
    <property name="title">
     <string>General Simulation Properties</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">1</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_10">
     <item>
@@ -485,12 +485,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_cell_type_spec">
+  <widget class="QWizardPage" name="wizardPage2">
    <property name="title">
     <string>Cell Type Specification</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">2</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
@@ -582,7 +582,7 @@ p, li { white-space: pre-wrap; }
     <string>Chemical Fields (Diffusants)</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">4</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_11">
     <item>
@@ -738,7 +738,7 @@ p, li { white-space: pre-wrap; }
     <string>Cell Properties and Behaviors</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">3</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_8">
     <item row="0" column="1" rowspan="2">
@@ -1307,12 +1307,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_secretion">
+  <widget class="QWizardPage" name="wizardPage_8">
    <property name="title">
     <string>Secretion Plugin</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">6</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_17">
     <item>
@@ -1515,12 +1515,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_chemotaxis">
+  <widget class="QWizardPage" name="wizardPage_6">
    <property name="title">
     <string>Chemotaxis Plugin</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">7</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_15">
     <item>
@@ -1739,12 +1739,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_adhesion_flex">
+  <widget class="QWizardPage" name="wizardPage_2">
    <property name="title">
     <string>AdhesionFlex Plugin</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">8</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_7">
     <item>
@@ -1840,12 +1840,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_contact_multi_cad">
+  <widget class="QWizardPage" name="wizardPage_4">
    <property name="title">
     <string>ContactMultiCad Plugin</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">9</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_8">
     <item>
@@ -1920,12 +1920,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_diffusion">
+  <widget class="QWizardPage" name="wizardPageDiffusion">
    <property name="title">
     <string>Chemical field diffusion coefficients and boundary conditions (PDE Solvers Specification)</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">5</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_22">
     <item>
@@ -1942,32 +1942,23 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="diffusion_options_GBox">
-      <property name="title">
-       <string/>
+     <widget class="QCheckBox" name="pythonControlSecretionCHB">
+      <property name="enabled">
+       <bool>true</bool>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_16">
-       <item>
-        <widget class="QCheckBox" name="pythonControlSecretionCHB">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="toolTip">
-          <string>Use python code to handle secretion and uptake, ignore values in table.</string>
-         </property>
-         <property name="text">
-          <string>Control Secretion through Python</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <property name="toolTip">
+       <string>Use python code to handle secretion and uptake, ignore values in table.</string>
+      </property>
+      <property name="text">
+       <string>Control Secretion through Python</string>
+      </property>
      </widget>
     </item>
     <item>
      <widget class="QLabel" name="ics_label">
       <property name="font">
        <font>
-        <pointsize>10</pointsize>
+        <pointsize>12</pointsize>
        </font>
       </property>
       <property name="text">
@@ -1993,7 +1984,7 @@ p, li { white-space: pre-wrap; }
      <widget class="QLabel" name="bcs_label">
       <property name="font">
        <font>
-        <pointsize>10</pointsize>
+        <pointsize>12</pointsize>
        </font>
       </property>
       <property name="text">
@@ -2029,7 +2020,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_diffusion_secretion">
+  <widget class="QWizardPage" name="wizardPageDiffusion_secretion">
    <property name="minimumSize">
     <size>
      <width>723</width>
@@ -2040,7 +2031,7 @@ p, li { white-space: pre-wrap; }
     <string>Secretion in DiffusionFE plugin</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">10</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_24">
     <item>
@@ -2315,12 +2306,12 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_config_complete">
+  <widget class="QWizardPage" name="wizardPage_3">
    <property name="title">
     <string>Configuration Complete!</string>
    </property>
    <attribute name="pageId">
-    <string notr="true">11</string>
+    <string notr="true"/>
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_21">
     <item>

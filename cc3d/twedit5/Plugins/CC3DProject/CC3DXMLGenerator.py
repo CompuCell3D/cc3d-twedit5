@@ -866,7 +866,7 @@ class CC3DXMLGenerator:
         self.cc3d.addComment("Change these settings to desired values after consulting CC3D manual on how to work with "
                              "large diffusion constants (>0.16 in 3D, >0.25 in 2D with DeltaX=1.0 and DeltaT=1.0)")
 
-        # first translate chem field table into dictionary sorted by solver type
+        # first translte chem field table into dictionary sorted by solver type
         solver_dict = {}
 
         for field_tuple in self.chemFieldsTable:
