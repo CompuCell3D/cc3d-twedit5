@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>948</width>
+    <width>951</width>
     <height>797</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>Simulation Wizard</string>
   </property>
-  <widget class="QWizardPage" name="wizardPage1">
+  <widget class="QWizardPage" name="wizardPage_intro_dir">
    <property name="title">
     <string>CompuCell3D Simulation Wizard</string>
    </property>
@@ -166,7 +166,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_9">
+  <widget class="QWizardPage" name="wizardPage_generalProps">
    <property name="title">
     <string>General Simulation Properties</string>
    </property>
@@ -485,7 +485,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage2">
+  <widget class="QWizardPage" name="wizardPage_cellType">
    <property name="title">
     <string>Cell Type Specification</string>
    </property>
@@ -996,6 +996,9 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <widget class="QCheckBox" name="neighborCHB">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="toolTip">
           <string>Module tracking neighbors of each cell</string>
          </property>
@@ -1009,11 +1012,17 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <widget class="QCheckBox" name="momentOfInertiaCHB">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="toolTip">
           <string>Module tracking tensor of inertia of each cell</string>
          </property>
          <property name="text">
           <string>Moment Of Inertia</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1025,6 +1034,9 @@ p, li { white-space: pre-wrap; }
          <property name="text">
           <string>Cell Pixel Tracker</string>
          </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
        <item>
@@ -1034,6 +1046,9 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="text">
           <string>Cell Boundary Pixel Tracker</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1307,7 +1322,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_8">
+  <widget class="QWizardPage" name="wizardPage_secretion">
    <property name="title">
     <string>Secretion Plugin</string>
    </property>
@@ -1515,7 +1530,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_6">
+  <widget class="QWizardPage" name="wizardPage_chemotaxis">
    <property name="title">
     <string>Chemotaxis Plugin</string>
    </property>
@@ -1739,7 +1754,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_2">
+  <widget class="QWizardPage" name="wizardPage_AdhesionFlex">
    <property name="title">
     <string>AdhesionFlex Plugin</string>
    </property>
@@ -1840,7 +1855,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_4">
+  <widget class="QWizardPage" name="wizardPage_contactMultiCad">
    <property name="title">
     <string>ContactMultiCad Plugin</string>
    </property>
@@ -1920,7 +1935,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPageDiffusion">
+  <widget class="QWizardPage" name="wizardPage_Diffusion">
    <property name="title">
     <string>Chemical field diffusion coefficients and boundary conditions (PDE Solvers Specification)</string>
    </property>
@@ -2306,7 +2321,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_3">
+  <widget class="QWizardPage" name="wizardPage_configComplete">
    <property name="title">
     <string>Configuration Complete!</string>
    </property>
@@ -2328,10 +2343,10 @@ p, li { white-space: pre-wrap; }
          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:7.8pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;CC3D project will be generated now&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:12pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt; font-weight:600; color:#0000ff;&quot;&gt;NOTE:&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.AppleSystemUIFont'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt;CC3D project will be generated now&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt; font-weight:600; color:#0000ff;&quot;&gt;NOTE:&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt; The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
