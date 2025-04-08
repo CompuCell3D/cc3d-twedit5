@@ -25,7 +25,7 @@ CELL_PROPS_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
 SECRETION_DIFFUSION_FE_PAGE_NAME = "Secretion in DiffusionFE plugin"  #  DO not use
 CELL_TYPE_SPEC_PAGE_NAME = "Cell Type Specification"
 CELL_PROP_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
-SECRETION_PAGE_NAME = "Secretion Plugin"
+SECRETION_PAGE_NAME = "Secretion Plugin"  # deprecated for now
 CHEMOTAXIS_PAGE_NAME = "Chemotaxis Plugin"
 CONTACT_MULTICAD_PAGE_NAME = "ContactMultiCad Plugin"
 ADHESION_FLEX_PAGE_NAME = "AdhesionFlex Plugin"
@@ -35,6 +35,8 @@ CONFIG_COMPLETE_PAGE_NAME = "Configuration Complete!"
 DIFFUSION_SOLVER_FE = "DiffusionSolverFE"
 REACT_DIFF_SOLVER_FE = "ReactionDiffusionSolverFE"
 REACT_DIFF_SOLVER_FVM = "ReactionDiffusionSolverFVM"
+SS_DIFF_SOLVER = "SteadyStateDiffusionSolver"
+SS_DIFF_SOLVER_2D = "SteadyStateDiffusionSolver2D"
 
 CONSTANT_BC = "Constant value (Dirichlet) "
 CONSTANT_DERIVATIVE_BC = "Constant derivative value (von Neumann)"
@@ -77,6 +79,52 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.diff_solver_info_textBrowser.setHtml(get_diffusion_solv_description_html())
         if sys.platform.startswith('win'):
             self.setWizardStyle(QWizard.ClassicStyle)
+
+    def nextId(self):  # Override nextId() to set page sequence as needed:
+        if self.currentId() == self.get_page_id_by_name(SIMULATION_DIR_PAGE_NAME):
+            print(self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME))
+            return self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME):
+            return self.get_page_id_by_name(CELL_TYPE_SPEC_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CELL_TYPE_SPEC_PAGE_NAME):
+            return self.get_page_id_by_name(CELL_PROPS_BEHAVIORS_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CELL_PROPS_BEHAVIORS_PAGE_NAME):
+            return self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME):
+            if len(self.diffusantDict.items()) > 0:
+                return self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME)
+            else:
+                if self.chemotaxisCHB.isChecked():
+                    return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
+                elif self.adhesionFlexCHB.isChecked():
+                    return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+                elif self.contactMultiCadCHB.isChecked():
+                    return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+                else:
+                    return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME):
+            if self.chemotaxisCHB.isChecked():
+                return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
+            elif self.adhesionFlexCHB.isChecked():
+                return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME):
+            if self.adhesionFlexCHB.isChecked():
+                return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
+            if self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
+            return -1  # No more pages
 
     def display_invalid_entity_label_message(self, error_message):
         """
