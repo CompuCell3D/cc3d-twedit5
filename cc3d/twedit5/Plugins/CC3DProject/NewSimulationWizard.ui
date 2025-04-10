@@ -1957,16 +1957,48 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QCheckBox" name="pythonControlSecretionCHB">
-      <property name="enabled">
-       <bool>true</bool>
+     <widget class="QFrame" name="additional_diff_settings_frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
       </property>
-      <property name="toolTip">
-       <string>Use python code to handle secretion and uptake, ignore values in table.</string>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
       </property>
-      <property name="text">
-       <string>Control Secretion through Python</string>
-      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_16">
+       <item>
+        <widget class="QCheckBox" name="pythonControlSecretionCHB">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>Use python code to handle secretion and uptake, ignore values in table.</string>
+         </property>
+         <property name="text">
+          <string>Control Secretion through Python</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="autoscale_diff_CHB">
+         <property name="toolTip">
+          <string>Optional automatic time sub-stepping. Safe, but conservative. </string>
+         </property>
+         <property name="text">
+          <string>Autoscale diffusion</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="reactionDiff_FE_PB">
+         <property name="toolTip">
+          <string>Additional term can be an expression involving field name and CellType</string>
+         </property>
+         <property name="text">
+          <string>Add additional diffusion term</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>

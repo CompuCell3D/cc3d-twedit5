@@ -14,6 +14,8 @@ from cc3d.core.Validation.sanity_checkers import validate_cc3d_entity_identifier
 from cc3d.twedit5.Plugins.CC3DMLGenerator.CC3DMLGeneratorBase import CC3DMLGeneratorBase
 from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
+from cc3d.twedit5.Plugins.CC3DProject.additionalRxnDiffFE_PropsPopup import RxnDiffusionPropsPopupForm
+#from cc3d.twedit5.Plugins.CC3DProject.ui_reactionDiffusion_additional_settings import Ui_RectionDiffusionExtraSettingsDialog
 
 MAC = "qt_mac_set_native_menubar" in dir()
 # Wizard pages:
@@ -70,6 +72,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.typeTable = []
         self.diffusantDict = {}
+        self.rxn_diffusionFE_add_data: dict[str, str] = {}
         self.chemotaxisData = {}
         self.cellTypeData = {}
         self.field_ic_fileDict = {}  # field_name -> ic file name
@@ -891,6 +894,20 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             directory = QFileDialog.getExistingDirectory(self, "Specify Location for your project", proj_dir)
             self.plugin.configuration.setSetting("RecentNewProjectDir", directory)
             self.dirLE.setText(directory)
+
+    @pyqtSlot()  # signature of the signal emitted by the button
+    def on_reactionDiff_FE_PB_clicked(self):
+        popup = RxnDiffusionPropsPopupForm(self)
+        if len(self.rxn_diffusionFE_add_data) > 1:  # Load existing user data, if exists
+            popup.set_data(self.rxn_diffusionFE_add_data)
+        if popup.exec_() == QDialog.Accepted:
+            extra_settings: dict = popup.get_data()
+            for key in extra_settings:
+                print(f"{key}: {extra_settings[key]}")
+                self.rxn_diffusionFE_add_data[key] = extra_settings[key]
+        else:
+            print("Popup cancelled")
+            #self.result_label.setText("Popup canceled.")
 
     # setting up validators for the entry fields
     def setUpValidators(self):
