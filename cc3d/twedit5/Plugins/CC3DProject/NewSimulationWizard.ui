@@ -1947,8 +1947,8 @@ p, li { white-space: pre-wrap; }
      <widget class="QTabWidget" name="field_tab">
       <property name="maximumSize">
        <size>
-        <width>800000</width>
-        <height>800000</height>
+        <width>16777215</width>
+        <height>16777215</height>
        </size>
       </property>
       <property name="currentIndex">
@@ -2018,6 +2018,18 @@ p, li { white-space: pre-wrap; }
     </item>
     <item>
      <widget class="QTabWidget" name="ics_tab">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
         <string>Tab 1</string>
@@ -2047,6 +2059,18 @@ p, li { white-space: pre-wrap; }
     </item>
     <item>
      <widget class="QTabWidget" name="bcs_tab">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
