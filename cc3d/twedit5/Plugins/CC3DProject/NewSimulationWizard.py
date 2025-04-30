@@ -14,7 +14,7 @@ from cc3d.core.Validation.sanity_checkers import validate_cc3d_entity_identifier
 from cc3d.twedit5.Plugins.CC3DMLGenerator.CC3DMLGeneratorBase import CC3DMLGeneratorBase
 from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
-from cc3d.twedit5.Plugins.CC3DProject.additionalRxnDiffFE_PropsPopup import RxnDiffusionPropsPopupForm
+from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
 #from cc3d.twedit5.Plugins.CC3DProject.ui_reactionDiffusion_additional_settings import Ui_RectionDiffusionExtraSettingsDialog
 
 MAC = "qt_mac_set_native_menubar" in dir()
@@ -45,6 +45,9 @@ CONSTANT_DERIVATIVE_BC = "Constant derivative value (von Neumann)"
 PERIODIC_BC = "Periodic BC"
 GLOBAL_DIFFUSION_LABEL = "Global (default value)"
 
+DEFAULT_DIFF_COEFF = '0.01'
+DEFAULT_DECAY_COEFF = '0.001'
+GLOBAL_DECAY_COEFF = '0.0001'
 
 class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard):
     def __init__(self, parent=None):
@@ -72,7 +75,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.typeTable = []
         self.diffusantDict = {}
-        self.rxn_diffusionFE_add_data: dict[str, str] = {}
+        self.rxn_diffusionFE_add_data: dict[str, dict] = {}
         self.chemotaxisData = {}
         self.cellTypeData = {}
         self.field_ic_fileDict = {}  # field_name -> ic file name
@@ -87,7 +90,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         newId = self.currentId()
         print("Page id: ", newId)
         if self.currentId() == self.get_page_id_by_name(SIMULATION_DIR_PAGE_NAME):
-            print(self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME))
+            # print(self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME))
             return self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME):
             return self.get_page_id_by_name(CELL_TYPE_SPEC_PAGE_NAME)
@@ -98,7 +101,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         elif self.currentId() == self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME):
             if len(self.diffusantDict.items()) > 0 and (DIFFUSION_SOLVER_FE in self.diffusantDict or
                                                         SS_DIFF_SOLVER in self.diffusantDict or
-                                                        SS_DIFF_SOLVER_2D in self.diffusantDict):
+                                                        SS_DIFF_SOLVER_2D in self.diffusantDict or
+                                                        REACT_DIFF_SOLVER_FE in self.diffusantDict):
                 return self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME)
             else:
                 if self.chemotaxisCHB.isChecked():
@@ -897,17 +901,27 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     @pyqtSlot()  # signature of the signal emitted by the button
     def on_reactionDiff_FE_PB_clicked(self):
-        popup = RxnDiffusionPropsPopupForm(self)
+        curr_idx: int = self.field_tab.currentIndex()
+        field_name: str = ""
+        solver_name: str = ""
+        for solver, fields in self.diffusantDict.items():
+            for idx, field in enumerate(fields):
+                if idx == curr_idx:
+                    field_name = field
+                    solver_name = solver
+        popup = RxnDiffusionPropsPopupForm(solver_name, field_name, self)
         if len(self.rxn_diffusionFE_add_data) > 1:  # Load existing user data, if exists
-            popup.set_data(self.rxn_diffusionFE_add_data)
+            popup.set_data(self.rxn_diffusionFE_add_data[field_name])
         if popup.exec_() == QDialog.Accepted:
-            extra_settings: dict = popup.get_data()
-            for key in extra_settings:
-                print(f"{key}: {extra_settings[key]}")
-                self.rxn_diffusionFE_add_data[key] = extra_settings[key]
+            extra_settings: dict[str:str] = popup.get_data()
+
+            #for key in extra_settings:
+                # print(f"{key}: {extra_settings[key]}")
+            self.rxn_diffusionFE_add_data[field_name] = extra_settings
         else:
             print("Popup cancelled")
             #self.result_label.setText("Popup canceled.")
+            
 
     # setting up validators for the entry fields
     def setUpValidators(self):
@@ -1028,12 +1042,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         width = self.cellTypeTable.horizontalHeader().width()
 
-        print("column 0 width=", self.cellTypeTable.horizontalHeader().sectionSize(0))
-        print("column 1 width=", self.cellTypeTable.horizontalHeader().sectionSize(1))
-        print("size=", self.cellTypeTable.size())
-        print("baseSize=", self.cellTypeTable.baseSize())
-        print("width=", width)
-        print("column width=", self.cellTypeTable.columnWidth(0))
+        # print("column 0 width=", self.cellTypeTable.horizontalHeader().sectionSize(0))
+        # print("column 1 width=", self.cellTypeTable.horizontalHeader().sectionSize(1))
+        # print("size=", self.cellTypeTable.size())
+        # print("baseSize=", self.cellTypeTable.baseSize())
+        # print("width=", width)
+        # print("column width=", self.cellTypeTable.columnWidth(0))
 
     def insertModulePage(self, _page):
 
@@ -1153,21 +1167,26 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 zMax = self.bcs_tab.findChild(QLineEdit, zmax_le)
                 zMax.setDisabled(False)
 
-    def field_tab_changed(self, index):
+    def field_tab_changed(self, index: int):  # TODO: bug still with hiding reactionDiff_FE_PB button
         if self.bcs_tab.currentIndex() != index:
             self.bcs_tab.setCurrentIndex(index)
         if self.ics_tab.currentIndex() != index:
             self.ics_tab.setCurrentIndex(index)
         if self.field_tab.currentIndex() != index:
             self.field_tab.setCurrentIndex(index)
+        solver: str = self.getSolverByFieldTabIndex(index)
+        if solver in (DIFFUSION_SOLVER_FE, SS_DIFF_SOLVER_2D, SS_DIFF_SOLVER):
+            self.reactionDiff_FE_PB.hide()
+        elif solver == REACT_DIFF_SOLVER_FE:
+            self.reactionDiff_FE_PB.setVisible(True)
 
     def ics_file_path_changed(self):
         tab_idx = self.ics_tab.currentIndex()
         field = self.ics_tab.tabText(tab_idx)
         icfe = "ic_file_edt_" + str(tab_idx)
-        current_fe = self.ics_tab.findChild(QLineEdit, icfe)
+        current_fe: QLineEdit = self.ics_tab.findChild(QLineEdit, icfe)
         ic_file = current_fe.text()  # contains full (absolute) file path
-        print(ic_file)
+        # print(ic_file)
         #  check if valid file location:
         if self.is_path_exists_or_creatable(ic_file):
             self.field_ic_fileDict[field] = ic_file
@@ -1385,7 +1404,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
            # print(cell_type, "hello")
             freeze = False
             if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
-                print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                 freeze = True
 
             self.cellTypeData[cell_type] = [row, freeze]
@@ -1397,11 +1416,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 if (solver_name == SS_DIFF_SOLVER) or (solver_name == SS_DIFF_SOLVER_2D):
                     steadyState_solv = True
                     diff_secrete_table_cols = 6  # No Constant conc or Secrete on contact columns
-                #if solver_name == REACT_DIFF_SOLVER_FE: # NOT implemented yet
-                #    auto_scale: QCheckBox = QCheckBox("Autoscale diffusion")
-                #    auto_scale.setToolTip("Optional auto time sub-stepping. Safe, but conservative")
-                #    current: QLayout = self.diffusion_options_GBox.layout()
-                #    current.addWidget(auto_scale, 0)
+                if solver_name == REACT_DIFF_SOLVER_FE:
+                    self.reactionDiff_FE_PB.setVisible(True)
+                else:
+                    self.reactionDiff_FE_PB.hide()
+
                 new_bc_dialog: QGroupBox = self.getBC_Dialog(idx)  # Set BCs
                 self.bcs_tab.insertTab(idx, new_bc_dialog, field)
                 self.bcs_tab.currentChanged.connect(self.field_tab_changed)
@@ -1460,11 +1479,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 # Global diffusion settings in first row:
                 diff_secrete_table_widget.insertRow(diff_secrete_table_widget.rowCount())
                 global_name = GLOBAL_DIFFUSION_LABEL
-                global_val_decay_coefficient = '0.00001'
+                global_val_decay_coefficient = GLOBAL_DECAY_COEFF
                 item = QTableWidgetItem(global_name)
+                item.setFont(QFont('Arial', 10))
                 item.setTextAlignment(Qt.AlignCenter)
                 diff_secrete_table_widget.setItem(0, 0, item)
-                default_value_diffusion_coefficient = '0.01'
+                default_value_diffusion_coefficient = DEFAULT_DIFF_COEFF
                 diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
                 diff_item.setTextAlignment(Qt.AlignCenter)
                 diff_secrete_table_widget.setItem(0, 1, diff_item)
@@ -1479,7 +1499,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     const_item3.setTextAlignment(Qt.AlignCenter)
                     diff_secrete_table_widget.setItem(0, 4, const_item3)
                     const_item4 = QTableWidgetItem("n/a")
-                    # const_item4.setFlags(not Qt.ItemIsEnabled)
                     const_item4.setTextAlignment(Qt.AlignCenter)
                     diff_secrete_table_widget.setItem(0, 5, const_item4)
                 else:
@@ -1499,11 +1518,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 # now list all cell types:
                 for row, (type_name, type_data) in enumerate(self.cellTypeData.items()):
                     diff_secrete_table_widget.insertRow(diff_secrete_table_widget.rowCount())
+                    default_value_diffusion_coefficient = DEFAULT_DIFF_COEFF
+                    default_value_decay_coefficient = DEFAULT_DECAY_COEFF
                     if steadyState_solv:
                         default_value_diffusion_coefficient = 'n/a'
                         default_value_decay_coefficient = 'n/a'
-                    else:
-                        default_value_decay_coefficient = '0.001'
+                    elif type_name == "Medium":  # Default type in every model
+                        default_value_diffusion_coefficient = 'Uses Global'
+                        default_value_decay_coefficient = 'Uses Global'
+
                     default_value_const_secretion = '-'
                     default_value_const_conc_secretion = '-'
                     default_value_sec_on_contact = '-'
@@ -1513,12 +1536,27 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     item = QTableWidgetItem(type_name)
                     item.setTextAlignment(Qt.AlignCenter)
                     diff_secrete_table_widget.setItem(row + 1, 0, item)
-                    diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
-                    diff_item.setTextAlignment(Qt.AlignCenter)
-                    diff_secrete_table_widget.setItem(row + 1, 1, diff_item)
-                    decay_item = QTableWidgetItem(default_value_decay_coefficient)
-                    decay_item.setTextAlignment(Qt.AlignCenter)
-                    diff_secrete_table_widget.setItem(row + 1, 2, decay_item)
+
+                    if solver_name == REACT_DIFF_SOLVER_FE:
+                        diff_item = QTableWidgetItem("Do not diffuse into")
+                        diff_item.setFont(QFont('Arial', 10))
+                        diff_item.setFlags(QtCore.Qt.ItemFlag.ItemIsUserCheckable |
+                                     QtCore.Qt.ItemFlag.ItemIsEnabled)
+                        diff_item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                        diff_secrete_table_widget.setItem(row + 1, 1, diff_item)
+                        decay_item = QTableWidgetItem("Do not decay into")
+                        decay_item.setFont(QFont('Arial', 10))
+                        decay_item.setFlags(QtCore.Qt.ItemFlag.ItemIsUserCheckable |
+                                           QtCore.Qt.ItemFlag.ItemIsEnabled)
+                        decay_item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                        diff_secrete_table_widget.setItem(row + 1, 2, decay_item)
+                    else:
+                        diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
+                        diff_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 1, diff_item)
+                        decay_item = QTableWidgetItem(default_value_decay_coefficient)
+                        decay_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 2, decay_item)
                     const_sec_item = QTableWidgetItem(default_value_const_secretion)
                     const_sec_item.setTextAlignment(Qt.AlignCenter)
                     diff_secrete_table_widget.setItem(row + 1, 3, const_sec_item)
@@ -1560,6 +1598,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 print("Cell type not found: " + str(new_type))
                 return False
         return True
+
+
+    def getSolverByFieldTabIndex(self, curr_idx) -> str:
+        #curr_idx: int = self.field_tab.currentIndex()
+        if len(self.diffusantDict) > 0:
+            for solver, fields in self.diffusantDict.items():
+                for idx, field in enumerate(fields):
+                    if idx == curr_idx:
+                        return solver
+        return ""  # No solver found
 
         #  Returns dictionary of chemical field secretion values, returns False if data bad
     def getDiffusionSecretion_Values(self, field_table: QTableWidget, field_str, solver: str) -> dict[str, list]:
@@ -1654,20 +1702,44 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 vol_coeffs = {}
                 for row in range(diff_table.rowCount()):
                     cell_type_vol = diff_table.item(row, 0).text()
-                    coef = diff_table.item(row, 1).text()
-                    decay = diff_table.item(row, 2).text()
                     if row == 0:
+                        coef = diff_table.item(row, 1).text()
+                        decay = diff_table.item(row, 2).text()
                         vol_coeffs.update({cell_type_vol: {"GlobalDiffusionCoefficient": coef, "GlobalDecayCoefficient": decay}})
+                    elif solver_name == REACT_DIFF_SOLVER_FE:
+                        #cell_value = diff_table.item(row, 1)
+                        do_not_defuse: str = ""
+                        do_not_decay:str = ""
+                        if diff_table.item(row, 1).checkState():
+                            do_not_defuse = "True"
+                        else:
+                            do_not_defuse = "False"
+                        if diff_table.item(row, 2).checkState():
+                            do_not_decay = "True"
+                        else:
+                            do_not_decay = "False"
+                        vol_coeffs.update({cell_type_vol: {"DoNotDefuseTo": do_not_defuse, "DoNotDecayTo": do_not_decay}})
                     else:
+                        coef = diff_table.item(row, 1).text()
+                        decay = diff_table.item(row, 2).text()
                         vol_coeffs.update({cell_type_vol: {"DiffusionCoefficient": coef, "DecayCoefficient": decay}})
                 diffusant_data["Coefficients"] = vol_coeffs
+                if solver_name == REACT_DIFF_SOLVER_FE:  # Additional settings for Rxn Diff solve
+                    if field in self.rxn_diffusionFE_add_data:
+                        curr_add_solver_settings: dict[str,str] = self.rxn_diffusionFE_add_data[field] # by default not created.
+                        for key in curr_add_solver_settings:
+                            if key == "AutoscaleDiffusion":
+                                if curr_add_solver_settings[key] == "True":  # XML: True: tag exists, False: no tag
+                                    diffusant_data["AutoscaleDiffusion"] = ""
+                            else:
+                                diffusant_data[key] = curr_add_solver_settings[key]
                 for widget in self.bcs_tab.children():  # Get BCs
                     group_boxes = widget.findChildren(QGroupBox)
                     all_bcs = {}
                     for child in group_boxes:
                         group_bx_name = ""
                         if isinstance(child, QGroupBox):
-                            combo_boxes = child.findChildren(QComboBox)
+                            combo_boxes: list[QComboBox] = child.findChildren(QComboBox)
                             group_bx_name = child.objectName()
                             if group_bx_name.endswith("_" + str(idx)):
                                 for c_box in combo_boxes:
@@ -1725,7 +1797,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     diffusant_data.update(diffusant_ic)
                 diffusion_vals_dict[field] = diffusant_data
 
-            print(diffusion_vals_dict)
+            # print(diffusion_vals_dict)
         return diffusion_vals_dict
 
 
@@ -1847,7 +1919,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 freeze = False
 
                 if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
-                    print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                    # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                     freeze = True
 
                 self.typeTable.append([cell_type, freeze])
@@ -1858,7 +1930,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.chemTowardsCellTypeCB.clear()
             self.chemFieldCB.clear()
 
-            print("Clearing Combo boxes")
+            # print("Clearing Combo boxes")
             for cell_type_tuple in self.typeTable:
 
                 if str(cell_type_tuple[0]) != "Medium":
@@ -1939,8 +2011,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             if len(self.diffusantDict.items()) > 0:  # VALIDATE ICs and BCs,
                 solver_found = False
-                for solver_name, fields in self.diffusantDict.items():  # Check for use of DiffusionSolverFE
-                    if solver_name in (DIFFUSION_SOLVER_FE, SS_DIFF_SOLVER, SS_DIFF_SOLVER_2D) and not solver_found:
+                for solver_name, fields in self.diffusantDict.items():  # Check for use of specific Diffusion Solvers:
+                    if solver_name in (DIFFUSION_SOLVER_FE, SS_DIFF_SOLVER, SS_DIFF_SOLVER_2D,
+                                       REACT_DIFF_SOLVER_FE) and not solver_found:
                     #if (solver_name == DIFFUSION_SOLVER_FE or REACT_DIFF_SOLVER_FE or REACT_DIFF_SOLVER_FVM) and not solver_found:
                         solver_found = True
                         self.setPage(self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME), self.get_page_by_name(DIFFUSION_WIZARD_PAGE_NAME))
@@ -1966,7 +2039,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if self.currentId() == self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME):
             # we only extract data from page here - it is not a validation strictly speaking
             self.diffusion_vals_dict = self.getCurrentDiffusionFE_Values()
-            # Get secretion values and uptake values
+            # Get Additional properties and secretion and uptake values
             for solver_name, fields in self.diffusantDict.items():
                 for field_name in fields:
                     results = self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name, solver_name)
@@ -1975,8 +2048,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                             return False  # secretion values bad
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
-                    #self.diffusion_vals_dict[field_name]["Secretion"] = \
-                    #    self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name)
 
         if self.currentId() == self.get_page_by_name("AdhesionFlex Plugin"):
 
@@ -2057,7 +2128,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 relative_piff_path = os.path.join(self.simulationFilesDir, base_piff_path)
                 self.generalPropertiesDict["Initializer"][1] = self.getRelativePathWRTProjectDir(relative_piff_path)
 
-                print("relativePathOF PIFF=", self.generalPropertiesDict["Initializer"][1])
+                # print("relativePathOF PIFF=", self.generalPropertiesDict["Initializer"][1])
 
             except shutil.Error:
                 QMessageBox.warning(self, "Cannot copy PIFF file",
@@ -2077,7 +2148,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             freeze = False
 
             if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
-                print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                 freeze = True
 
             self.cellTypeData[cell_type] = [row, freeze]
@@ -2385,15 +2456,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             solver_generator_fcn(*args, **kwds)
 
             # if self.fieldTable.rowCount():
-
-            # generator.generateDiffusionSolverFE(*args,**kwds)            
-
+            # generator.generateDiffusionSolverFE(*args,**kwds)
             # generator.generateFlexibleDiffusionSolverFE(*args,**kwds)
-
-            # generator.generateFastDiffusionSolver2DFE(*args,**kwds)            
-
-            # generator.generateKernelDiffusionSolver(*args,**kwds)            
-
+            # generator.generateFastDiffusionSolver2DFE(*args,**kwds)
+            # generator.generateKernelDiffusionSolver(*args,**kwds)
             # generator.generateSteadyStateDiffusionSolver(*args,**kwds)            
 
         if self.boxWatcherCHB.isChecked():

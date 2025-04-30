@@ -1885,91 +1885,305 @@ class CC3DMLGeneratorBase:
     @GenerateDecorator('Steppable', ['Type', 'ReactionDiffusionSolverFE'])
     def generateReactionDiffusionSolverFE(self, *args, **kwargs):
 
+
         m_element = self.mElement
+        gpd = self.gpd
 
         try:
             pde_field_data = kwargs['pdeFieldData']
-        except LookupError:
+        except LookupError as e:
             pde_field_data = {}
 
-        sim_3d_flag = self.checkIfSim3D(self.gpd)
+        try:
+            diffusion_algo_data = kwargs['diffusantData']
+            # print(diffusion_algo_data)
+        except LookupError as e:
+            diffusion_algo_data = {}
+
+        sim_3d_flag = self.checkIfSim3D(gpd)
 
         m_element.addComment("newline")
         m_element.addComment("Specification of PDE solvers")
 
         cell_type_names = self.decorated_cell_type_names
-        example_type = cell_type_names[0] if cell_type_names else "CellType"
-
         for field_name, solver in pde_field_data.items():
-
+            secr_specified = False
             if solver == 'ReactionDiffusionSolverFE':
-
                 diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": field_name})
-                diff_field_elem.addComment('Optional automatic time sub-stepping. Safe, but conservative. Uncomment to use.')
-                auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
-                auto_timestep_elem.commentOutElement()
-
-                # Diffusion data
+                diff_field_params = diffusion_algo_data[field_name]
+                if "AutoscaleDiffusion" in diff_field_params:
+                    auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
-                diff_data.ElementCC3D("DiffusionConstant", {}, 0.1)
-                diff_data.addComment("Additional term can be an expression involving field name and CellType. See muParser" \
-                                   " and CC3D documentation for valid mathematical expressions.")
-                diff_data.ElementCC3D("AdditionalTerm", {}, "1*" + field_name)
-                diff_data.addComment("Additional options are:")
-                do_not_diff_elem = diff_data.ElementCC3D("DoNotDiffuseTo", {}, "cell type")
-                do_not_diff_elem.commentOutElement()
-                do_not_decay_elem = diff_data.ElementCC3D("DoNotDecayTo", {}, "cell type")
-                do_not_decay_elem.commentOutElement()
-                conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
-                conc_eqn_elem.commentOutElement()
-                conc_file_elem = diff_data.ElementCC3D("ConcentrationFileName", {}, "INITIAL CONCENTRATION FIELD "\
-                "- typically a file with path Simulation/NAME_OF_THE_FILE.txt")
-                conc_file_elem.commentOutElement()
-                diff_data.addComment("To run solver for large diffusion constants you typically call solver multiple times "\
-                "- ExtraTimesPerMCS to specify additional calls to the solver in each MCS")
-                diff_data.addComment("IMPORTANT: make sure not to mix this setting with the PDESolverCaller module! "\
-                "See manual for more information")
-                extra_mcs_elem = diff_data.ElementCC3D("ExtraTimesPerMCS", {}, 0)
-                extra_mcs_elem.commentOutElement()
-                deltaX_elem = diff_data.ElementCC3D("DeltaX", {}, 1.0)
-                deltaX_elem.commentOutElement()
-                deltaT_elem = diff_data.ElementCC3D("DeltaT", {}, 1.0)
-                deltaT_elem.commentOutElement()
+                secr_data = diff_field_elem.ElementCC3D("SecretionData")
 
-                # Boundary Conditions
-                bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
-                plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
-                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 0.0})
-                plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 0.0})
-                plane_x_elem.addComment("Other options are (examples):")
+                if diff_field_params is not None:
+                    diff_field_coeffs = diff_field_params["Coefficients"]
+                    diff_field_bcs = diff_field_params["BoundaryConditions"]
+                    diff_field_ics = diff_field_params["InitialConditions"]
 
-                periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
-                periodic_x_elem.commentOutElement()
-                cd_elem = plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                cd_elem.commentOutElement()
+                    diff_data.addComment(
+                        "Additional term can be an expression involving field name and CellType. See muParser" \
+                        " and CC3D documentation for valid mathematical expressions.")
+                    if "AdditionalTerm" in diff_field_params:
+                        add_term: str = diff_field_params["AdditionalTerm"]
+                        if add_term.strip() == "":
+                            diff_data.ElementCC3D("AdditionalTerm", {}, "1*" + field_name)
+                        else:
+                            diff_data.ElementCC3D("AdditionalTerm", {}, add_term)
+                    else:
+                        diff_data.ElementCC3D("AdditionalTerm", {}, "1*" + field_name)
 
-                plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
-                plane_y_elem.addComment("Other options are (examples):")
+                    global_coeffs = diff_field_coeffs["Global (default value)"]
+                    diff_data.ElementCC3D("DiffusionConstant", {}, global_coeffs["GlobalDiffusionCoefficient"])
 
-                periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
-                periodic_y_elem.commentOutElement()
+                    if "InitialConcentrationExpression" in diff_field_ics:
+                        diff_data.ElementCC3D("InitialConcentrationExpression", {},
+                                              diff_field_ics["InitialConcentrationExpression"])
+                    else:
+                        if "ConcentrationFileName" in diff_field_ics:
+                            self.write_out_ic_file(diff_field_ics["ConcentrationFileName"], self.gpd["Dim"][0],
+                                                   self.gpd["Dim"][1], self.gpd["Dim"][2])
+                            diff_data.ElementCC3D("ConcentrationFileName", {}, diff_field_ics["ConcentrationFileName"])
 
-                cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 0.0})
-                cv_elem.commentOutElement()
+                    # Additional settings for ReactionDiffusionFE
+                    diff_data.addComment("Additional options are:")
+                    decay_used = False
+                    diff_used = False
+                    for type_name in cell_type_names:
+                        field_coeffs = diff_field_coeffs[type_name]
+                        if field_coeffs["DoNotDefuseTo"] == "True":
+                            diff_data.ElementCC3D('DoNotDiffuseTo', {}, type_name)
+                            diff_used = True
+                        if field_coeffs["DoNotDecayTo"] == "True":
+                            diff_data.ElementCC3D('DoNotDecayTo', {}, type_name)
+                            decay_used = True
 
-                if sim_3d_flag:
-                    plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
-                    plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
-                    plane_z_elem.addComment("Other options are (examples):")
+                    if not diff_used :
+                        do_not_diff_elem = diff_data.ElementCC3D("DoNotDiffuseTo", {}, "cell type")
+                        do_not_diff_elem.commentOutElement()
+                    if not decay_used:
+                        do_not_decay_elem = diff_data.ElementCC3D("DoNotDecayTo", {}, "cell type")
+                        do_not_decay_elem.commentOutElement()
 
-                    periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
-                    periodic_z_elem.commentOutElement()
-                    cvz_elem = plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 0.0})
-                    cvz_elem.commentOutElement()
+                    diff_data.addComment(
+                        "To run solver for large diffusion constants you typically call solver multiple times " \
+                        "- ExtraTimesPerMCS to specify additional calls to the solver in each MCS")
+                    diff_data.addComment(
+                        "IMPORTANT: make sure not to mix this setting with the PDESolverCaller module! " \
+                        "See manual for more information")
+                    extra_mcs: int = 0  # default
+                    if "ExtraTimesPerMCS" in diff_field_params:
+                        extra_mcs_str: str = diff_field_params["ExtraTimesPerMCS"]
+                        try:
+                            extra_mcs: int = int(extra_mcs_str)
+                            if extra_mcs < 0:
+                                extra_mcs = 0
+                        except:
+                            extra_mcs = 0
+                    extra_mcs_elem = diff_data.ElementCC3D("ExtraTimesPerMCS", {}, extra_mcs)
+                    delta_x: float = 1.0  # default
+                    if "DeltaX" in diff_field_params:
+                        delta_x_str: str = diff_field_params["DeltaX"]
+                        try:
+                            delta_x: float = float(delta_x_str)
+                            if delta_x <= 0.0:
+                                delta_x = 1.0
+                        except:
+                            delta_x = 1.0
+                    diff_data.ElementCC3D("DeltaX", {}, delta_x)
+                    delta_t = 1.0  # default
+                    if "DeltaT" in diff_field_params:
+                        delta_t_str: str = diff_field_params["DeltaT"]
+                        try:
+                            delta_t: float = float(delta_t_str)
+                            if delta_t <= 0.0:
+                                delta_t = 1.0
+                        except:
+                            delta_t = 1.0
+                    deltaT_elem = diff_data.ElementCC3D("DeltaT", {}, delta_t)
+
+                    #  Boundary conditions:
+                    bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
+                    for plane in diff_field_bcs:
+                        value = diff_field_bcs[plane]
+                        if "x_group" in plane:
+                            plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
+                            for bc_type in value:
+                                bc_value = value[bc_type]
+                                if "ConstantValue" in bc_type:
+                                    for min_max in bc_value:
+                                        if "min" in min_max:
+                                            plane_x_elem.ElementCC3D('ConstantValue',
+                                                                     {'PlanePosition': 'Min', 'Value': bc_value[min_max]})
+                                        else:
+                                            plane_x_elem.ElementCC3D('ConstantValue',
+                                                                     {'PlanePosition': 'Max', 'Value': bc_value[min_max]})
+                                else:
+
+                                    if "ConstantDerivative" in bc_type:
+                                        for min_max in bc_value:
+                                            if "min" in min_max:
+                                                plane_x_elem.ElementCC3D('ConstantDerivative',
+                                                                         {'PlanePosition': 'Min',
+                                                                          'Value': bc_value[min_max]})
+                                            else:
+                                                plane_x_elem.ElementCC3D('ConstantDerivative',
+                                                                         {'PlanePosition': 'Max',
+                                                                          'Value': bc_value[min_max]})
+                                    else:  # Periodic BC
+                                        plane_x_elem.ElementCC3D("Periodic")
+                        else:
+                            if "y_group" in plane:
+                                plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
+                                for bc_type in value:
+                                    bc_value = value[bc_type]
+                                    if "ConstantValue" in bc_type:
+                                        for min_max in bc_value:
+                                            if "min" in min_max:
+                                                plane_y_elem.ElementCC3D('ConstantValue',
+                                                                         {'PlanePosition': 'Min',
+                                                                          'Value': bc_value[min_max]})
+                                            else:
+                                                plane_y_elem.ElementCC3D('ConstantValue',
+                                                                         {'PlanePosition': 'Max',
+                                                                          'Value': bc_value[min_max]})
+                                    else:
+                                        if "ConstantDerivative" in bc_type:
+                                            for min_max in bc_value:
+                                                if "min" in min_max:
+                                                    plane_y_elem.ElementCC3D('ConstantDerivative',
+                                                                             {'PlanePosition': 'Min',
+                                                                              'Value': bc_value[min_max]})
+                                                else:
+                                                    plane_y_elem.ElementCC3D('ConstantDerivative',
+                                                                             {'PlanePosition': 'Max',
+                                                                              'Value': bc_value[min_max]})
+                                        else:  # Periodic BC
+                                            plane_y_elem.ElementCC3D("Periodic")
+                            else:
+                                if sim_3d_flag and "z_group" in plane:
+                                    plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
+                                    for bc_type in value:
+                                        bc_value = value[bc_type]
+                                        if "ConstantValue" in bc_type:
+                                            for min_max in bc_value:
+                                                if "min" in min_max:
+                                                    plane_z_elem.ElementCC3D('ConstantValue',
+                                                                             {'PlanePosition': 'Min',
+                                                                              'Value': bc_value[min_max]})
+                                                else:
+                                                    plane_z_elem.ElementCC3D('ConstantValue',
+                                                                             {'PlanePosition': 'Max',
+                                                                              'Value': bc_value[min_max]})
+                                        else:
+                                            if "ConstantDerivative" in bc_type:
+                                                for min_max in bc_value:
+                                                    if "min" in min_max:
+                                                        plane_z_elem.ElementCC3D('ConstantDerivative',
+                                                                                 {'PlanePosition': 'Min',
+                                                                                  'Value': bc_value[min_max]})
+                                                    else:
+                                                        plane_z_elem.ElementCC3D('ConstantDerivative',
+                                                                                 {'PlanePosition': 'Max',
+                                                                                  'Value': bc_value[min_max]})
+                                            else:  # Periodic BC
+                                                plane_z_elem.ElementCC3D("Periodic")
+                    #  Secretion info:
+                    if "Secretion" in diff_field_params:  # optional term
+                        diff_field_secr_dict = diff_field_params["Secretion"]
+                        for field in diff_field_secr_dict:  # should be only one field in dict
+                            diff_field_secr_list = diff_field_secr_dict[field]
+                            for secr_dict in diff_field_secr_list:
+                                uptake_attributes_dict = {}
+                                uptake_attributes_dict["Type"] = secr_dict["CellType"]
+                                uptake_attributes_dict["MaxUptake"] = secr_dict["MaxUptake"]
+                                uptake_attributes_dict["RelativeUptakeRate"] = secr_dict["RelativeUptakeRate"]
+                                secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+                                rate = secr_dict["Rate"]
+                                attribute_dict = {"Type": secr_dict["CellType"]}
+                                if secr_dict["SecretionType"] == 'uniform':
+                                    secr_specified = True
+                                    secr_data.ElementCC3D("Secretion", attribute_dict, rate)
+
+                                elif secr_dict["SecretionType"] == 'on contact':
+                                    secr_specified = True
+                                    attribute_dict["SecreteOnContactWith"] = secr_dict["OnContactWith"]
+                                    secr_data.ElementCC3D("SecretionOnContact", attribute_dict, rate)
+
+                                elif secr_dict["SecretionType"] == 'constant concentration':
+                                    secr_specified = True
+                                    secr_data.ElementCC3D("ConstantConcentration", attribute_dict, rate)
+
+                else:
+                    # DEFAULT **************************************
+
+                    diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": field_name})
+                    diff_field_elem.addComment('Optional automatic time sub-stepping. Safe, but conservative. Uncomment to use.')
+                    auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
+                    auto_timestep_elem.commentOutElement()
+
+                    # Diffusion data
+                    diff_data = diff_field_elem.ElementCC3D("DiffusionData")
+                    diff_data.ElementCC3D("FieldName", {}, field_name)
+                    diff_data.ElementCC3D("DiffusionConstant", {}, 0.1)
+                    diff_data.addComment("Additional term can be an expression involving field name and CellType. See muParser" \
+                                       " and CC3D documentation for valid mathematical expressions.")
+                    diff_data.ElementCC3D("AdditionalTerm", {}, "1*" + field_name)
+                    diff_data.addComment("Additional options are:")
+                    do_not_diff_elem = diff_data.ElementCC3D("DoNotDiffuseTo", {}, "cell type")
+                    do_not_diff_elem.commentOutElement()
+                    do_not_decay_elem = diff_data.ElementCC3D("DoNotDecayTo", {}, "cell type")
+                    do_not_decay_elem.commentOutElement()
+                    conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
+                    conc_eqn_elem.commentOutElement()
+                    conc_file_elem = diff_data.ElementCC3D("ConcentrationFileName", {}, "INITIAL CONCENTRATION FIELD "\
+                    "- typically a file with path Simulation/NAME_OF_THE_FILE.txt")
+                    conc_file_elem.commentOutElement()
+                    diff_data.addComment("To run solver for large diffusion constants you typically call solver multiple times "\
+                    "- ExtraTimesPerMCS to specify additional calls to the solver in each MCS")
+                    diff_data.addComment("IMPORTANT: make sure not to mix this setting with the PDESolverCaller module! "\
+                    "See manual for more information")
+                    extra_mcs_elem = diff_data.ElementCC3D("ExtraTimesPerMCS", {}, 0)
+                    extra_mcs_elem.commentOutElement()
+                    deltaX_elem = diff_data.ElementCC3D("DeltaX", {}, 1.0)
+                    deltaX_elem.commentOutElement()
+                    deltaT_elem = diff_data.ElementCC3D("DeltaT", {}, 1.0)
+                    deltaT_elem.commentOutElement()
+
+                    # Boundary Conditions
+                    bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
+                    plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
+                    plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Min', 'Value': 0.0})
+                    plane_x_elem.ElementCC3D("ConstantValue", {'PlanePosition': 'Max', 'Value': 0.0})
+                    plane_x_elem.addComment("Other options are (examples):")
+
+                    periodic_x_elem = plane_x_elem.ElementCC3D("Periodic")
+                    periodic_x_elem.commentOutElement()
+                    cd_elem = plane_x_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                    cd_elem.commentOutElement()
+
+                    plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
+                    plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                    plane_y_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
+                    plane_y_elem.addComment("Other options are (examples):")
+
+                    periodic_y_elem = plane_y_elem.ElementCC3D("Periodic")
+                    periodic_y_elem.commentOutElement()
+
+                    cv_elem = plane_y_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 0.0})
+                    cv_elem.commentOutElement()
+
+                    if sim_3d_flag:
+                        plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
+                        plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Min', 'Value': 0.0})
+                        plane_z_elem.ElementCC3D('ConstantDerivative', {'PlanePosition': 'Max', 'Value': 0.0})
+                        plane_z_elem.addComment("Other options are (examples):")
+
+                        periodic_z_elem = plane_z_elem.ElementCC3D("Periodic")
+                        periodic_z_elem.commentOutElement()
+                        cvz_elem = plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 0.0})
+                        cvz_elem.commentOutElement()
 
     @GenerateDecorator('Steppable',['Type','SteadyStateDiffusionSolver'])
     def generateSteadyStateDiffusionSolver(self, *args, **kwds):

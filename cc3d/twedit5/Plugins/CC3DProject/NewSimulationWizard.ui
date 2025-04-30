@@ -1979,14 +1979,17 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="autoscale_diff_CHB">
-         <property name="toolTip">
-          <string>Optional automatic time sub-stepping. Safe, but conservative. </string>
+        <spacer name="horizontalSpacer_8">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
-         <property name="text">
-          <string>Autoscale diffusion</string>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
          </property>
-        </widget>
+        </spacer>
        </item>
        <item>
         <widget class="QPushButton" name="reactionDiff_FE_PB">
@@ -1994,7 +1997,7 @@ p, li { white-space: pre-wrap; }
           <string>Additional term can be an expression involving field name and CellType</string>
          </property>
          <property name="text">
-          <string>Add additional diffusion term</string>
+          <string>Add reaction term and other settings</string>
          </property>
         </widget>
        </item>
@@ -2396,12 +2399,12 @@ p, li { white-space: pre-wrap; }
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>503</x>
-     <y>485</y>
+     <x>892</x>
+     <y>476</y>
     </hint>
     <hint type="destinationlabel">
-     <x>184</x>
-     <y>522</y>
+     <x>401</x>
+     <y>514</y>
     </hint>
    </hints>
   </connection>
@@ -2412,12 +2415,28 @@ p, li { white-space: pre-wrap; }
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>641</x>
-     <y>492</y>
+     <x>892</x>
+     <y>476</y>
     </hint>
     <hint type="destinationlabel">
-     <x>622</x>
-     <y>533</y>
+     <x>892</x>
+     <y>507</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>reactionDiff_FE_PB</sender>
+   <signal>clicked()</signal>
+   <receiver>NewSimulationWizard</receiver>
+   <slot>exec()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>758</x>
+     <y>262</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>648</x>
+     <y>-104</y>
     </hint>
    </hints>
   </connection>

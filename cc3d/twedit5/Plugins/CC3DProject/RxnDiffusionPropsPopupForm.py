@@ -1,16 +1,18 @@
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWizard, QWizardPage, QVBoxLayout, QPushButton,
-    QDialog, QBoxLayout, QGroupBox, QLineEdit, QDialogButtonBox, QLabel
+    QDialog, QBoxLayout, QGroupBox, QLineEdit, QCheckBox, QDialogButtonBox, QLabel
 )
 
 
 # Popup form listing additional parameters used in Reaction Diffusion FE solver
 class RxnDiffusionPropsPopupForm(QDialog):
-    def __init__(self,  tab_idx: int = 0, parent=None):  # tab_idx for chemical field currently not used.
+    # field for specific chemical field name.
+    # solver: specific name for diffusion solver used
+    def __init__(self,  solver: str, field: str = "", parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Additional Reaction Diffusion FE properties")
-
+        self.setWindowTitle("Additional Reaction Diffusion properties")
+        self.tab_solver: str = solver
+        self.tab_field: str = field
         # Layout and form
         self.main_layout = QBoxLayout(QBoxLayout.TopToBottom)
         self.reaction_diff_descr_label = QLabel("Additional term can be an expression involving field name and CellType. See "
@@ -59,6 +61,14 @@ class RxnDiffusionPropsPopupForm(QDialog):
         self.extra_deltaT_group.setLayout(self.extra_deltaT_layout)
         self.extra_set_layout.addWidget(self.extra_deltaT_group)
 
+        self.auto_scale_group = QGroupBox("")
+        self.auto_scale_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        self.auto_scale_CHB = QCheckBox("Autoscale Diffusion (Optional)")
+        self.auto_scale_CHB.setToolTip("Optional auto time sub-stepping. Safe, but conservative")
+        self.auto_scale_layout.addWidget(self.auto_scale_CHB)
+        self.auto_scale_group.setLayout(self.auto_scale_layout)
+        self.extra_set_layout.addWidget(self.auto_scale_group)
+
         self.extra_set_group.setLayout(self.extra_set_layout)
         self.main_layout.addWidget(self.extra_set_group)
 
@@ -76,6 +86,10 @@ class RxnDiffusionPropsPopupForm(QDialog):
         data["ExtraTimesPerMCS"] = self.extra_mcs_lineEdit.text()
         data["DeltaX"] = self.extra_deltaX_lineEdit.text()
         data["DeltaT"] = self.extra_deltaT_lineEdit.text()
+        if self.auto_scale_CHB.isChecked():
+            data["AutoscaleDiffusion"] = "True"
+        else:
+            data["AutoscaleDiffusion"] = "False"
         return data
 
     def set_data(self, data: dict[str, str]):
@@ -88,4 +102,7 @@ class RxnDiffusionPropsPopupForm(QDialog):
                 self.extra_deltaX_lineEdit.setText(data[key])
             elif key == "DeltaT":
                 self.extra_deltaT_lineEdit.setText(data[key])
+            elif key == "AutoscaleDiffusion":
+                if data[key] == "True":
+                    self.auto_scale_CHB.setChecked()
 
