@@ -213,7 +213,7 @@ class CC3DMLGeneratorBase:
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataSimulationProperties(self, *args, **kwds):
-
+        gpd: dict = self.gpd
         m_element = self.mElement
 
         m_element.addComment("newline")
@@ -225,6 +225,9 @@ class CC3DMLGeneratorBase:
         m_element.ElementCC3D("DebugOutputFrequency", {}, 10)
         non_parallel_elem = m_element.ElementCC3D("NonParallelModule", {"Name": "Potts"})
         non_parallel_elem.commentOutElement()
+
+        m_element.ElementCC3D("MCS_ConversionFactor", {"Units": gpd["mcsConversionUnits"]}, gpd["mcsConversionFactor"])
+        m_element.ElementCC3D("VoxelConversionFactor", {"Units": gpd["voxelConversionUnits"]}, gpd["voxelConversionFactor"])
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataDebugOutputFrequency(self, *args, **kwds):

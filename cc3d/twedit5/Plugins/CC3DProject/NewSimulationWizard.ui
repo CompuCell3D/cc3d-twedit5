@@ -337,50 +337,6 @@ p, li { white-space: pre-wrap; }
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout_6">
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_31">
-          <property name="text">
-           <string>Average Membrane Fluctuations</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="membraneFluctuationsLE">
-          <property name="toolTip">
-           <string>Also known as so called temperature parameter in the acceptance probability expresion:  exp(-delta E/(k*T))</string>
-          </property>
-          <property name="text">
-           <string>10</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_32">
-          <property name="text">
-           <string>Pixel Copy Range (NeighborOrder)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QSpinBox" name="neighborOrderSB">
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>10</number>
-          </property>
-          <property name="value">
-           <number>1</number>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_33">
-          <property name="text">
-           <string>Number of MC Steps</string>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="1">
          <widget class="QSpinBox" name="mcsSB">
           <property name="maximum">
@@ -403,6 +359,50 @@ p, li { white-space: pre-wrap; }
             <string>Hexagonal</string>
            </property>
           </item>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_33">
+          <property name="text">
+           <string>Number of MC Steps</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="neighborOrderSB">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_31">
+          <property name="text">
+           <string>Average Membrane Fluctuations</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_32">
+          <property name="text">
+           <string>Pixel Copy Range (NeighborOrder)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="membraneFluctuationsLE">
+          <property name="toolTip">
+           <string>Also known as so called temperature parameter in the acceptance probability expresion:  exp(-delta E/(k*T))</string>
+          </property>
+          <property name="text">
+           <string>10</string>
+          </property>
          </widget>
         </item>
         <item row="0" column="0">
@@ -469,6 +469,146 @@ p, li { white-space: pre-wrap; }
        </widget>
       </item>
      </layout>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="unitsGB">
+      <property name="title">
+       <string>Units</string>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_26">
+       <item>
+        <widget class="QLabel" name="mcs_time_label">
+         <property name="toolTip">
+          <string>1 Monte Carlo step equals how much time?</string>
+         </property>
+         <property name="text">
+          <string>1 mcs equals:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="mcs_time_factorLE">
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>1.0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="mcs_time_unitsCB">
+         <item>
+          <property name="text">
+           <string>No conversion</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Millisecond (msec)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Second (sec)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Minute (min)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Hour (hr)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Microsecond (usec)</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_17">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="voxel_length_label">
+         <property name="text">
+          <string>1 voxel/pixel side equals:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="voxel_length_factorLE">
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>1.0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="voxel_length_unitsCB">
+         <item>
+          <property name="text">
+           <string>No conversion</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>micrometer (um)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>millimeter (mm)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>centimeter (cm)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>nanometer (nm)</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </item>
     <item>
      <spacer name="verticalSpacer_3">

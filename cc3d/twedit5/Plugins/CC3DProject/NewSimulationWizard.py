@@ -1082,9 +1082,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.removePage(page_id)
                 break
 
-    def checkIfNumber(self, value):
-        if value == ".":
-            return True
+    def checkIfNumber(self, value: str):
+        #if value == ".":
+        #    return True
         if value.isdecimal():
             return True
         try:
@@ -2152,6 +2152,22 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             except IOError as e:
                 QMessageBox.warning(self, "IO Error", e.__str__(), QMessageBox.Ok)
+
+        self.generalPropertiesDict["mcsConversionUnits"] = self.mcs_time_unitsCB.currentText()
+        number_str = self.mcs_time_factorLE.text()
+        try:
+            float(number_str)
+            self.generalPropertiesDict["mcsConversionFactor"] = number_str
+        except ValueError:
+            self.generalPropertiesDict["voxelConversionFactor"] = "1.0"
+        self.generalPropertiesDict["voxelConversionUnits"] = self.voxel_length_unitsCB.currentText()
+        number_str = self.voxel_length_factorLE.text()
+        try:
+            float(number_str)
+            self.generalPropertiesDict["voxelConversionFactor"] = number_str
+        except ValueError:
+            self.generalPropertiesDict["voxelConversionFactor"] = "1.0"
+
 
         self.cellTypeData = {}
 
