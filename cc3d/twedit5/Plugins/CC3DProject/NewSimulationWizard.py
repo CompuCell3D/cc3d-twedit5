@@ -15,7 +15,6 @@ from cc3d.twedit5.Plugins.CC3DMLGenerator.CC3DMLGeneratorBase import CC3DMLGener
 from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
 from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
-#from cc3d.twedit5.Plugins.CC3DProject.ui_reactionDiffusion_additional_settings import Ui_RectionDiffusionExtraSettingsDialog
 
 MAC = "qt_mac_set_native_menubar" in dir()
 # Wizard pages:
@@ -170,6 +169,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 else:
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
+        elif self.currentId() == self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME):
+            if event.key() == Qt.Key_Return:
+                event.accept()  # Needed if Qlinedit text changes, otherwise NextButton event processed
 
         elif self.currentId() == self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME):
 
