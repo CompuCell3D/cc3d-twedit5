@@ -48,6 +48,12 @@ DEFAULT_DIFF_COEFF = '0.01'
 DEFAULT_DECAY_COEFF = '0.001'
 GLOBAL_DECAY_COEFF = '0.0001'
 
+# Units for conversion of MCS and voxel:
+TIME_UNITS = ["No conversion", "Millisecond (msec)", "Second (sec)", "Minute (min)", "Hour (hr)",
+              "Microsecond (usec)"]
+LENGTH_UNITS = ["No conversion", "micrometer (um)", "millimeter (mm)", "centimeter (cm)", "nanometer (nm)"]
+
+
 class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard):
     def __init__(self, parent=None):
         super(NewSimulationWizard, self).__init__(parent)
@@ -69,6 +75,13 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         # This dictionary holds references to certain pages e.g. plugin configuration pages are inserted on demand
         # and access to those pages is facilitated via self.pageDict
         self.pageDict = {}
+
+        self.mcs_time_unitsCB.clear() # clear out default unit values
+        for unit in TIME_UNITS:
+            self.mcs_time_unitsCB.addItem(unit)
+        self.voxel_length_unitsCB.clear()
+        for unit in LENGTH_UNITS:
+            self.voxel_length_unitsCB.addItem(unit)
 
         self.updateUi()
 
