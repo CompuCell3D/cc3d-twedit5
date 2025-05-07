@@ -228,11 +228,17 @@ class CC3DMLGeneratorBase:
         # assume format of 'display_name (unit_abrev)'
         time_labels: list[str] = gpd["mcsConversionUnits"].rstrip(")").split("(")
         display_name = time_labels[0].strip()
-        abrev = time_labels[1]
+        if len(time_labels) > 1:
+            abrev = time_labels[1]
+        else:
+            abrev = "-"
         m_element.ElementCC3D("MCSConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["mcsConversionFactor"])
         length_labels: list[str] = gpd["voxelConversionUnits"].rstrip(")").split("(")
         display_name = length_labels[0].strip()
-        abrev = length_labels[1]
+        if len(length_labels) > 1:
+            abrev = length_labels[1]
+        else:
+            abrev = "-"
         m_element.ElementCC3D("VoxelConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
 
     @GenerateDecorator('Metadata', ['', ''])
@@ -1338,7 +1344,7 @@ class CC3DMLGeneratorBase:
                                     else:  # Periodic BC
                                         plane_x_elem.ElementCC3D("Periodic")
                         else:
-                            if "y_group" in plane:
+                            if "y_group" in plane and (gpd["Dim"][1] > 1):
                                 plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
                                 for bc_type in value:
                                     bc_value = value[bc_type]
@@ -1366,7 +1372,7 @@ class CC3DMLGeneratorBase:
                                         else:  # Periodic BC
                                             plane_y_elem.ElementCC3D("Periodic")
                             else:
-                                if sim_3d_flag and "z_group" in plane:
+                                if "z_group" in plane and (gpd["Dim"][2] > 1):
                                     plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
                                     for bc_type in value:
                                         bc_value = value[bc_type]

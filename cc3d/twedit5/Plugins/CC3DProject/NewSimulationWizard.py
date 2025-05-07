@@ -50,7 +50,6 @@ GLOBAL_DECAY_COEFF = '0.0001'
 
 # Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
 TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
-
 LENGTH_UNITS = ["No conversion (-)", "nanometer (nm)", "micrometer (um)", "millimeter (mm)", "centimeter (cm)", "meter (m)"]
 
 
@@ -1394,7 +1393,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         zmax_label = QLabel("Value at z = z.max")
         zmax_line_edit = QLineEdit("0.0")
         zmax_line_edit.textChanged.connect(self.checkIfNumber)
-        xmax_le = "z_max" + str(idx)
+        zmax_le = "z_max" + str(idx)
         z_val = self.zDimSB.value()  # Check if lattice has z dir
         if z_val > 1:
             z_new_combo_bz.setDisabled(False)
@@ -1405,7 +1404,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             zmin_line_edit.setDisabled(True)
             zmax_line_edit.setDisabled(True)
 
-        zmax_line_edit.setObjectName(xmax_le)
+        zmax_line_edit.setObjectName(zmax_le)
         zmin_group = QGroupBox("")
         zmin_layout = QBoxLayout(QBoxLayout.LeftToRight)
         zmin_layout.setSpacing(BC_LAYOUT_SPACING)
