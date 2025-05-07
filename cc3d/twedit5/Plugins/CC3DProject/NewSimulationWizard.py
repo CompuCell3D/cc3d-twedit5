@@ -48,10 +48,10 @@ DEFAULT_DIFF_COEFF = '0.01'
 DEFAULT_DECAY_COEFF = '0.001'
 GLOBAL_DECAY_COEFF = '0.0001'
 
-# Units for conversion of MCS and voxel:
-TIME_UNITS = ["No conversion", "Millisecond (msec)", "Second (sec)", "Minute (min)", "Hour (hr)",
-              "Microsecond (usec)"]
-LENGTH_UNITS = ["No conversion", "micrometer (um)", "millimeter (mm)", "centimeter (cm)", "nanometer (nm)"]
+# Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
+TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
+
+LENGTH_UNITS = ["No conversion (-)", "nanometer (nm)", "micrometer (um)", "millimeter (mm)", "centimeter (cm)", "meter (m)"]
 
 
 class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard):

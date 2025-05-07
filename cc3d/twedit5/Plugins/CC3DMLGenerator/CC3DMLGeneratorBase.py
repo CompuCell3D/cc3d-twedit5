@@ -225,9 +225,15 @@ class CC3DMLGeneratorBase:
         m_element.ElementCC3D("DebugOutputFrequency", {}, 10)
         non_parallel_elem = m_element.ElementCC3D("NonParallelModule", {"Name": "Potts"})
         non_parallel_elem.commentOutElement()
-
-        m_element.ElementCC3D("MCS_ConversionFactor", {"Units": gpd["mcsConversionUnits"]}, gpd["mcsConversionFactor"])
-        m_element.ElementCC3D("VoxelConversionFactor", {"Units": gpd["voxelConversionUnits"]}, gpd["voxelConversionFactor"])
+        # assume format of 'display_name (unit_abrev)'
+        time_labels: list[str] = gpd["mcsConversionUnits"].rstrip(")").split("(")
+        display_name = time_labels[0].strip()
+        abrev = time_labels[1]
+        m_element.ElementCC3D("MCSConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["mcsConversionFactor"])
+        length_labels: list[str] = gpd["voxelConversionUnits"].rstrip(")").split("(")
+        display_name = length_labels[0].strip()
+        abrev = length_labels[1]
+        m_element.ElementCC3D("VoxelConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataDebugOutputFrequency(self, *args, **kwds):
