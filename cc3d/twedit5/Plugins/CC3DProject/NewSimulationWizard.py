@@ -2226,7 +2226,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             chem_field_name = str(self.fieldTable.item(row, 0).text())
 
             solver_name = str(self.fieldTable.item(row, 1).text())
-
+            if solver_name == SS_DIFF_SOLVER:
+                if not (self.xDimSB.value() > 1 and self.yDimSB.value() > 1 and self.zDimSB.value() > 1):
+                    solver_name = SS_DIFF_SOLVER_2D
             self.pde_field_data[chem_field_name] = solver_name
 
         try:
@@ -2502,6 +2504,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         list_of_solvers = list(self.diffusantDict.keys())
 
         for solver in list_of_solvers:
+            if solver == SS_DIFF_SOLVER and not (self.xDimSB.value() > 1 and self.yDimSB.value() > 1 and self.zDimSB.value() > 1):
+                solver = SS_DIFF_SOLVER_2D
             solver_generator_fcn = getattr(generator, 'generate' + solver)
 
             solver_generator_fcn(*args, **kwds)

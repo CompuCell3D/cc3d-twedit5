@@ -2049,7 +2049,7 @@ class CC3DMLGeneratorBase:
                                     else:  # Periodic BC
                                         plane_x_elem.ElementCC3D("Periodic")
                         else:
-                            if "y_group" in plane:
+                            if "y_group" in plane and (gpd["Dim"][1] > 1):
                                 plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
                                 for bc_type in value:
                                     bc_value = value[bc_type]
@@ -2077,7 +2077,7 @@ class CC3DMLGeneratorBase:
                                         else:  # Periodic BC
                                             plane_y_elem.ElementCC3D("Periodic")
                             else:
-                                if sim_3d_flag and "z_group" in plane:
+                                if "z_group" in plane and (gpd["Dim"][2] > 1):
                                     plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
                                     for bc_type in value:
                                         bc_value = value[bc_type]
@@ -2200,43 +2200,30 @@ class CC3DMLGeneratorBase:
                         cvz_elem = plane_z_elem.ElementCC3D('ConstantValue', {'PlanePosition': 'Min', 'Value': 0.0})
                         cvz_elem.commentOutElement()
 
-    @GenerateDecorator('Steppable',['Type','SteadyStateDiffusionSolver'])
-    def generateSteadyStateDiffusionSolver(self, *args, **kwds):
 
+    @GenerateDecorator('Steppable',['Type','SteadyStateDiffusionSolver'])
+    def generateSteadyStateDiffusionSolver(self, *args, **kwds)-> cc3d.core.XMLUtils.ElementCC3D:
+        return self.finishGeneratingSteadyStateDiffusionSolver(*args, **kwds)
+
+    @GenerateDecorator('Steppable', ['Type', 'SteadyStateDiffusionSolver2D'])
+    def generateSteadyStateDiffusionSolver2D(self, *args, **kwds) -> cc3d.core.XMLUtils.ElementCC3D:
+        return self.finishGeneratingSteadyStateDiffusionSolver(*args, **kwds)
+
+    def finishGeneratingSteadyStateDiffusionSolver(self, *args, **kwds) -> cc3d.core.XMLUtils.ElementCC3D:
+        m_element = self.mElement
         gpd = self.gpd
 
         try:
             diffusion_algo_data = kwds['diffusantData']
-            # print(diffusion_algo_data)
         except LookupError as e:
             diffusion_algo_data = {}
-        # -----------------------------
-        try:
-            ir_element = kwds['insert_root_element']
-        except LookupError:
-            ir_element = None
 
-        #     try:
-        #         general_properties_data = kwds['generalPropertiesData']
-        #     except LookupError:
-
-        #         general_properties_data = {}
-
-        # gpd = general_properties_data
         sim_3d_flag = self.checkIfSim3D(gpd)
         solver_name = ""
         if sim_3d_flag:
-            solver_name += 'SteadyStateDiffusionSolver'
+            solver_name = 'SteadyStateDiffusionSolver'
         else:
-            solver_name += 'SteadyStateDiffusionSolver2D'
-
-        # mElement is module element - either steppable of plugin element
-        if ir_element is None:
-            m_element = ElementCC3D("Steppable", {"Type": solver_name})
-
-        else:
-            ir_element.addComment("newline")
-            m_element = ir_element.ElementCC3D("Steppable", {"Type": solver_name})
+            solver_name = 'SteadyStateDiffusionSolver2D'
 
         try:
             pde_field_data = kwds['pdeFieldData']
@@ -2247,8 +2234,7 @@ class CC3DMLGeneratorBase:
         m_element.addComment("Specification of PDE solvers")
 
         for fieldName, solver in pde_field_data.items():
-            # secr_specified: bool = False
-            if solver == 'SteadyStateDiffusionSolver':
+            if 'SteadyStateDiffusionSolver' in solver:
                 diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": fieldName})
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, fieldName)
@@ -2304,7 +2290,7 @@ class CC3DMLGeneratorBase:
                                     else:  # Periodic BC
                                         plane_x_elem.ElementCC3D("Periodic")
                         else:
-                            if "y_group" in plane:
+                            if "y_group" in plane and (gpd["Dim"][1] > 1):
                                 plane_y_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Y'})
                                 for bc_type in value:
                                     bc_value = value[bc_type]
@@ -2332,7 +2318,7 @@ class CC3DMLGeneratorBase:
                                         else:  # Periodic BC
                                             plane_y_elem.ElementCC3D("Periodic")
                             else:
-                                if sim_3d_flag and "z_group" in plane:
+                                if "z_group" in plane and (gpd["Dim"][2] > 1):
                                     plane_z_elem = bc_data.ElementCC3D("Plane", {'Axis': 'Z'})
                                     for bc_type in value:
                                         bc_value = value[bc_type]
@@ -2376,7 +2362,7 @@ class CC3DMLGeneratorBase:
                                 if secr_dict["SecretionType"] == 'uniform':
                                     secr_data.ElementCC3D("Secretion", attribute_dict, rate)
 
-                else:  # default values: ?? Neeed another indent...
+                else:  # default values:
                     diff_data.ElementCC3D("DiffusionConstant", {}, 1.0)
                     diff_data.ElementCC3D("DecayConstant", {}, 0.00001)
                     conc_eqn_elem = diff_data.ElementCC3D("InitialConcentrationExpression", {}, "x*y")
