@@ -383,16 +383,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         for rowId in range(rows):
             name = str(self.cellTypeTable.item(rowId, 0).text()).strip()
-            print("CHECKING name=", name + "1", " type=", cell_type + "1")
+            # print("CHECKING name=", name + "1", " type=", cell_type + "1")
 
-            print("name==cellType ", name == cell_type)
+            # print("name==cellType ", name == cell_type)
 
             if name == cell_type:
                 cell_type_already_exists = True
 
                 break
 
-        print("cellTypeAlreadyExists=", cell_type_already_exists)
+        # print("cellTypeAlreadyExists=", cell_type_already_exists)
 
         if cell_type_already_exists:
             print("WARNING")
@@ -1345,7 +1345,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         ymax_line_edit.textChanged.connect(self.checkIfNumber)
         ymax_le = "y_max" + str(idx)
 
-        if self.yDimSB.value() > 1:  # Check if lattice has y dir
+        if self.yDimSB.value() > 1:  # Check if lattice has y direction
             y_new_combo_by.setDisabled(False)
             ymin_line_edit.setDisabled(False)
             ymax_line_edit.setDisabled(False)
@@ -1394,7 +1394,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         zmax_line_edit = QLineEdit("0.0")
         zmax_line_edit.textChanged.connect(self.checkIfNumber)
         zmax_le = "z_max" + str(idx)
-        z_val = self.zDimSB.value()  # Check if lattice has z dir
+        z_val = self.zDimSB.value()  # Check if lattice has z direction
         if z_val > 1:
             z_new_combo_bz.setDisabled(False)
             zmin_line_edit.setDisabled(False)
@@ -1436,16 +1436,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         for row in range(self.cellTypeTable.rowCount()):
             cell_type = str(self.cellTypeTable.item(row, 0).text())
-           # print(cell_type, "hello")
             freeze = False
             if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
                 # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                 freeze = True
 
             self.cellTypeData[cell_type] = [row, freeze]
-
+        idx = -1  # Keep track of field tab index
         for solver_name, fields in self.diffusantDict.items():
-            for idx, field in enumerate(fields):
+            for index, field in enumerate(fields): # index goes to 0 for each solver
+                idx += 1
                 steadyState_solv: bool = False
                 diff_secrete_table_cols: int = 8
                 if (solver_name == SS_DIFF_SOLVER) or (solver_name == SS_DIFF_SOLVER_2D):
@@ -1730,8 +1730,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     #  Returns diffusion values dict
     def getCurrentDiffusionFE_Values(self):
         diffusion_vals_dict = {}
+        idx: int = -1  # Keep track of field tab index
         for solver_name, fields in self.diffusantDict.items():
-            for idx, field in enumerate(fields):
+            for index, field in enumerate(fields):
+                idx += 1
+                # print("Solver, idx, field: ", solver_name, ", ", idx, field)
                 diff_table = self.field_table_dict[field]
                 diffusant_data = {}
                 vol_coeffs = {}
@@ -1742,7 +1745,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                         decay = diff_table.item(row, 2).text()
                         vol_coeffs.update({cell_type_vol: {"GlobalDiffusionCoefficient": coef, "GlobalDecayCoefficient": decay}})
                     elif solver_name == REACT_DIFF_SOLVER_FE:
-                        #cell_value = diff_table.item(row, 1)
                         do_not_defuse: str = ""
                         do_not_decay:str = ""
                         if diff_table.item(row, 1).checkState():
@@ -1778,6 +1780,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                             group_bx_name = child.objectName()
                             if group_bx_name.endswith("_" + str(idx)):
                                 for c_box in combo_boxes:
+                                   # print("combo box name: ", c_box.objectName())
                                     bcs = {}
                                     boundary_type = ''
                                     axis_dir = ""
@@ -1890,7 +1893,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 if directory != "":
                     self.plugin.configuration.setSetting("RecentNewProjectDir", directory)
-                    print("CHECKING DIRECTORY ")
+                    # print("CHECKING DIRECTORY ")
 
                     # checking if directory is writeable
                     project_dir = os.path.abspath(directory)
@@ -2507,15 +2510,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             if solver == SS_DIFF_SOLVER and not (self.xDimSB.value() > 1 and self.yDimSB.value() > 1 and self.zDimSB.value() > 1):
                 solver = SS_DIFF_SOLVER_2D
             solver_generator_fcn = getattr(generator, 'generate' + solver)
-
             solver_generator_fcn(*args, **kwds)
 
             # if self.fieldTable.rowCount():
-            # generator.generateDiffusionSolverFE(*args,**kwds)
             # generator.generateFlexibleDiffusionSolverFE(*args,**kwds)
             # generator.generateFastDiffusionSolver2DFE(*args,**kwds)
             # generator.generateKernelDiffusionSolver(*args,**kwds)
-            # generator.generateSteadyStateDiffusionSolver(*args,**kwds)            
 
         if self.boxWatcherCHB.isChecked():
             generator.generateBoxWatcherSteppable(*args, **kwds)
@@ -2553,7 +2553,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return [t] + rest, pathMatch
 
-        print("(h,t,pathMatch)=", (h, t, pathMatch))
+       # print("(h,t,pathMatch)=", (h, t, pathMatch))
 
         if len(h) < 1: return [t] + rest, pathMatch
 
