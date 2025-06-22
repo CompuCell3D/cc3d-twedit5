@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>948</width>
+    <width>951</width>
     <height>797</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>Simulation Wizard</string>
   </property>
-  <widget class="QWizardPage" name="wizardPage1">
+  <widget class="QWizardPage" name="wizardPage_intro_dir">
    <property name="title">
     <string>CompuCell3D Simulation Wizard</string>
    </property>
@@ -166,7 +166,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_9">
+  <widget class="QWizardPage" name="wizardPage_generalProps">
    <property name="title">
     <string>General Simulation Properties</string>
    </property>
@@ -337,50 +337,6 @@ p, li { white-space: pre-wrap; }
       </item>
       <item>
        <layout class="QGridLayout" name="gridLayout_6">
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_31">
-          <property name="text">
-           <string>Average Membrane Fluctuations</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="membraneFluctuationsLE">
-          <property name="toolTip">
-           <string>Also known as so called temperature parameter in the acceptance probability expresion:  exp(-delta E/(k*T))</string>
-          </property>
-          <property name="text">
-           <string>10</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_32">
-          <property name="text">
-           <string>Pixel Copy Range (NeighborOrder)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QSpinBox" name="neighborOrderSB">
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>10</number>
-          </property>
-          <property name="value">
-           <number>1</number>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_33">
-          <property name="text">
-           <string>Number of MC Steps</string>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="1">
          <widget class="QSpinBox" name="mcsSB">
           <property name="maximum">
@@ -403,6 +359,50 @@ p, li { white-space: pre-wrap; }
             <string>Hexagonal</string>
            </property>
           </item>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_33">
+          <property name="text">
+           <string>Number of MC Steps</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="neighborOrderSB">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_31">
+          <property name="text">
+           <string>Average Membrane Fluctuations</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_32">
+          <property name="text">
+           <string>Pixel Copy Range (NeighborOrder)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="membraneFluctuationsLE">
+          <property name="toolTip">
+           <string>Also known as so called temperature parameter in the acceptance probability expresion:  exp(-delta E/(k*T))</string>
+          </property>
+          <property name="text">
+           <string>10</string>
+          </property>
          </widget>
         </item>
         <item row="0" column="0">
@@ -471,6 +471,146 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
+     <widget class="QGroupBox" name="unitsGB">
+      <property name="title">
+       <string>Units</string>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_26">
+       <item>
+        <widget class="QLabel" name="mcs_time_label">
+         <property name="toolTip">
+          <string>1 Monte Carlo step equals how much time?</string>
+         </property>
+         <property name="text">
+          <string>1 mcs equals:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="mcs_time_factorLE">
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>1.0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="mcs_time_unitsCB">
+         <item>
+          <property name="text">
+           <string>No conversion</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Millisecond (msec)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Second (sec)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Minute (min)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Hour (hr)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Microsecond (usec)</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_17">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="voxel_length_label">
+         <property name="text">
+          <string>1 voxel/pixel side equals:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="voxel_length_factorLE">
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>1.0</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="voxel_length_unitsCB">
+         <item>
+          <property name="text">
+           <string>No conversion</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>micrometer (um)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>millimeter (mm)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>centimeter (cm)</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>nanometer (nm)</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <spacer name="verticalSpacer_3">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
@@ -485,7 +625,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage2">
+  <widget class="QWizardPage" name="wizardPage_cellType">
    <property name="title">
     <string>Cell Type Specification</string>
    </property>
@@ -996,6 +1136,9 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <widget class="QCheckBox" name="neighborCHB">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="toolTip">
           <string>Module tracking neighbors of each cell</string>
          </property>
@@ -1009,11 +1152,17 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <widget class="QCheckBox" name="momentOfInertiaCHB">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="toolTip">
           <string>Module tracking tensor of inertia of each cell</string>
          </property>
          <property name="text">
           <string>Moment Of Inertia</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1025,6 +1174,9 @@ p, li { white-space: pre-wrap; }
          <property name="text">
           <string>Cell Pixel Tracker</string>
          </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
         </widget>
        </item>
        <item>
@@ -1034,6 +1186,9 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="text">
           <string>Cell Boundary Pixel Tracker</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1307,7 +1462,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_8">
+  <widget class="QWizardPage" name="wizardPage_secretion">
    <property name="title">
     <string>Secretion Plugin</string>
    </property>
@@ -1515,7 +1670,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_6">
+  <widget class="QWizardPage" name="wizardPage_chemotaxis">
    <property name="title">
     <string>Chemotaxis Plugin</string>
    </property>
@@ -1739,7 +1894,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_2">
+  <widget class="QWizardPage" name="wizardPage_AdhesionFlex">
    <property name="title">
     <string>AdhesionFlex Plugin</string>
    </property>
@@ -1840,7 +1995,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_4">
+  <widget class="QWizardPage" name="wizardPage_contactMultiCad">
    <property name="title">
     <string>ContactMultiCad Plugin</string>
    </property>
@@ -1920,7 +2075,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPageDiffusion">
+  <widget class="QWizardPage" name="wizardPage_Diffusion">
    <property name="title">
     <string>Chemical field diffusion coefficients and boundary conditions (PDE Solvers Specification)</string>
    </property>
@@ -1932,8 +2087,8 @@ p, li { white-space: pre-wrap; }
      <widget class="QTabWidget" name="field_tab">
       <property name="maximumSize">
        <size>
-        <width>800000</width>
-        <height>800000</height>
+        <width>16777215</width>
+        <height>16777215</height>
        </size>
       </property>
       <property name="currentIndex">
@@ -1942,16 +2097,51 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QCheckBox" name="pythonControlSecretionCHB">
-      <property name="enabled">
-       <bool>true</bool>
+     <widget class="QFrame" name="additional_diff_settings_frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
       </property>
-      <property name="toolTip">
-       <string>Use python code to handle secretion and uptake, ignore values in table.</string>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
       </property>
-      <property name="text">
-       <string>Control Secretion through Python</string>
-      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_16">
+       <item>
+        <widget class="QCheckBox" name="pythonControlSecretionCHB">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="toolTip">
+          <string>Use python code to handle secretion and uptake, ignore values in table.</string>
+         </property>
+         <property name="text">
+          <string>Control Secretion through Python</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_8">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QPushButton" name="reactionDiff_FE_PB">
+         <property name="toolTip">
+          <string>Additional term can be an expression involving field name and CellType</string>
+         </property>
+         <property name="text">
+          <string>Add reaction term and other settings</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>
@@ -1968,6 +2158,18 @@ p, li { white-space: pre-wrap; }
     </item>
     <item>
      <widget class="QTabWidget" name="ics_tab">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
         <string>Tab 1</string>
@@ -1997,6 +2199,18 @@ p, li { white-space: pre-wrap; }
     </item>
     <item>
      <widget class="QTabWidget" name="bcs_tab">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -2306,7 +2520,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_3">
+  <widget class="QWizardPage" name="wizardPage_configComplete">
    <property name="title">
     <string>Configuration Complete!</string>
    </property>
@@ -2328,10 +2542,10 @@ p, li { white-space: pre-wrap; }
          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:7.8pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;CC3D project will be generated now&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:12pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:12pt; font-weight:600; color:#0000ff;&quot;&gt;NOTE:&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.AppleSystemUIFont'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt;CC3D project will be generated now&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt; font-weight:600; color:#0000ff;&quot;&gt;NOTE:&lt;/span&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt; The parameters in the XML and Python scripts will have to be changed to be realistic. Please see CC3D manual on how to choose simulation parameters&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -2349,12 +2563,12 @@ p, li { white-space: pre-wrap; }
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>503</x>
-     <y>485</y>
+     <x>892</x>
+     <y>476</y>
     </hint>
     <hint type="destinationlabel">
-     <x>184</x>
-     <y>522</y>
+     <x>401</x>
+     <y>514</y>
     </hint>
    </hints>
   </connection>
@@ -2365,12 +2579,28 @@ p, li { white-space: pre-wrap; }
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>641</x>
-     <y>492</y>
+     <x>892</x>
+     <y>476</y>
     </hint>
     <hint type="destinationlabel">
-     <x>622</x>
-     <y>533</y>
+     <x>892</x>
+     <y>507</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>reactionDiff_FE_PB</sender>
+   <signal>clicked()</signal>
+   <receiver>NewSimulationWizard</receiver>
+   <slot>exec()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>758</x>
+     <y>262</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>648</x>
+     <y>-104</y>
     </hint>
    </hints>
   </connection>

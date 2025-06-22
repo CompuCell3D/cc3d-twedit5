@@ -900,7 +900,7 @@ class CC3DXMLGenerator:
 
         for solver, field_names in solver_dict.items():
 
-            if solver == 'KernelDiffusionSolver':
+            if solver == 'KernelDiffusionSolver':  # Legacy solver
                 kdiff_solver_elem = self.cc3d.ElementCC3D("Steppable", {"Type": "KernelDiffusionSolver"})
 
                 for field_name in field_names:
@@ -935,7 +935,7 @@ class CC3DXMLGenerator:
 
                     # add commented out concentration field specification file
 
-            elif solver in ('FlexibleDiffusionSolverFE', 'FastDiffusionSolver2DFE'):
+            elif solver in ('FlexibleDiffusionSolverFE', 'FastDiffusionSolver2DFE'):  # Legacy solvers
                 diff_solver_elem = self.cc3d.ElementCC3D("Steppable", {"Type": solver})
 
                 for field_name in field_names:
@@ -977,9 +977,8 @@ class CC3DXMLGenerator:
                     diff_data.ElementCC3D("DeltaX", {}, 1.0)
                     diff_data.ElementCC3D("DeltaT", {}, 1.0)
 
-            elif solver in ('SteadyStateDiffusionSolver'):
+            elif 'SteadyStateDiffusionSolver' in solver: # Not needed anymore?
                 solver_name = 'SteadyStateDiffusionSolver2D'
-
                 sim_3d_flag = self.checkIfSim3D()
 
                 if sim_3d_flag:
@@ -1002,7 +1001,7 @@ class CC3DXMLGenerator:
 
                     conc_field_name_elem.commentOutElement()
 
-                    # Boiundary Conditions
+                    # Boundary Conditions
                     bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
 
                     plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
