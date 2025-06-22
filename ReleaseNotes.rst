@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 4.7.0
+-------------
+**2022-06-21**
+
+New features:
+ - Vastly improved Simulation Wizard
+
+Bug fixes:
+
+
 Version 4.6.0
 -------------
 **2022-06-08**
