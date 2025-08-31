@@ -433,6 +433,11 @@ class CC3DListener(QTcpServer):
             popen_args.append("-i")
 
             popen_args.append(_simulationName)
+            # starting cc3d in stepping mode
+            popen_args.append("--run-action")
+            popen_args.append("step")
+
+
 
         print("Executing Popen command with following arguments=", popen_args)
 
