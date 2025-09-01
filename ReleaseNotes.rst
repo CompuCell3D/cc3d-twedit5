@@ -1,9 +1,26 @@
 Release Notes
 =============
 
+Version 4.7.0
+-------------
+**2025-06-21**
+
+New features:
+
+- Vastly improved Simulation Wizard
+    - Removed Secretion plugin option (still supported in xml and CC3D, just not in Wizard).
+    - Added Wizard page for DiffusionSolverFE, ReactionDiffusionSolverFE, and SteadystateSolver.
+    - When specifying ReactionDiffusionSolverFVM or legacy diffusion solvers, default xml is inserted into the project xml file.
+    - The new diffusion solver page adds secretion and uptake settings to be added for each chemical field.
+    - The new diffusion solver page adds the ability to specify initial conditions and boundary conditions for each chemical field.
+    - Added the ability to specify MCS and voxel conversion factors stored in the section (below). This is just a placeholder for a future feature.
+
+Bug fixes:
+
+
 Version 4.6.0
 -------------
-**2022-06-08**
+**2024-06-08**
 
 New features:
 

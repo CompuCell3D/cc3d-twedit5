@@ -18,3 +18,7 @@ also available via conda as an extension package of the CompuCell3D conda packag
 
 For conda packages, Twedit++ can be launched from a terminal by activating the conda
 environment in which Twedit++ is installed and then issuing the command ``cc3d-twedit5``.
+
+.. code-block:: console
+
+    python -m cc3d.twedit5

@@ -32,7 +32,7 @@ Legacy solver was replaced by DiffusionSolver. Uses Finite-Euler method. We reco
 <h3>FastDiffusionSolver2DFE</h3>
 Legacy Solver that may have performance improvements over Diffusion Solver FE. 
 
-<h3>KernalDiffusionSolver</h3>
+<h3>KernelDiffusionSolver</h3>
 Legacy Solver that provides an approximate solution to Diffusion Equations for large diffusion constants. While significantly faster than Diffusion Solver FE, it does not provide the same level of flexibility. 
 <a href="https://compucell3dreferencemanual.readthedocs.io/en/latest/kernel_diffusion_solver.html"> More info.</a> """
 
