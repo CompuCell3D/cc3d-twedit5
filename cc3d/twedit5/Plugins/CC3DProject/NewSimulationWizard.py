@@ -50,8 +50,11 @@ GLOBAL_DECAY_COEFF = '0.0001'
 
 # Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
 TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
+DEFAULT_TIME_UNIT = "min"
+DEFAULT_TIME_FACTOR = "1.0"
 LENGTH_UNITS = ["No conversion (-)", "nanometer (nm)", "micrometer (um)", "millimeter (mm)", "centimeter (cm)", "meter (m)"]
-
+DEFAULT_LENGTH_UNIT = "um"
+DEFAULT_LENGTH_FACTOR = "2"
 
 class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard):
     def __init__(self, parent=None):
@@ -78,10 +81,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.mcs_time_unitsCB.clear() # clear out default unit values
         for unit in TIME_UNITS:
             self.mcs_time_unitsCB.addItem(unit)
+            if DEFAULT_TIME_UNIT in unit:
+                self.mcs_time_unitsCB.setCurrentText(unit)
+        self.mcs_time_factorLE.setText(DEFAULT_TIME_FACTOR)
         self.voxel_length_unitsCB.clear()
         for unit in LENGTH_UNITS:
             self.voxel_length_unitsCB.addItem(unit)
-
+            if DEFAULT_LENGTH_UNIT in unit:
+                self.voxel_length_unitsCB.setCurrentText(unit)
+        self.voxel_length_factorLE.setText(DEFAULT_LENGTH_FACTOR)
         self.updateUi()
 
         self.typeTable = []
