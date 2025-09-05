@@ -2191,14 +2191,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             float(number_str)
             self.generalPropertiesDict["mcsConversionFactor"] = number_str
         except ValueError:
-            self.generalPropertiesDict["voxelConversionFactor"] = "1.0"
+            self.generalPropertiesDict["mcsConversionFactor"] = DEFAULT_TIME_FACTOR
+
         self.generalPropertiesDict["voxelConversionUnits"] = self.voxel_length_unitsCB.currentText()
         number_str = self.voxel_length_factorLE.text()
         try:
             float(number_str)
             self.generalPropertiesDict["voxelConversionFactor"] = number_str
         except ValueError:
-            self.generalPropertiesDict["voxelConversionFactor"] = "1.0"
+            self.generalPropertiesDict["voxelConversionFactor"] = DEFAULT_LENGTH_FACTOR
 
 
         self.cellTypeData = {}
