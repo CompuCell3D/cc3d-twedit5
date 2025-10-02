@@ -1,4 +1,4 @@
-"""
+r"""
 ideally instead hard-coding snippets we should use XML Schema or RelaxNG formats to describe and help generate CC3DML
 And use a single ML generator another one is in
 cc3d\twedit5\Plugins\CC3DProject\CC3DXMLGenerator.py
@@ -232,14 +232,15 @@ class CC3DMLGeneratorBase:
             abrev = time_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("MCSConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["mcsConversionFactor"])
+        m_element.ElementCC3D("MCSConversionFactor", {"id": "mcs_conv_factor", "DisplayName": display_name,
+                                                      "Units": abrev}, gpd["mcsConversionFactor"])
         length_labels: list[str] = gpd["voxelConversionUnits"].rstrip(")").split("(")
         display_name = length_labels[0].strip()
         if len(length_labels) > 1:
             abrev = length_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("VoxelConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
+        m_element.ElementCC3D("VoxelConversionFactor", {"id": "voxel_conv_factor", "DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataDebugOutputFrequency(self, *args, **kwds):
