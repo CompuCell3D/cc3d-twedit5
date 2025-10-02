@@ -19,7 +19,7 @@ class SnippetMenuParser(object):
 
         self.currentSuggestedIndent = None
 
-        self.menuRegex = re.compile('^[=]*[\s]*#[\s]*@Menu@([\s\S]*)$')
+        self.menuRegex = re.compile(r'^[=]*[\s]*#[\s]*@Menu@([\s\S]*)$')
 
         # self.submenuRegex = re.compile('^[-]*[\s]*#[\s]*@Submenu@([\s\S]*)$')
 
@@ -27,7 +27,7 @@ class SnippetMenuParser(object):
 
         # self.submenuRegex = re.compile('^[-]*([\s]*|[[i\d]*\s*])#[\s]*@Submenu@([\s\S]*)$')
 
-        self.submenuRegex = re.compile('^[-]*([i\d]*)[\s]*#[\s]*@Submenu@([\s\S]*)$')
+        self.submenuRegex = re.compile(r'^[-]*([i\d]*)[\s]*#[\s]*@Submenu@([\s\S]*)$')
 
     def initialize(self):
 

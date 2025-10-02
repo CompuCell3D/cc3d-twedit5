@@ -11,7 +11,7 @@ def win_enum_callback_twedit(hwnd, results):
     import win32gui
     import re
 
-    expr_checker = re.compile(".*Twedit\+\+$")
+    expr_checker = re.compile(r".*Twedit\+\+$")
 
     if expr_checker.match(win32gui.GetWindowText(hwnd)):
         # dbgMsg("GOT TWEDIT ++ ",win32gui.GetWindowText(hwnd))

@@ -2619,7 +2619,7 @@ class CC3DProject(QObject, TweditPluginBase):
 
     def find_entry_point_for_steppable_registration(self, main_script_editor_window):
 
-        main_loop_regex = re.compile('^[\s]*CompuCellSetup\.run()')
+        main_loop_regex = re.compile(r'^[\s]*CompuCellSetup\.run()')
 
         return self.find_regex_occurrence(regex=main_loop_regex,
                                           script_editor_window=main_script_editor_window,
