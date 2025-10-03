@@ -239,13 +239,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     @pyqtSlot()  # signature of the signal emited by the button
     def on_piffPB_clicked(self):
 
-        file_name = QFileDialog.getOpenFileName(self, "Choose PIFF file...")
-
+        file_name, _ = QFileDialog.getOpenFileName(self, "Choose PIFF file...", "", "PIFF files (*.piff)")
         file_name = str(file_name)
 
         # normalizing path
         file_name = os.path.abspath(file_name)
-
         self.piffLE.setText(file_name)
 
     def hideConstraintFlexOption(self):
@@ -2161,7 +2159,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.generalPropertiesDict["Initializer"] = ["blob", None]
 
         elif self.piffRB.isChecked():
-
             piff_path = str(self.piffLE.text()).strip()
             self.generalPropertiesDict["Initializer"] = ["piff", piff_path]
 
