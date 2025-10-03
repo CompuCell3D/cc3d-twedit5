@@ -1292,7 +1292,9 @@ class CC3DMLGeneratorBase:
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
-                diff_field_params = diffusion_algo_data[field_name]
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[field_name]
                 if diff_field_params is not None:
                     diff_field_coeffs = diff_field_params["Coefficients"]
                     diff_field_bcs = diff_field_params["BoundaryConditions"]
@@ -1926,9 +1928,11 @@ class CC3DMLGeneratorBase:
             secr_specified = False
             if solver == 'ReactionDiffusionSolverFE':
                 diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": field_name})
-                diff_field_params = diffusion_algo_data[field_name]
-                if "AutoscaleDiffusion" in diff_field_params:
-                    auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[field_name]
+                    if "AutoscaleDiffusion" in diff_field_params:
+                        auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
@@ -2240,7 +2244,9 @@ class CC3DMLGeneratorBase:
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, fieldName)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
-                diff_field_params = diffusion_algo_data[fieldName]
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[fieldName]
                 if diff_field_params is not None:
                     diff_field_coeffs = diff_field_params["Coefficients"]
                     diff_field_bcs = diff_field_params["BoundaryConditions"]
