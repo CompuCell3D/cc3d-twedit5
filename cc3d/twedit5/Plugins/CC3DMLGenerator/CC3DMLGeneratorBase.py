@@ -1,4 +1,4 @@
-"""
+r"""
 ideally instead hard-coding snippets we should use XML Schema or RelaxNG formats to describe and help generate CC3DML
 And use a single ML generator another one is in
 cc3d\twedit5\Plugins\CC3DProject\CC3DXMLGenerator.py
@@ -232,14 +232,15 @@ class CC3DMLGeneratorBase:
             abrev = time_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("MCSConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["mcsConversionFactor"])
+        m_element.ElementCC3D("MCSConversionFactor", {"id": "mcs_conv_factor", "DisplayName": display_name,
+                                                      "Units": abrev}, gpd["mcsConversionFactor"])
         length_labels: list[str] = gpd["voxelConversionUnits"].rstrip(")").split("(")
         display_name = length_labels[0].strip()
         if len(length_labels) > 1:
             abrev = length_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("VoxelConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
+        m_element.ElementCC3D("VoxelConversionFactor", {"id": "voxel_conv_factor", "DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataDebugOutputFrequency(self, *args, **kwds):
@@ -1291,7 +1292,9 @@ class CC3DMLGeneratorBase:
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
-                diff_field_params = diffusion_algo_data[field_name]
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[field_name]
                 if diff_field_params is not None:
                     diff_field_coeffs = diff_field_params["Coefficients"]
                     diff_field_bcs = diff_field_params["BoundaryConditions"]
@@ -1925,9 +1928,11 @@ class CC3DMLGeneratorBase:
             secr_specified = False
             if solver == 'ReactionDiffusionSolverFE':
                 diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": field_name})
-                diff_field_params = diffusion_algo_data[field_name]
-                if "AutoscaleDiffusion" in diff_field_params:
-                    auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[field_name]
+                    if "AutoscaleDiffusion" in diff_field_params:
+                        auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
@@ -2239,7 +2244,9 @@ class CC3DMLGeneratorBase:
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, fieldName)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
-                diff_field_params = diffusion_algo_data[fieldName]
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[fieldName]
                 if diff_field_params is not None:
                     diff_field_coeffs = diff_field_params["Coefficients"]
                     diff_field_bcs = diff_field_params["BoundaryConditions"]

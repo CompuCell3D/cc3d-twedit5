@@ -50,8 +50,11 @@ GLOBAL_DECAY_COEFF = '0.0001'
 
 # Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
 TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
+DEFAULT_TIME_UNIT = "min"
+DEFAULT_TIME_FACTOR = "1.0"
 LENGTH_UNITS = ["No conversion (-)", "nanometer (nm)", "micrometer (um)", "millimeter (mm)", "centimeter (cm)", "meter (m)"]
-
+DEFAULT_LENGTH_UNIT = "um"
+DEFAULT_LENGTH_FACTOR = "2"
 
 class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard):
     def __init__(self, parent=None):
@@ -78,10 +81,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.mcs_time_unitsCB.clear() # clear out default unit values
         for unit in TIME_UNITS:
             self.mcs_time_unitsCB.addItem(unit)
+            if DEFAULT_TIME_UNIT in unit:
+                self.mcs_time_unitsCB.setCurrentText(unit)
+        self.mcs_time_factorLE.setText(DEFAULT_TIME_FACTOR)
         self.voxel_length_unitsCB.clear()
         for unit in LENGTH_UNITS:
             self.voxel_length_unitsCB.addItem(unit)
-
+            if DEFAULT_LENGTH_UNIT in unit:
+                self.voxel_length_unitsCB.setCurrentText(unit)
+        self.voxel_length_factorLE.setText(DEFAULT_LENGTH_FACTOR)
         self.updateUi()
 
         self.typeTable = []
@@ -231,13 +239,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     @pyqtSlot()  # signature of the signal emited by the button
     def on_piffPB_clicked(self):
 
-        file_name = QFileDialog.getOpenFileName(self, "Choose PIFF file...")
-
+        file_name, _ = QFileDialog.getOpenFileName(self, "Choose PIFF file...", "", "PIFF files (*.piff)")
         file_name = str(file_name)
 
         # normalizing path
         file_name = os.path.abspath(file_name)
-
         self.piffLE.setText(file_name)
 
     def hideConstraintFlexOption(self):
@@ -2153,7 +2159,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.generalPropertiesDict["Initializer"] = ["blob", None]
 
         elif self.piffRB.isChecked():
-
             piff_path = str(self.piffLE.text()).strip()
             self.generalPropertiesDict["Initializer"] = ["piff", piff_path]
 
@@ -2183,14 +2188,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             float(number_str)
             self.generalPropertiesDict["mcsConversionFactor"] = number_str
         except ValueError:
-            self.generalPropertiesDict["voxelConversionFactor"] = "1.0"
+            self.generalPropertiesDict["mcsConversionFactor"] = DEFAULT_TIME_FACTOR
+
         self.generalPropertiesDict["voxelConversionUnits"] = self.voxel_length_unitsCB.currentText()
         number_str = self.voxel_length_factorLE.text()
         try:
             float(number_str)
             self.generalPropertiesDict["voxelConversionFactor"] = number_str
         except ValueError:
-            self.generalPropertiesDict["voxelConversionFactor"] = "1.0"
+            self.generalPropertiesDict["voxelConversionFactor"] = DEFAULT_LENGTH_FACTOR
 
 
         self.cellTypeData = {}

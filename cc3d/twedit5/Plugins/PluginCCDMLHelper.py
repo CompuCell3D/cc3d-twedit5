@@ -61,19 +61,19 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
         # useful regular expressions
 
-        self.nonwhitespaceRegex = re.compile('^[\s]*[\S]+')
+        self.nonwhitespaceRegex = re.compile(r'^[\s]*[\S]+')
 
-        self.commentRegex = re.compile('^[\s]*#')
+        self.commentRegex = re.compile(r'^[\s]*#')
 
-        self.defFunRegex = re.compile('^[\s]*def')
+        self.defFunRegex = re.compile(r'^[\s]*def')
 
         self.blockStatementRegex = re.compile(
 
-            ':[\s]*$')  # block statement - : followed by whitespaces at the end of the line
+            r':[\s]*$')  # block statement - : followed by whitespaces at the end of the line
 
         self.blockStatementWithCommentRegex = re.compile(
 
-            ':[\s]*[#]+[\s\S]*$')  # block statement - : followed by whitespaces at the end of the line
+            r':[\s]*[#]+[\s\S]*$')  # block statement - : followed by whitespaces at the end of the line
 
     def initialize(self):
         '''
@@ -528,9 +528,9 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
     def includeExtraFieldsImports(self, _editor):
 
-        playerFromImportRegex = re.compile('^[\s]*from[\s]*PlayerPython[\s]*import[\s]*\*')
+        playerFromImportRegex = re.compile(r'^[\s]*from[\s]*PlayerPython[\s]*import[\s]*\*')
 
-        compuCellSetupImportRegex = re.compile('^[\s]*import[\s]*CompuCellSetup')
+        compuCellSetupImportRegex = re.compile(r'^[\s]*import[\s]*CompuCellSetup')
 
         curLine, curCol = _editor.getCursorPosition()
 
@@ -568,9 +568,9 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
         moduleClosingLineLocatorRegex = None
 
-        moduleClosingLineLocatorSingleLineRegex = re.compile('^[\s\S]*<[\s]*' + _moduleType + '[\s\S]*/>')
+        moduleClosingLineLocatorSingleLineRegex = re.compile(r'^[\s\S]*<[\s]*' + _moduleType + r'[\s\S]*/>')
 
-        moduleClosingLineLocatorRegex = re.compile('^[\s\S]*</[\s]*' + _moduleType + '[\s]*>')
+        moduleClosingLineLocatorRegex = re.compile(r'^[\s\S]*</[\s]*' + _moduleType + r'[\s]*>')
 
         # moduleClosingLineLocatorSingleLineRegex=re.compile('^[\s\S]*/>')
 
@@ -578,13 +578,13 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
             moduleLineLocatorRegex = re.compile(
 
-                '^[\s]*<[\s]*' + _moduleType + '[\s\S]*' + _moduleName[0] + '[\s]*=[\s]*\"' + _moduleName[1] + '\"')
+                r'^[\s]*<[\s]*' + _moduleType + r'[\s\S]*' + _moduleName[0] + r'[\s]*=[\s]*\"' + _moduleName[1] + r'\"')
 
 
 
         else:
 
-            moduleLineLocatorRegex = re.compile('^[\s]*<[\s]*' + _moduleType + '[\s]*>')
+            moduleLineLocatorRegex = re.compile(r'^[\s]*<[\s]*' + _moduleType + r'[\s]*>')
 
         # getCoreSimulationObjectsRegex=re.compile('^[\s]*sim.*CompuCellSetup\.getCoreSimulationObjects')
 
@@ -661,7 +661,7 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
     def findEntryLineForCellAttributes(self, _editor):
 
-        getCoreSimulationObjectsRegex = re.compile('^[\s]*sim.*CompuCellSetup\.getCoreSimulationObjects')
+        getCoreSimulationObjectsRegex = re.compile(r'^[\s]*sim.*CompuCellSetup\.getCoreSimulationObjects')
 
         text = ''
 
@@ -685,7 +685,7 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
             # check for comment code  - #add extra attributes here
 
-            attribCommentRegex = re.compile('^[\s]*#[\s]*add[\s]*extra[\s]*attrib')
+            attribCommentRegex = re.compile(r'^[\s]*#[\s]*add[\s]*extra[\s]*attrib')
 
             for line in range(foundLine, _editor.lines()):
 
