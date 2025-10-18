@@ -1013,9 +1013,9 @@ class FindDisplayWidget(QsciScintilla):
 
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, QsciScintilla.CARETSTYLE_INVISIBLE)  # make caret invisible
 
-        self.lineNumberExtractRegex = re.compile('^[\s]*Line[\s]*([0-9]*)')
+        self.lineNumberExtractRegex = re.compile(r'^[\s]*Line[\s]*([0-9]*)')
 
-        self.fileNameWithSearchTextExtractRegex = re.compile('^[\s]*File:[\s]*([\S][\s\S]*)\(')
+        self.fileNameWithSearchTextExtractRegex = re.compile(r'^[\s]*File:[\s]*([\S][\s\S]*)\(')
 
         self.zoomRange = self.editorWindow.configuration.setting("ZoomRangeFindDisplayWidget")
 
@@ -1475,7 +1475,7 @@ class FindInFilesLexer(QsciLexerCustom):
 
         self.searchText = ""
 
-        self.lineNumberRegex = re.compile('[\d]+')
+        self.lineNumberRegex = re.compile(r'[\d]+')
 
     def language(self):
 
@@ -1618,7 +1618,7 @@ class FindInFilesLexer(QsciLexerCustom):
                     state = self.SearchInfo
                     # we have to use search instead of match - match matches onle beginning of the string ,
                     # search searches through entire string
-                    search_groups = re.search('"([\s\S]*)"', line)
+                    search_groups = re.search(r'"([\s\S]*)"', line)
 
                     try:
                         if search_groups:

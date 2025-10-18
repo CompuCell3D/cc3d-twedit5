@@ -2028,7 +2028,7 @@ class EditorWindow(QMainWindow):
         :return:
         """
         comment_string_begin = comment_string_begin.strip()
-        pattern = f'^(({comment_string_begin})(\s*)({comment_string_begin}))'
+        pattern = rf'^(({comment_string_begin})(\s*)({comment_string_begin}))'
         return re.search(pattern, line_text.lstrip())
         # lstrip_line_text = line_text.lstrip()
         # first_comment_pos = lstrip_line_text.find(comment_string_begin.strip()):
