@@ -905,7 +905,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         # reset molecule entry line
         self.afMoleculeLE.setText("")
-
         return
 
     @pyqtSlot()  # signature of the signal emited by the button
@@ -916,6 +915,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.afTable.removeRow(i)
 
         self.clearAdhesionInteractionMatrix()
+        # TODO: self.clearBindingFormulaMolecularPairTable()
+
+
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_cmcMoleculeAddPB_clicked(self):
@@ -1216,18 +1218,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     def update_binding_formula_mol_pair_table(self, new_mol_row: int):
         mol_count: int = self.afTable.rowCount()
-        # mol_pair_str: list = []
         molecule_name2 = str(self.afTable.item(new_mol_row, 0).text())
+        self.binding_formula_molecular_pairTable.verticalHeader().setVisible(False)
         for row in range(self.afTable.rowCount()):
             molecule_name1 = str(self.afTable.item(row, 0).text())
-
             mol_pair_str = molecule_name1 + "-" + molecule_name2
             row_position = self.binding_formula_molecular_pairTable.rowCount()
             self.binding_formula_molecular_pairTable.insertRow(row_position)
             binding_formula = QTableWidgetItem(DEFAULT_BINDING_FORMULAS[0])
             binding_formula.setFont(QFont('Arial', ADHESION_TABLE_HEADER_FONT_SIZE))
             binding_formula.setTextAlignment(Qt.AlignCenter)
-            binding_formula.setFlags(binding_formula.flags() & ~Qt.ItemIsEditable)  # not editable
             binding_pair = QTableWidgetItem(mol_pair_str)
             binding_pair.setFont(QFont('Arial', ADHESION_TABLE_HEADER_FONT_SIZE))
             binding_pair.setTextAlignment(Qt.AlignCenter)
@@ -1966,10 +1966,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         return diffusion_vals_dict
 
     def setUpAdhesionFlexPage(self):
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
         self.binding_formula1RB.setText(DEFAULT_BINDING_FORMULAS[0])
+        self.binding_formula1RB.setFont(header_font)
         self.binding_formula1RB.setChecked(True)
+        self.binding_formula1RB.toggled.connect(self.onBindingFormulaSelected)
         self.binding_formula2RB.setText(DEFAULT_BINDING_FORMULAS[1])
-        self.binding_formula1RB.setChecked(False)
+        self.binding_formula2RB.setFont(header_font)
+        self.binding_formula2RB.setChecked(False)
+        self.binding_formula2RB.toggled.connect(self.onBindingFormulaSelected)
         #self.binding_formular_user_defineRB.setChecked(False)
         #self.bindingFormulaLE.setDisabled(True)
 
@@ -1983,6 +1989,29 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         bind_formula_header = self.binding_formula_molecular_pairTable.horizontalHeaderItem(0)
         if bind_formula_header:
             bind_formula_header.setToolTip(BINDING_FORMULA_TOOL_TIP)
+
+    def onBindingFormulaSelected(self):
+        sender_button = self.sender()
+        cell_font = QFont()
+        cell_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        new_formula = ""
+        if isinstance(sender_button, QRadioButton) and sender_button.isChecked():
+            if DEFAULT_BINDING_FORMULAS[0] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[0]
+            elif DEFAULT_BINDING_FORMULAS[1] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[1]
+
+            selected_formula_cells = self.binding_formula_molecular_pairTable.selectedItems()
+            for cell in selected_formula_cells:
+                print(f"Selected cell text: {cell.text()}")
+                print(f"Selected cell row: {cell.row()}")
+                print(f"Selected cell column: {cell.column()}")
+                if cell.column() == 0:  # confirm it is column that holds formula
+                    update_item = QTableWidgetItem(new_formula)
+                    update_item.setFont(cell_font)
+                    self.binding_formula_molecular_pairTable.setItem(cell.row(), 0, update_item)
+            self.binding_formula_molecular_pairTable.resizeRowsToContents()
+            self.binding_formula_molecular_pairTable.resizeColumnsToContents()
 
     def is_path_creatable(self, pathname: str) -> bool:
         '''
