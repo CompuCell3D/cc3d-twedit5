@@ -1903,29 +1903,60 @@ p, li { white-space: pre-wrap; }
    </attribute>
    <layout class="QVBoxLayout" name="verticalLayout_7">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_8">
+     <widget class="QLabel" name="adhesion_infoLabel">
+      <property name="text">
+       <string>This plugin defines adhesion between cells. The adhesion energy of the system is obtained by calculating the adhesion energy between each cell and its neighbors.</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="addMolecule_horizontalLayout">
       <item>
-       <widget class="QTableWidget" name="afTable">
-        <property name="enabled">
-         <bool>true</bool>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Adhesion molecule to add:</string>
         </property>
-        <property name="baseSize">
-         <size>
-          <width>256</width>
-          <height>171</height>
-         </size>
-        </property>
-        <column>
-         <property name="text">
-          <string>Adhesion Molecule</string>
-         </property>
-        </column>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="clearAFTablePB">
+       <widget class="QLineEdit" name="afMoleculeLE"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="afMoleculeAddPB">
         <property name="text">
-         <string>Clear Table</string>
+         <string>Add molecule</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="afMolecule_title_horizontalLayout">
+      <item>
+       <spacer name="horizontalSpacer_19">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="clearAFTablePB">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Clear Tables</string>
         </property>
        </widget>
       </item>
@@ -1945,50 +1976,172 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_7">
+     <layout class="QHBoxLayout" name="horizontalLayout_8">
       <item>
-       <widget class="QLabel" name="label_9">
-        <property name="text">
-         <string>Molecule</string>
+       <widget class="QGroupBox" name="groupBox_11">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
+        <property name="title">
+         <string>Adhesion molecule density in cell type:</string>
+        </property>
+        <widget class="QTableWidget" name="afTable">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="geometry">
+          <rect>
+           <x>8</x>
+           <y>30</y>
+           <width>281</width>
+           <height>221</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="baseSize">
+          <size>
+           <width>256</width>
+           <height>171</height>
+          </size>
+         </property>
+         <column>
+          <property name="text">
+           <string>Adhesion Molecule</string>
+          </property>
+         </column>
+        </widget>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="afMoleculeLE">
-        <property name="toolTip">
-         <string>Specify names of the adhesion molecules you want to use int he simulation</string>
+       <widget class="QGroupBox" name="interaction_matrixGBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <property name="text">
-         <string/>
+        <property name="title">
+         <string>Adhesion interaction matrix:</string>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="afMoleculeAddPB">
-        <property name="text">
-         <string>Add</string>
-        </property>
+        <widget class="QTableWidget" name="interaction_matrixTable">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>30</y>
+           <width>281</width>
+           <height>221</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+        </widget>
        </widget>
       </item>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <layout class="QHBoxLayout" name="binding_formula_horizontalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetMinimumSize</enum>
+      </property>
       <item>
-       <widget class="QLabel" name="label_10">
-        <property name="text">
-         <string>Binding Formula</string>
+       <widget class="QGroupBox" name="binding_formula_moleculesGB">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
+        <property name="title">
+         <string>Binding formulas</string>
+        </property>
+        <widget class="QRadioButton" name="binding_formula2RB">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>60</y>
+           <width>331</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>RadioButton</string>
+         </property>
+        </widget>
+        <widget class="QRadioButton" name="binding_formula1RB">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>30</y>
+           <width>321</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>RadioButton</string>
+         </property>
+        </widget>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="bindingFormulaLE">
-        <property name="toolTip">
-         <string>This is binary function that takes atwo arguments -  Molecule1 and Molecule2. The allowed functions are those given by muParser - see http://muparser.sourceforge.net/</string>
+       <widget class="QGroupBox" name="binding_formula_molecule_pairGB">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <property name="text">
-         <string>min(Molecule1,Molecule2)</string>
+        <property name="title">
+         <string>Binding formula for molecule pair:</string>
         </property>
+        <widget class="QTableWidget" name="binding_formula_molecular_pairTable">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>31</y>
+           <width>321</width>
+           <height>201</height>
+          </rect>
+         </property>
+        </widget>
        </widget>
       </item>
      </layout>

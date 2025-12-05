@@ -48,6 +48,16 @@ DEFAULT_DIFF_COEFF = '0.01'
 DEFAULT_DECAY_COEFF = '0.001'
 GLOBAL_DECAY_COEFF = '0.0001'
 
+# AdhesionFlex plugin:
+DEFAULT_MOLECULE_DENSITY = 1.1
+DEFAULT_BINDING_PARAMETER = 0.5
+ADHESION_MOLECULE_TABLE_LABEL = "Adhesion Molecule"  # column label for Adhesion molecule table
+ADHESION_TABLE_HEADER_FONT_SIZE = 10
+DEFAULT_BINDING_FORMULAS = ["min(Molecule1, Molecule2)", "-(Molecule1 * Molecule2)"]
+DEFAULT_BINDING_FORMULAS_DESCR = ["Description here...", "Description 2 here..."]
+BINDING_FORMULA_TOOL_TIP = "This is a binary function that takes two arguments -  Molecule1 and Molecule2. " \
+                           "The allowed functions are those given by muParser - see http://muparser.sourceforge.net/"
+
 # Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
 TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
 DEFAULT_TIME_UNIT = "min"
@@ -334,6 +344,19 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         if _flag:
             self.lengthConstraintCHB.setChecked(not _flag)
+
+    @pyqtSlot(bool)
+    def on_adhesionFlexCHB_toggled(self, _flag):
+        if _flag:  # Include Volume and Surface flex plugins:
+            self.volumeLocalFlexCHB.setChecked(_flag)
+            self.surfaceLocalFlexCHB.setChecked(_flag)
+        if self.contactCHB.isChecked():
+            QMessageBox.warning(self, "Adhesion and Contact plugins may interfere", "Contact plugin may interfere with "
+                                                "Adhesion plugin as it is a different way to compute adhesion energy "
+                                                "between cells. You may need to set Contact plugin energies to zero to "
+                                                "confirm Adhesion plugin behavior.", QMessageBox.Ok)
+
+
 
     @pyqtSlot(bool)  # signature of the signal emited by the button
     def on_growthCHB_toggled(self, _flag):
@@ -828,12 +851,27 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if molecule == "":
             return
 
-        # check if molecule with this name already exist
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        columns = self.afTable.columnCount()  # Add celltype column headers
+        if columns < 2:
+            column_names = []
+            column_names.append(ADHESION_MOLECULE_TABLE_LABEL)
+            for row in range(self.cellTypeTable.rowCount()):
+                cell_type = str(self.cellTypeTable.item(row, 0).text())
+                column_names.append(cell_type)
 
+            self.afTable.setColumnCount(len(column_names))
+            self.afTable.setHorizontalHeaderLabels(column_names)
+            self.afTable.verticalHeader().setVisible(False)
+            for i in range(0, self.afTable.columnCount()):
+                self.afTable.horizontalHeaderItem(i).setFont(header_font)
+            self.afTable.resizeColumnsToContents()  # remove for columns of same width
+
+        # check if molecule with this name already exist
         molecule_already_exists = False
         for rowId in range(rows):
             name = str(self.afTable.item(rowId, 0).text()).strip()
-
             if name == molecule:
                 molecule_already_exists = True
                 break
@@ -848,8 +886,22 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.afTable.insertRow(rows)
 
         molecule_item = QTableWidgetItem(molecule)
-
-        self.afTable.setItem(rows, 0, molecule_item)
+        molecule_item.setTextAlignment(Qt.AlignCenter)
+        for i in range(0, self.afTable.columnCount()):
+            if i == 0:
+                self.afTable.setItem(rows, 0, molecule_item)
+            else:
+                density_item = QTableWidgetItem(str(DEFAULT_MOLECULE_DENSITY))
+                density_item.setFont(header_font)
+                density_item.setTextAlignment(Qt.AlignCenter)
+                tool_tip = "Density of " + molecule + " in " + self.afTable.horizontalHeaderItem(i).text()
+                density_item.setToolTip(tool_tip)
+                self.afTable.setItem(rows, i, density_item)
+        self.afTable.resizeRowsToContents()
+        self.afTable.resizeColumnsToContents()
+        self.afTable.horizontalHeader().setStretchLastSection(True)
+        self.updateAdhesionInteractionMatrix(molecule, rows)
+        self.update_binding_formula_mol_pair_table(rows)
 
         # reset molecule entry line
         self.afMoleculeLE.setText("")
@@ -860,9 +912,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def on_clearAFTablePB_clicked(self):
 
         rows = self.afTable.rowCount()
-
         for i in range(rows - 1, -1, -1):
             self.afTable.removeRow(i)
+
+        self.clearAdhesionInteractionMatrix()
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_cmcMoleculeAddPB_clicked(self):
@@ -1115,6 +1168,74 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                                     "Please specify a number for the value",
                                     QMessageBox.Ok)
             return False
+
+    def clearAdhesionInteractionMatrix(self):
+        rows = self.interaction_matrixTable.rowCount()
+        for i in range(rows - 1, -1, -1):
+            self.interaction_matrixTable.removeRow(i)
+        self.interaction_matrixTable.clear()
+
+    def updateAdhesionInteractionMatrix(self, molecule, insert_row):
+        molecule_count = self.afTable.rowCount()
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+
+        column_names = []
+        for row in range(self.afTable.rowCount()):
+            molecule_name = str(self.afTable.item(row, 0).text())
+            column_names.append(molecule_name)
+
+        self.interaction_matrixTable.setColumnCount(len(column_names))
+        self.interaction_matrixTable.setHorizontalHeaderLabels(column_names)
+        for i in range(0, self.interaction_matrixTable.columnCount()):
+            self.interaction_matrixTable.horizontalHeaderItem(i).setFont(header_font)
+
+        for row in range(0, molecule_count):
+            if row == insert_row:
+                self.interaction_matrixTable.insertRow(row)
+            binding_par_item = QTableWidgetItem(str(DEFAULT_BINDING_PARAMETER))
+            binding_par_item.setFont(header_font)
+            binding_par_item.setTextAlignment(Qt.AlignCenter)
+            tool_tip = "Binding parameter between the two molecules, used to calculate the binding energy."
+            binding_par_item.setToolTip(tool_tip)
+            for column in range(0, molecule_count):
+                if row <= column:
+                    if insert_row == column:
+                        self.interaction_matrixTable.setItem(row, column, binding_par_item)
+                else:  # bottom of matrix assumed the same as top half:
+                    redundant_val = QTableWidgetItem("-")
+                    redundant_val.setTextAlignment(Qt.AlignCenter)
+                    redundant_val.setFlags(redundant_val.flags() & ~Qt.ItemIsEditable)  # not editable
+                    self.interaction_matrixTable.setItem(row, column, redundant_val)
+
+        self.interaction_matrixTable.setVerticalHeaderLabels(column_names)
+        for i in range(0, self.interaction_matrixTable.rowCount()):
+            self.interaction_matrixTable.verticalHeaderItem(i).setFont(header_font)
+        self.interaction_matrixTable.verticalHeader().setVisible(True)
+        self.interaction_matrixTable.resizeRowsToContents()
+
+    def update_binding_formula_mol_pair_table(self, new_mol_row: int):
+        mol_count: int = self.afTable.rowCount()
+        # mol_pair_str: list = []
+        molecule_name2 = str(self.afTable.item(new_mol_row, 0).text())
+        for row in range(self.afTable.rowCount()):
+            molecule_name1 = str(self.afTable.item(row, 0).text())
+
+            mol_pair_str = molecule_name1 + "-" + molecule_name2
+            row_position = self.binding_formula_molecular_pairTable.rowCount()
+            self.binding_formula_molecular_pairTable.insertRow(row_position)
+            binding_formula = QTableWidgetItem(DEFAULT_BINDING_FORMULAS[0])
+            binding_formula.setFont(QFont('Arial', ADHESION_TABLE_HEADER_FONT_SIZE))
+            binding_formula.setTextAlignment(Qt.AlignCenter)
+            binding_formula.setFlags(binding_formula.flags() & ~Qt.ItemIsEditable)  # not editable
+            binding_pair = QTableWidgetItem(mol_pair_str)
+            binding_pair.setFont(QFont('Arial', ADHESION_TABLE_HEADER_FONT_SIZE))
+            binding_pair.setTextAlignment(Qt.AlignCenter)
+            binding_pair.setFlags(binding_formula.flags() & ~Qt.ItemIsEditable)  # not editable
+            self.binding_formula_molecular_pairTable.setItem(row_position, 0, binding_formula)
+            self.binding_formula_molecular_pairTable.setItem(row_position, 1, binding_pair)
+        self.binding_formula_molecular_pairTable.resizeRowsToContents()
+        self.binding_formula_molecular_pairTable.resizeColumnsToContents()
 
     def x_bcTypeChanged(self, index):
         tab_idx = self.bcs_tab.currentIndex()
@@ -1627,7 +1748,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.field_table_dict[field] = diff_secrete_table_widget
 
     # Secretion on contact: Expect a comma separated string of cell types to check: 'cell1, cell2, cell3'
-    def checkIfValidCellType(self, cell_types_str) -> bool:
+    def checkIfValidCellType(self, cell_types_str) -> bool:  # TODO: Is this necessary? more description needed...
         type_list = cell_types_str.split(",")
         for new_type in type_list:
             found = False
@@ -1844,6 +1965,24 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # print(diffusion_vals_dict)
         return diffusion_vals_dict
 
+    def setUpAdhesionFlexPage(self):
+        self.binding_formula1RB.setText(DEFAULT_BINDING_FORMULAS[0])
+        self.binding_formula1RB.setChecked(True)
+        self.binding_formula2RB.setText(DEFAULT_BINDING_FORMULAS[1])
+        self.binding_formula1RB.setChecked(False)
+        #self.binding_formular_user_defineRB.setChecked(False)
+        #self.bindingFormulaLE.setDisabled(True)
+
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        column_names = ["Binding formula", "Adhesion molecule pair"]
+        self.binding_formula_molecular_pairTable.setColumnCount(len(column_names))
+        self.binding_formula_molecular_pairTable.setHorizontalHeaderLabels(column_names)
+        for i in range(0, self.binding_formula_molecular_pairTable.columnCount()):
+            self.binding_formula_molecular_pairTable.horizontalHeaderItem(i).setFont(header_font)
+        bind_formula_header = self.binding_formula_molecular_pairTable.horizontalHeaderItem(0)
+        if bind_formula_header:
+            bind_formula_header.setToolTip(BINDING_FORMULA_TOOL_TIP)
 
     def is_path_creatable(self, pathname: str) -> bool:
         '''
@@ -2016,6 +2155,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             if self.adhesionFlexCHB.isChecked():
                 self.setPage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME), self.get_page_by_name(ADHESION_FLEX_PAGE_NAME))
+                self.setUpAdhesionFlexPage()
+
             else:
                 self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
             return True
@@ -2220,8 +2361,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             self.af_data[row] = molecule
 
-        self.af_formula = str(self.bindingFormulaLE.text()).strip()
-
+        #self.af_formula = str(self.bindingFormulaLE.text()).strip()
+        self.af_formula = DEFAULT_BINDING_FORMULAS[0]
         cmc_table = []
 
         for row in range(self.cmcTable.rowCount()):
