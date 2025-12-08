@@ -2029,7 +2029,7 @@ p, li { white-space: pre-wrap; }
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Adhesion interaction matrix:</string>
+         <string>Adhesion interaction matrix (binding parameters):</string>
         </property>
         <widget class="QTableWidget" name="interaction_matrixTable">
          <property name="geometry">
@@ -2063,6 +2063,13 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
+     <widget class="QLabel" name="adhesion_calc_descr_label">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="binding_formula_horizontalLayout">
       <property name="spacing">
        <number>0</number>
@@ -2085,7 +2092,7 @@ p, li { white-space: pre-wrap; }
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>60</y>
+           <y>90</y>
            <width>331</width>
            <height>20</height>
           </rect>
@@ -2117,6 +2124,44 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="text">
           <string>RadioButton</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="binding_formula1_label">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>50</y>
+           <width>311</width>
+           <height>20</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="binding_formula2_label">
+         <property name="geometry">
+          <rect>
+           <x>30</x>
+           <y>110</y>
+           <width>311</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>TextLabel</string>
          </property>
         </widget>
        </widget>

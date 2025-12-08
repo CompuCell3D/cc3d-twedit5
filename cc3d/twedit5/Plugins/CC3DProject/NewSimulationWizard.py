@@ -52,9 +52,20 @@ GLOBAL_DECAY_COEFF = '0.0001'
 DEFAULT_MOLECULE_DENSITY = 1.1
 DEFAULT_BINDING_PARAMETER = 0.5
 ADHESION_MOLECULE_TABLE_LABEL = "Adhesion Molecule"  # column label for Adhesion molecule table
+ADHESION_CALC_DESCR = "Adhesion energy for a cell is calculated by summing all of the individual contact energies " \
+                      "between it and each neighbor. The individual contact energy is the binding parameter of the " \
+                      "two adhesion molecules times the user defined binding function which is a " \
+                      "function of the density of the two adhesion molecules in each cell type. " \
+                      "See https://compucell3dreferencemanual.readthedocs.io/en/latest/adhesion_flex_plugin.html for " \
+                      "further information. Needs to be clarified..."
 ADHESION_TABLE_HEADER_FONT_SIZE = 10
+ADHESION_SMALL_FONT_SIZE = 8
+ADHESION_FLEX_DESCRIPTION = "This plugin defines adhesion between cells. The adhesion energy of the system is obtained " \
+                            "by calculating the adhesion energy between each cell and its neighbors. " \
+                            "In AdhesionFlex, a larger Binding Parameter corresponds with a stronger interaction."
 DEFAULT_BINDING_FORMULAS = ["min(Molecule1, Molecule2)", "-(Molecule1 * Molecule2)"]
-DEFAULT_BINDING_FORMULAS_DESCR = ["Description here...", "Description 2 here..."]
+DEFAULT_BINDING_FORMULAS_DESCR = ["Interactions controlled by strong-strong, versus weak-strong (or weak-weak)",
+                                  "Increases adhesion as the product of the two adhesion molecule's density in each cell type."]
 BINDING_FORMULA_TOOL_TIP = "This is a binary function that takes two arguments -  Molecule1 and Molecule2. " \
                            "The allowed functions are those given by muParser - see http://muparser.sourceforge.net/"
 
@@ -1215,6 +1226,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.interaction_matrixTable.verticalHeaderItem(i).setFont(header_font)
         self.interaction_matrixTable.verticalHeader().setVisible(True)
         self.interaction_matrixTable.resizeRowsToContents()
+        self.interaction_matrixTable.resizeColumnsToContents()
 
     def update_binding_formula_mol_pair_table(self, new_mol_row: int):
         mol_count: int = self.afTable.rowCount()
@@ -1966,15 +1978,26 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         return diffusion_vals_dict
 
     def setUpAdhesionFlexPage(self):
+
+        self.adhesion_infoLabel.setText(ADHESION_FLEX_DESCRIPTION)
         header_font = QFont()
         header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        self.adhesion_calc_descr_label.setFont(header_font)
+        self.adhesion_calc_descr_label.setText(ADHESION_CALC_DESCR)
+        self.adhesion_calc_descr_label.setWordWrap(True)
+        descr_font = QFont()
+        descr_font.setPointSize(ADHESION_SMALL_FONT_SIZE)
         self.binding_formula1RB.setText(DEFAULT_BINDING_FORMULAS[0])
         self.binding_formula1RB.setFont(header_font)
         self.binding_formula1RB.setChecked(True)
+        self.binding_formula1_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[0])
+        self.binding_formula1_label.setFont(descr_font)
         self.binding_formula1RB.toggled.connect(self.onBindingFormulaSelected)
         self.binding_formula2RB.setText(DEFAULT_BINDING_FORMULAS[1])
         self.binding_formula2RB.setFont(header_font)
         self.binding_formula2RB.setChecked(False)
+        self.binding_formula2_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[1])
+        self.binding_formula2_label.setFont(descr_font)
         self.binding_formula2RB.toggled.connect(self.onBindingFormulaSelected)
         #self.binding_formular_user_defineRB.setChecked(False)
         #self.bindingFormulaLE.setDisabled(True)
