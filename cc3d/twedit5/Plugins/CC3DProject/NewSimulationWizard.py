@@ -920,15 +920,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_clearAFTablePB_clicked(self):
-
-        rows = self.afTable.rowCount()
-        for i in range(rows - 1, -1, -1):
-            self.afTable.removeRow(i)
-
+        self.clearAFTable()
         self.clearAdhesionInteractionMatrix()
-        # TODO: self.clearBindingFormulaMolecularPairTable()
-
-
+        self.clearBindingFormulaMolecularPairTable()
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_cmcMoleculeAddPB_clicked(self):
@@ -1169,8 +1163,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 break
 
     def checkIfNumber(self, value: str):
-        #if value == ".":
-        #    return True
         if value.isdecimal():
             return True
         try:
@@ -1182,11 +1174,30 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                                     QMessageBox.Ok)
             return False
 
-    def clearAdhesionInteractionMatrix(self):
-        rows = self.interaction_matrixTable.rowCount()
+    def clearTableWidget(self, table_widget_to_be_cleared: QTableWidget):
+        rows = table_widget_to_be_cleared.rowCount()
         for i in range(rows - 1, -1, -1):
-            self.interaction_matrixTable.removeRow(i)
-        self.interaction_matrixTable.clear()
+            table_widget_to_be_cleared.removeRow(i)
+
+    def clearAFTable(self):
+        try:
+            self.clearTableWidget(self.afTable)  # do not clear column headers
+        except NameError:
+            print(" -> self.afTable does not exist.")
+
+
+    def clearAdhesionInteractionMatrix(self):
+        try:
+            self.clearTableWidget(self.interaction_matrixTable)
+            self.interaction_matrixTable.clear()  # clear headers
+        except NameError:
+            print(" -> self.interaction_matrixTable does not exist.")
+
+    def clearBindingFormulaMolecularPairTable(self):
+        try:
+            self.clearTableWidget(self.binding_formula_molecular_pairTable)  # do not clear column headers
+        except NameError:
+            print(" -> self.binding_formula_molecular_pairTable does not exist.")
 
     def updateAdhesionInteractionMatrix(self, molecule, insert_row):
         molecule_count = self.afTable.rowCount()
@@ -1221,9 +1232,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     redundant_val.setFlags(redundant_val.flags() & ~Qt.ItemIsEditable)  # not editable
                     self.interaction_matrixTable.setItem(row, column, redundant_val)
 
-        self.interaction_matrixTable.setVerticalHeaderLabels(column_names)
-        for i in range(0, self.interaction_matrixTable.rowCount()):
-            self.interaction_matrixTable.verticalHeaderItem(i).setFont(header_font)
+        self.interaction_matrixTable.setVerticalHeaderLabels(column_names)  # matrix, so col - row headers same.
+        if self.interaction_matrixTable.rowCount() > 0:
+            for i in range(0, self.interaction_matrixTable.rowCount()):
+                self.interaction_matrixTable.verticalHeaderItem(i).setFont(header_font)
         self.interaction_matrixTable.verticalHeader().setVisible(True)
         self.interaction_matrixTable.resizeRowsToContents()
         self.interaction_matrixTable.resizeColumnsToContents()
