@@ -58,6 +58,8 @@ ADHESION_CALC_DESCR = "Adhesion energy for a cell is calculated by summing all o
                       "function of the density of the two adhesion molecules in each cell type. " \
                       "See https://compucell3dreferencemanual.readthedocs.io/en/latest/adhesion_flex_plugin.html for " \
                       "further information. Needs to be clarified..."
+ADHESION_FLEX_HTML_LINK = "See https://compucell3dreferencemanual.readthedocs.io/en/latest/adhesion_flex_plugin.html for " \
+                      "further information"
 ADHESION_TABLE_HEADER_FONT_SIZE = 10
 ADHESION_SMALL_FONT_SIZE = 8
 ADHESION_FLEX_DESCRIPTION = "This plugin defines adhesion between cells. The adhesion energy of the system is obtained " \
@@ -232,7 +234,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
 
             molecule = str(self.afMoleculeLE.text()).strip()
-
+            # TODO: Check if molecule starts with letter (no digit)?
             if event.key() == Qt.Key_Return:
 
                 if molecule != "":
@@ -1726,15 +1728,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     if solver_name == REACT_DIFF_SOLVER_FE:
                         diff_item = QTableWidgetItem("Do not diffuse into")
                         diff_item.setFont(QFont('Arial', 10))
-                        diff_item.setFlags(QtCore.Qt.ItemFlag.ItemIsUserCheckable |
-                                     QtCore.Qt.ItemFlag.ItemIsEnabled)
-                        diff_item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                        diff_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                                     Qt.ItemFlag.ItemIsEnabled)
+                        diff_item.setCheckState(Qt.CheckState.Unchecked)
                         diff_secrete_table_widget.setItem(row + 1, 1, diff_item)
                         decay_item = QTableWidgetItem("Do not decay into")
                         decay_item.setFont(QFont('Arial', 10))
-                        decay_item.setFlags(QtCore.Qt.ItemFlag.ItemIsUserCheckable |
-                                           QtCore.Qt.ItemFlag.ItemIsEnabled)
-                        decay_item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                        decay_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                                           Qt.ItemFlag.ItemIsEnabled)
+                        decay_item.setCheckState(Qt.CheckState.Unchecked)
                         diff_secrete_table_widget.setItem(row + 1, 2, decay_item)
                     else:
                         diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
@@ -2298,8 +2300,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
 
-        if self.currentId() == self.get_page_by_name("AdhesionFlex Plugin"):
-
+        if self.currentId() == self.get_page_by_name(ADHESION_FLEX_PAGE_NAME):
             if not self.afTable.rowCount():
 
                 QMessageBox.warning(self, "Missing information",
@@ -2309,11 +2310,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                 return False
 
-            else:
-
-                return True
-
         return True
+
 
     def makeProjectDirectories(self, dir, name):
 
