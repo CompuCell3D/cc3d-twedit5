@@ -919,7 +919,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             if i == 0:
                 self.afTable.setItem(rows, 0, molecule_item)
             else:
-                if molecule == "Medium":
+                if self.afTable.horizontalHeaderItem(i).text() == "Medium":
                     density_item = QTableWidgetItem(str(DEFAULT_MEDIUM_DENSITY))
                 else:
                     density_item = QTableWidgetItem(str(DEFAULT_MOLECULE_DENSITY))
@@ -2055,7 +2055,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         return diffusion_vals_dict
 
     def setUpAdhesionFlexPage(self):
-        adhesion_page = self.get_page_by_name(ADHESION_FLEX_PAGE_NAME)
+        adhesion_page: QWizardPage = self.get_page_by_name(ADHESION_FLEX_PAGE_NAME)
 
         self.adhesion_infoLabel.setText(ADHESION_FLEX_DESCRIPTION)
         header_font = QFont()
@@ -2136,7 +2136,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     self.binding_formula_molecular_pairTable.setItem(cell.row(), cell.column(), update_item)
             self.binding_formula_molecular_pairTable.resizeRowsToContents()
             #self.binding_formula_molecular_pairTable.resizeColumnsToContents()
-
 
     def is_path_creatable(self, pathname: str) -> bool:
         '''
