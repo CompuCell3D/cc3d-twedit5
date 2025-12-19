@@ -52,7 +52,7 @@ GLOBAL_DECAY_COEFF = '0.0001'
 DEFAULT_MOLECULE_DENSITY = '1.0'
 DEFAULT_MEDIUM_DENSITY = '0.0'  # molecule density in medium
 DEFAULT_BINDING_PARAMETER = '0.5'
-DEFAULT_BINDING_PARAM_SAME_SAME = '1.0'
+DEFAULT_BINDING_PARAM_MOL_SAME = '1.0'
 DEFAULT_NEIGHBOR_ORDER = '4'
 NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Potts algorithm will check each time it needs to do a " \
                                     "pixel copy attempt for the adhesion plugin."
@@ -1245,6 +1245,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             for column in range(0, molecule_count):
                 if row <= column:
                     if insert_row == column:
+                        if row == column:
+                            binding_par_item.setText(str(DEFAULT_BINDING_PARAM_MOL_SAME))
                         self.interaction_matrixTable.setItem(row, column, binding_par_item)
                 else:  # bottom of matrix assumed the same as top half:
                     redundant_val = QTableWidgetItem("-")
