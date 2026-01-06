@@ -1306,28 +1306,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.binding_formula_molecular_pairTable.resizeRowsToContents()
         #self.binding_formula_molecular_pairTable.resizeColumnsToContents()
 
-    '''
-    def update_binding_formula_mol_pair_table(self, new_mol_row: int):
-        mol_count: int = self.afTable.rowCount()
-        molecule_name2 = str(self.afTable.item(new_mol_row, 0).text())
-        self.binding_formula_molecular_pairTable.verticalHeader().setVisible(False)
-        for row in range(self.afTable.rowCount()):
-            molecule_name1 = str(self.afTable.item(row, 0).text())
-            mol_pair_str = molecule_name1 + " : " + molecule_name2
-            row_position = self.binding_formula_molecular_pairTable.rowCount()
-            self.binding_formula_molecular_pairTable.insertRow(row_position)
-            binding_formula = QTableWidgetItem(DEFAULT_BINDING_FORMULAS[0])
-            binding_formula.setFont(QFont('Arial', ADHESION_TABLE_HEADER_FONT_SIZE))
-            binding_formula.setTextAlignment(Qt.AlignCenter)
-            binding_pair = QTableWidgetItem(mol_pair_str)
-            binding_pair.setFont(QFont('Arial', ADHESION_TABLE_HEADER_FONT_SIZE))
-            binding_pair.setTextAlignment(Qt.AlignCenter)
-            binding_pair.setFlags(binding_formula.flags() & ~Qt.ItemIsEditable)  # not editable
-            self.binding_formula_molecular_pairTable.setItem(row_position, 0, binding_formula)
-            self.binding_formula_molecular_pairTable.setItem(row_position, 1, binding_pair)
-        self.binding_formula_molecular_pairTable.resizeRowsToContents()
-        self.binding_formula_molecular_pairTable.resizeColumnsToContents()
-'''
+
     def x_bcTypeChanged(self, index):
         tab_idx = self.bcs_tab.currentIndex()
         xc = "x_combo" + str(tab_idx)
@@ -2137,7 +2116,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 if self.binding_formula_molecular_pairTable.item(cell.row(), cell.column()).flags() & Qt.ItemIsEditable:
                     self.binding_formula_molecular_pairTable.setItem(cell.row(), cell.column(), update_item)
             self.binding_formula_molecular_pairTable.resizeRowsToContents()
-            #self.binding_formula_molecular_pairTable.resizeColumnsToContents()
 
     def is_path_creatable(self, pathname: str) -> bool:
         '''
@@ -2389,18 +2367,64 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
 
-        if self.currentId() == self.get_page_by_name(ADHESION_FLEX_PAGE_NAME):
-            if not self.afTable.rowCount():
-
-                QMessageBox.warning(self, "Missing information",
-                                    "Please specify at least one adhesion molecule name "
-                                    "to be used in AdhesionFlex plugin",
-                                    QMessageBox.Ok)
+        if self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
+            issues_found = self.validateAdhesionFlexPage()
+            if len(issues_found) > 0:
+                issues_str = ""
+                for issue in issues_found:
+                    if issues_str == "":
+                        issues_str = issue
+                    else:
+                        issues_str = issues_str + ", \n" + issue
+                QMessageBox.warning(self, "Missing information", issues_str, QMessageBox.Ok)
 
                 return False
             else:
                 print("Adhesion flex page get data section !!!!")
         return True
+
+    def validateAdhesionFlexPage(self) -> list[str]:
+        issues = []
+        if not self.afTable.rowCount() or self.afTable.rowCount() < 1:
+            issues.append("Please specify at least one adhesion molecule name to be used in AdhesionFlex plugin")
+
+        # Check conc of adhesion mol in cell type is >= 0
+        for row in range(0, self.afTable.rowCount()):
+            for col in range(1, self.afTable.columnCount()):
+                val_str = str(self.afTable.item(row, col).text()).strip()
+                try:
+                    if float(val_str) < 0.0:
+                        issues.append(f"Adhesion molecule conc {val_str} is less than zero")
+                except ValueError:
+                    issues.append(f"Adhesion molecule conc {val_str} is not a valid number")
+
+        # Check that adhesion mol binding param is a number:
+        for row in range(0, self.interaction_matrixTable.rowCount()):
+            for col in range(0, self.interaction_matrixTable.columnCount()):
+                val_str = str(self.interaction_matrixTable.item(row, col).text()).strip()
+                if val_str != "-":
+                    try:
+                        if float(val_str):
+                            pass
+                    except ValueError:
+                        issues.append(f"Adhesion molecule binding param value: {val_str} is not a valid number")
+
+        # Check if formulas have either Molecule1 or Molecule2 in them. In future validate with MuParser as well.
+        valid_mol_names = ("Molecule1", "Molecule2")
+        for row in range(0, self.binding_formula_molecular_pairTable.rowCount()):
+            for col in range(0, self.binding_formula_molecular_pairTable.columnCount()):
+                formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
+                if formula != "-":
+                    found = False
+                    for name in valid_mol_names:
+                        if name in formula:
+                            found = True
+                    if not found:
+                        issues.append(f"{formula} does not contain 'Molecule1' and/or 'Molecule2'.")
+
+
+
+        return issues
 
 
     def makeProjectDirectories(self, dir, name):
