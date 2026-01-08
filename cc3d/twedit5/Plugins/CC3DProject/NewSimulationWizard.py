@@ -2537,75 +2537,78 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.cellTypeData[cell_type] = [row, freeze]
 
         # Adhesion flex data here:
-        # af_data : dict that holds row from afTable and adhesion mol name {int, str}
-        # af_formula: holds list of binding formulas
-        neighbor_order_str = str(self.neighbor_orderLE.text())
-        if neighbor_order_str.isdigit():
-            try:
-                value = int(neighbor_order_str)
-            except ValueError:
-                value = DEFAULT_NEIGHBOR_ORDER
-            self.af_neighbor_order = value
-        else:
+        if self.adhesionFlexCHB.isChecked():
+            # af_data : dict that holds row from afTable and adhesion mol name {int, str}
+            # af_formula: holds list of binding formulas
             self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
-
-        for row in range(self.afTable.rowCount()):
-            molecule = str(self.afTable.item(row, 0).text())
-            self.af_data[row] = molecule  # Probably can deprecate this in the future
-
-        # generate mol-mol binding list here:
-        for row in range(self.interaction_matrixTable.rowCount()):
-            for col in range(self.interaction_matrixTable.columnCount()):
-                if str(self.interaction_matrixTable.item(row, col).text()).strip() != "-":
-                    mol1 = str(self.interaction_matrixTable.verticalHeaderItem(row).text())
-                    mol2 = str(self.interaction_matrixTable.horizontalHeaderItem(col).text())
-                    bind_par = str(self.interaction_matrixTable.item(row, col).text()).strip()
-                    if self.checkIfNumber(bind_par):
-                        new_mol_mol_bind = (mol1, mol2, bind_par)
-                    else:
-                        bind_par = DEFAULT_BINDING_PARAMETER
-                        new_mol_mol_bind = (mol1, mol2, bind_par)
-                    self.af_mol_mol_param.append(new_mol_mol_bind)
-
-        # generate dictionary of molecule densities in each cell type:
-        for col in range(1, self.afTable.columnCount()):
-            cell = str(self.afTable.horizontalHeaderItem(col).text())
-            mol_density = {}
-            for row in range(self.afTable.rowCount()):
-                mol = str(self.afTable.item(row, 0).text()).strip()
-                density = str(self.afTable.item(row, col).text()).strip()
-                if self.checkIfNumber(density):
+            try:
+                neighbor_order_str = str(self.neighbor_orderLE.text())
+                if neighbor_order_str.isdigit():
                     try:
-                        density_float = float(density)
-                        if density_float < 0:  # density cannot be less than zero
-                            density = DEFAULT_MOLECULE_DENSITY
+                        value = int(neighbor_order_str)
+                        self.af_neighbor_order = value
                     except ValueError:
-                        density = DEFAULT_MOLECULE_DENSITY
-                else:
-                    density = DEFAULT_MOLECULE_DENSITY
-                mol_density[mol] = density
-            self.af_mol_density[cell] = mol_density
+                        pass  # do nothing as default neighborhood value already set.
+            except AttributeError:
+                pass  # do nothing as default neighborhood value already set.
 
-        # grab formula for each adhesion  mol-mol pair:
-        for row in range(self.binding_formula_molecular_pairTable.rowCount()):
-            for col in range(self.binding_formula_molecular_pairTable.columnCount()):
-                if str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip() != "-":
-                    mol1 = str(self.binding_formula_molecular_pairTable.verticalHeaderItem(row).text())
-                    mol2 = str(self.binding_formula_molecular_pairTable.horizontalHeaderItem(col).text())
-                    bind_formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
-                    if bind_formula != "":
-                        new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+            for row in range(self.afTable.rowCount()):
+                molecule = str(self.afTable.item(row, 0).text())
+                self.af_data[row] = molecule  # Probably can deprecate this in the future
+
+            # generate mol-mol binding list here:
+            for row in range(self.interaction_matrixTable.rowCount()):
+                for col in range(self.interaction_matrixTable.columnCount()):
+                    if str(self.interaction_matrixTable.item(row, col).text()).strip() != "-":
+                        mol1 = str(self.interaction_matrixTable.verticalHeaderItem(row).text())
+                        mol2 = str(self.interaction_matrixTable.horizontalHeaderItem(col).text())
+                        bind_par = str(self.interaction_matrixTable.item(row, col).text()).strip()
+                        if self.checkIfNumber(bind_par):
+                            new_mol_mol_bind = (mol1, mol2, bind_par)
+                        else:
+                            bind_par = DEFAULT_BINDING_PARAMETER
+                            new_mol_mol_bind = (mol1, mol2, bind_par)
+                        self.af_mol_mol_param.append(new_mol_mol_bind)
+
+            # generate dictionary of molecule densities in each cell type:
+            for col in range(1, self.afTable.columnCount()):
+                cell = str(self.afTable.horizontalHeaderItem(col).text())
+                mol_density = {}
+                for row in range(self.afTable.rowCount()):
+                    mol = str(self.afTable.item(row, 0).text()).strip()
+                    density = str(self.afTable.item(row, col).text()).strip()
+                    if self.checkIfNumber(density):
+                        try:
+                            density_float = float(density)
+                            if density_float < 0:  # density cannot be less than zero
+                                density = DEFAULT_MOLECULE_DENSITY
+                        except ValueError:
+                            density = DEFAULT_MOLECULE_DENSITY
                     else:
-                        bind_formula = DEFAULT_BINDING_FORMULAS[0]
-                        new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
-                    formula_found = False
-                    for key in self.af_formula:
-                        if self.af_formula[key] == bind_formula:
-                            formula_found = True
-                    if not formula_found:
-                        new_name = DEFAULT_AF_FORMULA_NAME + "_" + str(len(self.af_formula))
-                        self.af_formula[new_name] = bind_formula
-                    self.af_mol_mol_bind_formula.append(new_mol_mol_bind_formula)
+                        density = DEFAULT_MOLECULE_DENSITY
+                    mol_density[mol] = density
+                self.af_mol_density[cell] = mol_density
+
+            # grab formula for each adhesion  mol-mol pair:
+            for row in range(self.binding_formula_molecular_pairTable.rowCount()):
+                for col in range(self.binding_formula_molecular_pairTable.columnCount()):
+                    if str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip() != "-":
+                        mol1 = str(self.binding_formula_molecular_pairTable.verticalHeaderItem(row).text())
+                        mol2 = str(self.binding_formula_molecular_pairTable.horizontalHeaderItem(col).text())
+                        bind_formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
+                        if bind_formula != "":
+                            new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                        else:
+                            bind_formula = DEFAULT_BINDING_FORMULAS[0]
+                            new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                        formula_found = False
+                        for key in self.af_formula:
+                            if self.af_formula[key] == bind_formula:
+                                formula_found = True
+                        if not formula_found:
+                            new_name = DEFAULT_AF_FORMULA_NAME + "_" + str(len(self.af_formula))
+                            self.af_formula[new_name] = bind_formula
+                        self.af_mol_mol_bind_formula.append(new_mol_mol_bind_formula)
 
         #  ContactMultiCad data:
         cmc_table = []
