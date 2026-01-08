@@ -942,56 +942,89 @@ class CC3DMLGeneratorBase:
             af_data = kwds['afData']
         except LookupError:
             af_data = {}
-
         try:
-            formula = kwds['formula']
+            formulas: dict = kwds['afFormula']
         except LookupError:
-
-            formula = ''
+            formulas = {}
+        try:
+            binding_params: list = kwds['afBindingParams']
+        except LookupError:
+            binding_params = []
+        try:
+            mol_densities: dict = kwds['afMoleculeDensities']
+        except LookupError:
+            mol_densities = {}
+        try:
+            mol_mol_bind_formulas: list = kwds['afMolMolBindingFormulas']
+        except LookupError:
+            mol_mol_bind_formulas = []
+        try:
+            af_neighbor_order = kwds['afNeighborOrder']
+        except LookupError:
+            mol_mol_bind_formulas = []
 
         m_element.addComment("newline")
-
         m_element.addComment(
             "Specification of adhesion energies as a function of cadherin concentration at cell membranes")
-
         m_element.addComment(
-            "Adhesion energy is a function of two cells in ocntact. the functional form is specified by the user")
+            "Adhesion energy is a function of two cells in contact. the functional form is specified by the user")
 
-        # writing AdhesionMolecule elements
+        if mol_densities is not None and len(mol_densities) > 0:  # Check if legacy default adhesion plugin is in use.
+            # writing AdhesionMolecule elements
+            for idx, props in af_data.items():
+                attr_dict = {"Molecule": props}
+                m_element.ElementCC3D("AdhesionMolecule", attr_dict)
 
-        for idx, props in af_data.items():
-            attr_dict = {"Molecule": props}
-            m_element.ElementCC3D("AdhesionMolecule", attr_dict)
+            # writing AdhesionMoleculeDensity elements
+            for type_name in cell_type_data.keys():
+                mols = mol_densities[type_name]
+                for molecule in mols.keys():
+                    density = mols[molecule]
+                    attr_dict = {"CellType": type_name, "Molecule": molecule, "Density": density}
+                    m_element.ElementCC3D("AdhesionMoleculeDensity", attr_dict)
 
-        # writing AdhesionMoleculeDensity elements
-        for type_name in cell_type_data.keys():
+            # writing binding formula
+            for formula_name, formula in formulas.items():
+                bf_element = m_element.ElementCC3D("BindingFormula", {'Name': formula_name})
+                bf_element.ElementCC3D("Formula", {}, formula)
+                var_element = bf_element.ElementCC3D("Variables")
+                adh_matrix_element = var_element.ElementCC3D("AdhesionInteractionMatrix")
+                for mol_mol_formula in mol_mol_bind_formulas:
+                    if formula in mol_mol_formula:
+                        mol1, mol2, f = mol_mol_formula
+                        for mol_mol_bind in binding_params:
+                            if mol1 == mol_mol_bind[0] and mol2 == mol_mol_bind[1]:
+                                bind_val = mol_mol_bind[2]
+                                attr_dict = {"Molecule1": mol1, "Molecule2": mol2}
+                                adh_matrix_element.ElementCC3D("BindingParameter", attr_dict, bind_val)
+            m_element.ElementCC3D("NeighborOrder", {}, af_neighbor_order)
 
-            for idx, afprops in af_data.items():
-                attr_dict = {"CellType": type_name, "Molecule": afprops, "Density": 1.1}
-                m_element.ElementCC3D("AdhesionMoleculeDensity", attr_dict)
+        else:   # Default, use if no Adhesion Flex info:
+            # writing AdhesionMoleculeDensity elements
+            for type_name in cell_type_data.keys():
+                for idx, afprops in af_data.items():
+                    attr_dict = {"CellType": type_name, "Molecule": afprops, "Density": 1.1}
+                    m_element.ElementCC3D("AdhesionMoleculeDensity", attr_dict)
 
-        # writing binding formula
+            # writing binding formula
+            bf_element = m_element.ElementCC3D("BindingFormula", {'Name': 'Binary'})
+            # Default formula:
+            bf_element.ElementCC3D("Formula", {}, "avg(Molecule1, Molecule2)")
+            var_element = bf_element.ElementCC3D("Variables")
+            adh_matrix_element = var_element.ElementCC3D("AdhesionInteractionMatrix")
 
-        bf_element = m_element.ElementCC3D("BindingFormula", {'Name': 'Binary'})
+            repetition_dict = {}
+            for idx1, afprops1 in af_data.items():
+                for idx2, afprops2 in af_data.items():
+                    if afprops2 + '_' + afprops1 in list(repetition_dict.keys()):  # to avoid duplicate entries
+                        continue
+                    else:
+                        repetition_dict[afprops1 + '_' + afprops2] = 0
+                    attr_dict = {"Molecule1": afprops1, "Molecule2": afprops2}
+                    adh_matrix_element.ElementCC3D("BindingParameter", attr_dict, 0.5)
 
-        bf_element.ElementCC3D("Formula", {}, formula)
-
-        var_element = bf_element.ElementCC3D("Variables")
-
-        adh_matrix_element = var_element.ElementCC3D("AdhesionInteractionMatrix")
-
-        repetition_dict = {}
-
-        for idx1, afprops1 in af_data.items():
-            for idx2, afprops2 in af_data.items():
-                if afprops2 + '_' + afprops1 in list(repetition_dict.keys()):  # to avoid duplicate entries
-                    continue
-                else:
-                    repetition_dict[afprops1 + '_' + afprops2] = 0
-                attr_dict = {"Molecule1": afprops1, "Molecule2": afprops2}
-                adh_matrix_element.ElementCC3D("BindingParameter", attr_dict, 0.5)
-
-        m_element.ElementCC3D("NeighborOrder", {}, 4)
+            m_element.ElementCC3D("NeighborOrder", {}, 4)
+            # END of default Adhesion Flex plugin
 
     @GenerateDecorator('Plugin', ['Name', 'Chemotaxis'])
     def generateChemotaxisPlugin(self, *args, **kwds):

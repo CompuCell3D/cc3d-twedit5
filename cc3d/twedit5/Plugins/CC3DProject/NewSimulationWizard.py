@@ -140,6 +140,14 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.field_table_dict = {}  # {field -> QTableWidget}
         self.diff_solver_info_textBrowser.clear()
         self.diff_solver_info_textBrowser.setHtml(get_diffusion_solv_description_html())
+        # Adhesion flex:
+        self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
+        self.af_data: dict[int, str] = {}  # row -> molecule
+        self.af_formula = {}  # dict[ formula_name -> formula ]
+        self.af_mol_density: dict[str, dict[str, float]] = {}  # dict[celltype, dict[mol, density]]
+        self.af_mol_mol_param: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
+        self.af_mol_mol_bind_formula: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding formula]]
+
         if sys.platform.startswith('win'):
             self.setWizardStyle(QWizard.ClassicStyle)
 
@@ -2077,17 +2085,17 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.binding_formula_molecular_pairTable.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
 
         adhesion_page_layout: QLayout = adhesion_page.layout()
-        neighbor_order_layout = QHBoxLayout()
-        neighbor_orderLB = QLabel("Neighbor order:")
-        neighbor_orderLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
-        neighbor_order_layout.addWidget(neighbor_orderLB)
-        neighbor_orderLE = QLineEdit(DEFAULT_NEIGHBOR_ORDER)
-        neighbor_orderLE.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
-        neighbor_orderLE.setAlignment(Qt.AlignCenter)
-        neighbor_order_layout.addWidget(neighbor_orderLE)
+        self.neighbor_order_layout = QHBoxLayout()
+        self.neighbor_orderLB = QLabel("Neighbor order:")
+        self.neighbor_orderLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
+        self.neighbor_order_layout.addWidget(self.neighbor_orderLB)
+        self.neighbor_orderLE = QLineEdit(DEFAULT_NEIGHBOR_ORDER)
+        self.neighbor_orderLE.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
+        self.neighbor_orderLE.setAlignment(Qt.AlignCenter)
+        self.neighbor_order_layout.addWidget(self.neighbor_orderLE)
         h_spacer = QSpacerItem(700, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        neighbor_order_layout.addItem(h_spacer)
-        adhesion_page_layout.addLayout(neighbor_order_layout)
+        self.neighbor_order_layout.addItem(h_spacer)
+        adhesion_page_layout.addLayout(self.neighbor_order_layout)
 
     def onBindingFormulaSelected(self):
         sender_button = self.sender()
@@ -2422,8 +2430,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     if not found:
                         issues.append(f"{formula} does not contain 'Molecule1' and/or 'Molecule2'.")
 
-
-
         return issues
 
 
@@ -2530,21 +2536,18 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             self.cellTypeData[cell_type] = [row, freeze]
 
-    #  TODO: *****   Store Adhesion flex data here:
-        #  Need to store: Neighbor order?
-        # Currently:
+        # Adhesion flex data here:
         # af_data : dict that holds row from afTable and adhesion mol name {int, str}
-        # af_formula: holds default binding formula ( make this a list )
-        # Need:
-        # af_mol_density: dict[celltype, dict[mol, density]]
-        # af_formula becomes dict[ formula_name, formula ]
-        # af_interaction_dict: dict[ formula_name, list[ list[ mol1, mol2, binding param] ]
-
-        self.af_data = {}  # adhesion flex: row -> molecule  DONE
-        self.af_formula = {}  # adhesion flex: formula name -> formula  DONE
-        self.af_mol_density: dict[str, dict[str, float]] = {}  # dict[celltype, dict[mol, density]] DONE
-        self.af_mol_mol_param: list[list[str, str, str]] = []   # list mol1, mol2, binding param  DONE
-        self.af_interaction_dict = {}
+        # af_formula: holds list of binding formulas
+        neighbor_order_str = str(self.neighbor_orderLE.text())
+        if neighbor_order_str.isdigit():
+            try:
+                value = int(neighbor_order_str)
+            except ValueError:
+                value = DEFAULT_NEIGHBOR_ORDER
+            self.af_neighbor_order = value
+        else:
+            self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
 
         for row in range(self.afTable.rowCount()):
             molecule = str(self.afTable.item(row, 0).text())
@@ -2553,16 +2556,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         # generate mol-mol binding list here:
         for row in range(self.interaction_matrixTable.rowCount()):
             for col in range(self.interaction_matrixTable.columnCount()):
-                new_mol_mol_bind = []
                 if str(self.interaction_matrixTable.item(row, col).text()).strip() != "-":
                     mol1 = str(self.interaction_matrixTable.verticalHeaderItem(row).text())
                     mol2 = str(self.interaction_matrixTable.horizontalHeaderItem(col).text())
                     bind_par = str(self.interaction_matrixTable.item(row, col).text()).strip()
                     if self.checkIfNumber(bind_par):
-                        new_mol_mol_bind = [mol1, mol2, bind_par]
+                        new_mol_mol_bind = (mol1, mol2, bind_par)
                     else:
                         bind_par = DEFAULT_BINDING_PARAMETER
-                        new_mol_mol_bind = [mol1, mol2, bind_par]
+                        new_mol_mol_bind = (mol1, mol2, bind_par)
                     self.af_mol_mol_param.append(new_mol_mol_bind)
 
         # generate dictionary of molecule densities in each cell type:
@@ -2584,34 +2586,31 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 mol_density[mol] = density
             self.af_mol_density[cell] = mol_density
 
-
+        # grab formula for each adhesion  mol-mol pair:
         for row in range(self.binding_formula_molecular_pairTable.rowCount()):
-            new_mol_pair = str(self.binding_formula_molecular_pairTable.item(row, 1).text())
-            mol_pair = new_mol_pair.split(":")
-            bind_formula = str(self.binding_formula_molecular_pairTable.item(row, 0).text())
-            if bind_formula == "":
-                bind_formula = DEFAULT_BINDING_FORMULAS[0]
-
-            new_formula = bind_formula.strip()
-            formula_found = False
-            for key in self.af_formula:
-                if self.af_formula[key] == new_formula:
-                    formula_found = True
-            if not formula_found:
-                new_name = DEFAULT_AF_FORMULA_NAME + "_" + str(len(self.af_formula))
-                self.af_formula[new_name] = bind_formula.strip()
-
-            # TODO: build out af_interaction_dict: dict[ formula_name, list[ list[ mol1, mol2, binding param] ] HERE:
-
-
-        #self.af_formula = str(self.bindingFormulaLE.text()).strip()
-        #self.af_formula = DEFAULT_BINDING_FORMULAS[0]
+            for col in range(self.binding_formula_molecular_pairTable.columnCount()):
+                if str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip() != "-":
+                    mol1 = str(self.binding_formula_molecular_pairTable.verticalHeaderItem(row).text())
+                    mol2 = str(self.binding_formula_molecular_pairTable.horizontalHeaderItem(col).text())
+                    bind_formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
+                    if bind_formula != "":
+                        new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                    else:
+                        bind_formula = DEFAULT_BINDING_FORMULAS[0]
+                        new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                    formula_found = False
+                    for key in self.af_formula:
+                        if self.af_formula[key] == bind_formula:
+                            formula_found = True
+                    if not formula_found:
+                        new_name = DEFAULT_AF_FORMULA_NAME + "_" + str(len(self.af_formula))
+                        self.af_formula[new_name] = bind_formula
+                    self.af_mol_mol_bind_formula.append(new_mol_mol_bind_formula)
 
         #  ContactMultiCad data:
         cmc_table = []
         for row in range(self.cmcTable.rowCount()):
             cadherin = str(self.cmcTable.item(row, 0).text())
-
             cmc_table.append(cadherin)
 
         self.pde_field_data = {}  # Need to add all the new settings/values to this
@@ -2787,14 +2786,17 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def generateXML(self, generator):
         cell_type_dict = self.cellTypeData
         args = []
-
         kwds = {}
 
         kwds['insert_root_element'] = generator.cc3d
         kwds['data'] = cell_type_dict
         kwds['generalPropertiesData'] = self.generalPropertiesDict
         kwds['afData'] = self.af_data
-        kwds['formula'] = self.af_formula
+        kwds['afFormula'] = self.af_formula
+        kwds['afBindingParams'] = self.af_mol_mol_param
+        kwds['afMoleculeDensities'] = self.af_mol_density
+        kwds['afMolMolBindingFormulas'] = self.af_mol_mol_bind_formula
+        kwds['afNeighborOrder'] = self.af_neighbor_order
         kwds['chemotaxisData'] = self.chemotaxisData
         kwds['pdeFieldData'] = self.pde_field_data
         kwds['secretionData'] = self.secretion_data
