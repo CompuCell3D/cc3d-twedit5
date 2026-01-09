@@ -2539,7 +2539,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         # Adhesion flex data here:
         if self.adhesionFlexCHB.isChecked():
             # af_data : dict that holds row from afTable and adhesion mol name {int, str}
-            # af_formula: holds list of binding formulas
+            # af_formula: holds dictionary of binding formulas {formula name -> formula}
             self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
             try:
                 neighbor_order_str = str(self.neighbor_orderLE.text())
