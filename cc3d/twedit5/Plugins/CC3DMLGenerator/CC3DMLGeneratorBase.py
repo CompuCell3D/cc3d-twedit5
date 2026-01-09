@@ -232,15 +232,28 @@ class CC3DMLGeneratorBase:
             abrev = time_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("MCSConversionFactor", {"id": "mcs_conv_factor", "DisplayName": display_name,
-                                                      "Units": abrev}, gpd["mcsConversionFactor"])
+
+        m_element.ElementCC3D("MCSConversionFactor", {
+                        # as of now using "id" inside <Meteadat> child
+                        # element will lead to code crash with older versions of CC3D. Therefore, we are delaying this way of identifying
+                        # XML Units specification inside <Metadata>
+                        # "id": "mcs_conv_factor",
+                        "DisplayName": display_name,
+                        "Units": abrev
+                    }, gpd["mcsConversionFactor"])
+
         length_labels: list[str] = gpd["voxelConversionUnits"].rstrip(")").split("(")
         display_name = length_labels[0].strip()
         if len(length_labels) > 1:
             abrev = length_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("VoxelConversionFactor", {"id": "voxel_conv_factor", "DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
+        m_element.ElementCC3D("VoxelConversionFactor", {
+                    # as of now using "id" inside <Meteadat> child
+                    # element will lead to code crash with older versions of CC3D. Therefore, we are delaying this way of identifying
+                    # XML Units specification inside <Metadata>
+                    # "id": "voxel_conv_factor",
+                    "DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataDebugOutputFrequency(self, *args, **kwds):
