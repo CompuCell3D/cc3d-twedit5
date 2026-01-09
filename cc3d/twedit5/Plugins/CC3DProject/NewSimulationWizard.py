@@ -2540,6 +2540,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if self.adhesionFlexCHB.isChecked():
             # af_data : dict that holds row from afTable and adhesion mol name {int, str}
             # af_formula: holds dictionary of binding formulas {formula name -> formula}
+            # af_mol_mol_param: holds list of (mol1, mol2, binding param) tuple
+            # af_mol_density: holds dict of dict of mol densities in each cell type {cell-> {mol-> density}}
             self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
             try:
                 neighbor_order_str = str(self.neighbor_orderLE.text())
@@ -2563,9 +2565,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                         mol1 = str(self.interaction_matrixTable.verticalHeaderItem(row).text())
                         mol2 = str(self.interaction_matrixTable.horizontalHeaderItem(col).text())
                         bind_par = str(self.interaction_matrixTable.item(row, col).text()).strip()
-                        if self.checkIfNumber(bind_par):
+                        try:
+                            bind_par_float = float(bind_par)
                             new_mol_mol_bind = (mol1, mol2, bind_par)
-                        else:
+                        except ValueError:
                             bind_par = DEFAULT_BINDING_PARAMETER
                             new_mol_mol_bind = (mol1, mol2, bind_par)
                         self.af_mol_mol_param.append(new_mol_mol_bind)
@@ -2577,14 +2580,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 for row in range(self.afTable.rowCount()):
                     mol = str(self.afTable.item(row, 0).text()).strip()
                     density = str(self.afTable.item(row, col).text()).strip()
-                    if self.checkIfNumber(density):
-                        try:
-                            density_float = float(density)
-                            if density_float < 0:  # density cannot be less than zero
-                                density = DEFAULT_MOLECULE_DENSITY
-                        except ValueError:
+                    try:
+                        density_float = float(density)
+                        if density_float < 0:  # density cannot be less than zero
                             density = DEFAULT_MOLECULE_DENSITY
-                    else:
+                    except ValueError:
                         density = DEFAULT_MOLECULE_DENSITY
                     mol_density[mol] = density
                 self.af_mol_density[cell] = mol_density
