@@ -15,6 +15,7 @@ from cc3d.twedit5.Plugins.CC3DMLGenerator.CC3DMLGeneratorBase import CC3DMLGener
 from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
 from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
+from cc3d.twedit5.Plugins.CC3DProject.AdhesionFlexCalcsPopupForm import AdhesionFlexCalcsPopupForm
 
 MAC = "qt_mac_set_native_menubar" in dir()
 # Wizard pages:
@@ -62,11 +63,10 @@ ADHESION_MOLECULE_TABLE_LABEL = "Adhesion Molecule"  # column label for Adhesion
 ADHESION_CALC_DESCR = "Adhesion energy for a cell is calculated by summing all of the individual contact energies " \
                       "between it and each neighbor. The individual contact energy is the binding parameter of the " \
                       "two adhesion molecules times the user defined binding formula which is a " \
-                      "function of the density of the two adhesion molecules in each cell type. " \
-                      "See https://compucell3dreferencemanual.readthedocs.io/en/latest/adhesion_flex_plugin.html for " \
-                      "further information. Needs to be clarified..."
+                      "function of the density of the two adhesion molecules in each cell type. "
+
 ADHESION_FLEX_HTML_LINK = "See https://compucell3dreferencemanual.readthedocs.io/en/latest/adhesion_flex_plugin.html for " \
-                      "further information"
+                      "further information."
 ADHESION_TABLE_HEADER_FONT_SIZE = 10
 ADHESION_SMALL_FONT_SIZE = 8
 ADHESION_FLEX_DESCRIPTION = "This plugin defines adhesion between cells. The adhesion energy of the system is obtained " \
@@ -947,6 +947,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         return
 
     @pyqtSlot()  # signature of the signal emited by the button
+    def on_calc_detailsPB_clicked(self):
+        self.displayAdhesionCalcDetails()
+
+    @pyqtSlot()  # signature of the signal emited by the button
     def on_clearAFTablePB_clicked(self):
         self.clearAFTable()
         self.clearAdhesionInteractionMatrix()
@@ -1314,6 +1318,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.binding_formula_molecular_pairTable.resizeRowsToContents()
         #self.binding_formula_molecular_pairTable.resizeColumnsToContents()
 
+
+    def displayAdhesionCalcDetails(self):
+        popup = AdhesionFlexCalcsPopupForm(self)
+        popup.exec_()
 
     def x_bcTypeChanged(self, index):
         tab_idx = self.bcs_tab.currentIndex()
