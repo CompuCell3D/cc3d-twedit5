@@ -55,8 +55,8 @@ DEFAULT_MEDIUM_DENSITY = '0.0'  # molecule density in medium
 DEFAULT_BINDING_PARAMETER = '0.5'
 DEFAULT_BINDING_PARAM_MOL_SAME = '1.0'
 DEFAULT_NEIGHBOR_ORDER = '4'
-NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Potts algorithm will check each time it needs to do a " \
-                                    "pixel copy attempt for the adhesion plugin."
+NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Adhesion Flex algorithm will check each time it needs to do a " \
+                                    "energy calculation."
 NEIGHBOR_ORDER_TOOLTIP_2 = "Integer > 0, typically between 2 and 4. Higher is more computationally intensive."
 
 ADHESION_MOLECULE_TABLE_LABEL = "Adhesion Molecule"  # column label for Adhesion molecule table
@@ -83,6 +83,7 @@ DEFAULT_BINDING_FORMULAS_DESCR = ["Interactions controlled by the average densit
                                   " See muParser library for allowable math functions."]
 BINDING_FORMULA_TOOL_TIP = "This is a binary function that takes two arguments -  Molecule1 and Molecule2. " \
                            "The allowed functions are those given by muParser - see http://muparser.sourceforge.net/"
+ADHESION_BINDING_FORMULA_MOL_PAIR_GB_TITLE = "Binding formula for molecule pair (highlight cell(s) to change):"
 
 # Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
 TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
@@ -141,6 +142,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.diff_solver_info_textBrowser.clear()
         self.diff_solver_info_textBrowser.setHtml(get_diffusion_solv_description_html())
         # Adhesion flex:
+        self.binding_formula_molecule_pairGB.setTitle(ADHESION_BINDING_FORMULA_MOL_PAIR_GB_TITLE)
         self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
         self.af_data: dict[int, str] = {}  # row -> molecule
         self.af_formula = {}  # dict[ formula_name -> formula ]
@@ -881,9 +883,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def on_afMoleculeAddPB_clicked(self):
 
         molecule = str(self.afMoleculeLE.text()).strip()
-
         rows = self.afTable.rowCount()
-
         if molecule == "":
             return
 
@@ -914,9 +914,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         if molecule_already_exists:
             QMessageBox.warning(self, "Molecule Name Already Exists",
-
                                 "Molecule name already exist. Please choose different name", QMessageBox.Ok)
-
             return
 
         self.afTable.insertRow(rows)

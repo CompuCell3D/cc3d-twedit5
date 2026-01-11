@@ -2247,9 +2247,9 @@ p, li { white-space: pre-wrap; }
         <widget class="QLabel" name="binding_formula4_label">
          <property name="geometry">
           <rect>
-           <x>30</x>
+           <x>10</x>
            <y>170</y>
-           <width>311</width>
+           <width>301</width>
            <height>41</height>
           </rect>
          </property>
@@ -2264,6 +2264,9 @@ p, li { white-space: pre-wrap; }
          </property>
          <property name="scaledContents">
           <bool>true</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
