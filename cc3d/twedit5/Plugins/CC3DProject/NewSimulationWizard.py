@@ -60,7 +60,7 @@ NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Adhesion Flex algorithm w
 NEIGHBOR_ORDER_TOOLTIP_2 = "Integer > 0, typically between 2 and 4. Higher is more computationally intensive."
 
 ADHESION_MOLECULE_TABLE_LABEL = "Adhesion Molecule"  # column label for Adhesion molecule table
-ADHESION_CALC_DESCR = "Adhesion energy for a cell is calculated by summing all of the individual contact energies " \
+ADHESION_CALC_DESCR = "The total adhesion energy for a cell is calculated by summing all of the individual contact energies " \
                       "between it and each neighbor. The individual contact energy is the binding parameter of the " \
                       "two adhesion molecules times the user defined binding formula which is a " \
                       "function of the density of the two adhesion molecules in each cell type. "
