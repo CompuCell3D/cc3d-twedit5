@@ -1423,7 +1423,12 @@ class CC3DMLGeneratorBase:
                                 uptake_attributes_dict["Type"] = secr_dict["CellType"]
                                 uptake_attributes_dict["MaxUptake"] = secr_dict["MaxUptake"]
                                 uptake_attributes_dict["RelativeUptakeRate"] = secr_dict["RelativeUptakeRate"]
-                                secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+                                try:  # DO not print out xml element if uptake values not set above 0.0:
+                                    if float(secr_dict["MaxUptake"]) > 0.0 \
+                                            and float(secr_dict["RelativeUptakeRate"]) > 0.0:
+                                        secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+                                except ValueError:
+                                    print("MaxUpdate or RelativeUpdate not a float.")
                                 rate = secr_dict["Rate"]
                                 attribute_dict = {"Type": secr_dict["CellType"]}
                                 if secr_dict["SecretionType"] == 'uniform':
