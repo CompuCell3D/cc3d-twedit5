@@ -902,7 +902,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.afTable.verticalHeader().setVisible(False)
             for i in range(0, self.afTable.columnCount()):
                 self.afTable.horizontalHeaderItem(i).setFont(header_font)
-            self.afTable.resizeColumnsToContents()  # remove for columns of same width
+
+            # self.afTable.resizeColumnsToContents()  # remove for columns of same width
 
         # check if molecule with this name already exist
         molecule_already_exists = False
