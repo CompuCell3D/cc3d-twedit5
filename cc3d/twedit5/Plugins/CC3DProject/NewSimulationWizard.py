@@ -1439,15 +1439,20 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.bcs_tab.clear()
         self.ics_tab.clear()
-
+        cells_str = ""  # use in secretion tooltip
         for row in range(self.cellTypeTable.rowCount()):
             cell_type = str(self.cellTypeTable.item(row, 0).text())
+            if cells_str == "":
+                cells_str += cell_type
+            else:
+                cells_str += ", " + cell_type
             freeze = False
             if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
                 # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                 freeze = True
 
             self.cellTypeData[cell_type] = [row, freeze]
+        toolTip_secretion_str = "Cell types allowed: " + cells_str
         idx = -1  # Keep track of field tab index
         for solver_name, fields in self.diffusantDict.items():
             for index, field in enumerate(fields): # index goes to 0 for each solver
@@ -1500,7 +1505,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     diff_secrete_table_widget.setHorizontalHeaderItem(5, rel_up_header)
                 else:
                     const_conc_sec_header = QTableWidgetItem("Constant conc\n field (amt/voxel)")
-                    const_conc_sec_header.setToolTip("Chemical field kept at constant concentration.")
+                    const_conc_sec_header.setToolTip("Chemical field kept at constant concentration. (Secretion rate must be '-')")
                     sec_on_contact_header = QTableWidgetItem("Secrete on contact\n with cell/vol")
                     sec_on_contact_header.setToolTip(
                         "Secrete on contact with another cell or volume: 'cell_type1, cell_type2' ")
@@ -1581,15 +1586,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     if solver_name == REACT_DIFF_SOLVER_FE:
                         diff_item = QTableWidgetItem("Do not diffuse into")
                         diff_item.setFont(QFont('Arial', 10))
-                        diff_item.setFlags(QtCore.Qt.ItemFlag.ItemIsUserCheckable |
-                                     QtCore.Qt.ItemFlag.ItemIsEnabled)
-                        diff_item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                        diff_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                                     Qt.ItemFlag.ItemIsEnabled)
+                        diff_item.setCheckState(Qt.CheckState.Unchecked)
                         diff_secrete_table_widget.setItem(row + 1, 1, diff_item)
                         decay_item = QTableWidgetItem("Do not decay into")
                         decay_item.setFont(QFont('Arial', 10))
-                        decay_item.setFlags(QtCore.Qt.ItemFlag.ItemIsUserCheckable |
-                                           QtCore.Qt.ItemFlag.ItemIsEnabled)
-                        decay_item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+                        decay_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                                           Qt.ItemFlag.ItemIsEnabled)
+                        decay_item.setCheckState(Qt.CheckState.Unchecked)
                         diff_secrete_table_widget.setItem(row + 1, 2, decay_item)
                     else:
                         diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
@@ -1613,6 +1618,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     else:
                         diff_secrete_table_widget.setItem(row + 1, 4, const_conc_sec_item)
                         sec_on_contact_item = QTableWidgetItem(default_value_sec_on_contact)
+                        sec_on_contact_item.setToolTip(toolTip_secretion_str)
                         sec_on_contact_item.setTextAlignment(Qt.AlignCenter)
                         diff_secrete_table_widget.setItem(row + 1, 5, sec_on_contact_item)
                         max_uptake_item = QTableWidgetItem(default_value_max_uptake)
@@ -1670,14 +1676,14 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                             rate = float(
                                 const_conc_sec)  # value stored in rate var even though it is a constant conc.
                             secretion_type = "constant concentration"
-                    except Exception:
+                    except ValueError:
                         rate = 0.0
                 try:
                     uniform_rate = str(field_table.item(row, 3).text())
                     if not uniform_rate == "-":
                         rate = float(str(field_table.item(row, 3).text()))
                         secretion_type = "uniform"
-                except Exception:
+                except ValueError:
                     rate = 0.0
                 try:
                     if not ss_solver:
@@ -1686,7 +1692,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                         max_uptake = float(str(field_table.item(row, 4).text()))
                     if max_uptake < 0.0:
                         max_uptake = 0.0
-                except Exception:
+                except ValueError:
                     max_uptake = 0.0
                 try:
                     if not ss_solver:
@@ -1697,7 +1703,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                         rel_uptake = 0.0
                     elif rel_uptake > 1.0:
                         rel_uptake = 1.0
-                except Exception:
+                except ValueError:
                     rel_uptake = 0.0
 
                 diff_fe_secr_dict = {}
