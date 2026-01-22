@@ -43,6 +43,7 @@ CONSTANT_BC = "Constant value (Dirichlet) "
 CONSTANT_DERIVATIVE_BC = "Constant derivative value (von Neumann)"
 PERIODIC_BC = "Periodic BC"
 GLOBAL_DIFFUSION_LABEL = "Global (default value)"
+MAX_AND_REL_UPTAKE_TOOLTIP = "Both max uptake and relative uptake must be set"
 
 DEFAULT_DIFF_COEFF = '0.01'
 DEFAULT_DECAY_COEFF = '0.001'
@@ -1140,6 +1141,116 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 xMax = self.bcs_tab.findChild(QLineEdit, xmax_le)
                 xMax.setDisabled(False)
 
+    def diffusionCoeffChanged(self, cell_item: QTableWidgetItem, diff_algo: str):
+        if diff_algo.strip() == REACT_DIFF_SOLVER_FE:  # Param for this solver is yes/no only
+            return
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText(DEFAULT_DIFF_COEFF)
+
+    def decayCoeffChanged(self, cell_item: QTableWidgetItem, diff_algo: str):
+        if diff_algo.strip() == REACT_DIFF_SOLVER_FE:  # Param for this solver is yes/no only
+            return
+        #print(diff_algo.strip() + ", diff_algo ")
+        #print(REACT_DIFF_SOLVER_FE)
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText(DEFAULT_DECAY_COEFF)
+
+    def secretionRateChanged(self, cell_item: QTableWidgetItem):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+
+    def constantFieldSecretionChanged(self, cell_item):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+
+    def secreteOnContactChanged(self, cell_types: QTableWidgetItem):
+        if not self.checkIfValidCellType(str(cell_types.text())):
+            valid_cell_types = ""
+            cell_types.setText("-")
+            for row in range(self.cellTypeTable.rowCount()):
+                if valid_cell_types == "":
+                    valid_cell_types = str(self.cellTypeTable.item(row, 0).text())
+                else:
+                    valid_cell_types = valid_cell_types + ", " +  str(self.cellTypeTable.item(row, 0).text())
+            QMessageBox.warning(self, "Secret on contact",
+                                f"Invalid cell type(s), please use one or more of the following: {valid_cell_types}",
+                                QMessageBox.Ok)
+
+    def relativeUptakeChanged(self, cell_item: QTableWidgetItem, cur_table:QTableWidget):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+        else:
+            # Check if max uptake already set:
+            max_set = False
+            for i in range(0, cur_table.columnCount()):
+                if "Max uptake" in cur_table.horizontalHeaderItem(i).text():
+                    cell_val: str = str(cur_table.item(cell_item.row(), i).text())
+                    if "-" == cell_val:
+                        max_set = False
+                    else:
+                        max_set = True
+
+            rel_uptake_val = float(cell_item.text())
+            if rel_uptake_val < 0.0 or rel_uptake_val > 1.0:
+                cell_item.setText("0.0")
+                QMessageBox.warning(self, "Relative Uptake",
+                                    "Relative uptake must be between 0.0 and 1.0",
+                                    QMessageBox.Ok)
+            elif not max_set:
+                QMessageBox.warning(self, "Relative Uptake",
+                                    "Reminder: Maximum uptake must also be set.",
+                                    QMessageBox.Ok)
+
+    def maxUptakeChanged(self, cell_item: QTableWidgetItem, cur_table:QTableWidget):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+        else:
+            # Check if rel uptake already set:
+            rel_uptake_set = False
+            for i in range(0, cur_table.columnCount()):
+                if "Relative uptake" in str(cur_table.horizontalHeaderItem(i).text()):
+                    cell_val: str = str(cur_table.item(cell_item.row(), i).text())
+                    if "-" == cell_val:
+                        rel_uptake_set = False
+                    else:
+                        rel_uptake_set = True
+            max_uptake_val = float(cell_item.text())
+            if max_uptake_val < 0.0:
+                cell_item.setText("0.0")
+                QMessageBox.warning(self, "Maximum Uptake",
+                                    "Maximum uptake cannot be less than 0.0.",
+                                    QMessageBox.Ok)
+            elif not rel_uptake_set:
+                QMessageBox.warning(self, "Maximum Uptake",
+                                    "Reminder: Relative uptake must also be set.",
+                                    QMessageBox.Ok)
+
+
+    def diff_secretion_table_item_changed(self, item: QTableWidgetItem):
+        tab_idx = self.field_tab.currentIndex()
+        current_tab_name: str = self.field_tab.tabText(tab_idx)
+        field_name, diffusion_algo = current_tab_name.split(':')
+        column = item.column()
+        # process change based on column from field diffusion algo params table:
+        current_table: QTableWidget = self.field_table_dict[field_name.strip()]
+        current_table.blockSignals(True)  # May make changes to item value
+        if "Secretion rate" in current_table.horizontalHeaderItem(column).text():
+            self.secretionRateChanged(item)
+        elif "Constant conc" in current_table.horizontalHeaderItem(column).text():
+            self.constantFieldSecretionChanged(item)
+        elif "Secrete on contact" in current_table.horizontalHeaderItem(column).text():
+            self.secreteOnContactChanged(item)
+        elif "Relative uptake" in current_table.horizontalHeaderItem(column).text():
+            self.relativeUptakeChanged(item, current_table)
+        elif "Max uptake" in current_table.horizontalHeaderItem(column).text():
+            self.maxUptakeChanged(item, current_table)
+        elif "Diffusion coeff" in current_table.horizontalHeaderItem(column).text():
+            self.diffusionCoeffChanged(item, diffusion_algo)
+        elif "Decay coefficient" in current_table.horizontalHeaderItem(column).text():
+            self.decayCoeffChanged(item, diffusion_algo)
+
+        current_table.blockSignals(False)  # Send signals again
+
 
     def y_bcTypeChanged(self, index):
         tab_idx = self.bcs_tab.currentIndex()
@@ -1611,8 +1722,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     if steadyState_solv:
                         max_uptake_item = QTableWidgetItem(default_value_max_uptake)
                         max_uptake_item.setTextAlignment(Qt.AlignCenter)
+                        max_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP)
                         diff_secrete_table_widget.setItem(row + 1, 4, max_uptake_item)
                         rel_uptake_item = QTableWidgetItem(default_value_rel_uptake)
+                        rel_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP )
                         rel_uptake_item.setTextAlignment(Qt.AlignCenter)
                         diff_secrete_table_widget.setItem(row + 1, 5, rel_uptake_item)
                     else:
@@ -1622,12 +1735,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                         sec_on_contact_item.setTextAlignment(Qt.AlignCenter)
                         diff_secrete_table_widget.setItem(row + 1, 5, sec_on_contact_item)
                         max_uptake_item = QTableWidgetItem(default_value_max_uptake)
+                        max_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP)
                         max_uptake_item.setTextAlignment(Qt.AlignCenter)
                         diff_secrete_table_widget.setItem(row + 1, 6, max_uptake_item)
                         rel_uptake_item = QTableWidgetItem(default_value_rel_uptake)
+                        rel_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP)
                         rel_uptake_item.setTextAlignment(Qt.AlignCenter)
                         diff_secrete_table_widget.setItem(row + 1, 7, rel_uptake_item)
                 tab_title: str = field + ": " + solver_name
+                diff_secrete_table_widget.itemChanged.connect(self.diff_secretion_table_item_changed)
                 self.field_tab.insertTab(idx, diff_secrete_table_widget, tab_title)
                 self.field_tab.currentChanged.connect(self.field_tab_changed)
                 self.field_table_dict[field] = diff_secrete_table_widget
