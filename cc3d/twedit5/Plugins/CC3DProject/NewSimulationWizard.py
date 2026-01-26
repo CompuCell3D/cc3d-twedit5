@@ -1180,51 +1180,23 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if not self.checkIfNumber(cell_item.text()):
             cell_item.setText("-")
         else:
-            # Check if max uptake already set:
-            max_set = False
-            for i in range(0, cur_table.columnCount()):
-                if "Max uptake" in cur_table.horizontalHeaderItem(i).text():
-                    cell_val: str = str(cur_table.item(cell_item.row(), i).text())
-                    if "-" == cell_val:
-                        max_set = False
-                    else:
-                        max_set = True
-
             rel_uptake_val = float(cell_item.text())
             if rel_uptake_val < 0.0 or rel_uptake_val > 1.0:
-                cell_item.setText("0.0")
+                cell_item.setText("-")
                 QMessageBox.warning(self, "Relative Uptake",
                                     "Relative uptake must be between 0.0 and 1.0",
-                                    QMessageBox.Ok)
-            elif not max_set:
-                QMessageBox.warning(self, "Relative Uptake",
-                                    "Reminder: Maximum uptake must also be set.",
                                     QMessageBox.Ok)
 
     def maxUptakeChanged(self, cell_item: QTableWidgetItem, cur_table:QTableWidget):
         if not self.checkIfNumber(cell_item.text()):
             cell_item.setText("-")
         else:
-            # Check if rel uptake already set:
-            rel_uptake_set = False
-            for i in range(0, cur_table.columnCount()):
-                if "Relative uptake" in str(cur_table.horizontalHeaderItem(i).text()):
-                    cell_val: str = str(cur_table.item(cell_item.row(), i).text())
-                    if "-" == cell_val:
-                        rel_uptake_set = False
-                    else:
-                        rel_uptake_set = True
             max_uptake_val = float(cell_item.text())
             if max_uptake_val < 0.0:
-                cell_item.setText("0.0")
+                cell_item.setText("-")
                 QMessageBox.warning(self, "Maximum Uptake",
                                     "Maximum uptake cannot be less than 0.0.",
                                     QMessageBox.Ok)
-            elif not rel_uptake_set:
-                QMessageBox.warning(self, "Maximum Uptake",
-                                    "Reminder: Relative uptake must also be set.",
-                                    QMessageBox.Ok)
-
 
     def diff_secretion_table_item_changed(self, item: QTableWidgetItem):
         tab_idx = self.field_tab.currentIndex()
@@ -1608,7 +1580,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 diff_secrete_table_widget.setHorizontalHeaderItem(3, const_sec_header)
                 if steadyState_solv:
                     max_up_header = QTableWidgetItem("Max uptake by cell\n (amt/mcs/voxel)")
-                    max_up_header.setToolTip("Maximum uptake of the field chemical by cell or volume")
+                    max_up_header.setToolTip(
+                        "Maximum uptake of the field chemical by cell or volume. Max and Rel uptake must be specified in pairs.")
                     diff_secrete_table_widget.setHorizontalHeaderItem(4, max_up_header)
                     rel_up_header = QTableWidgetItem("Relative uptake\n by cell/vol")
                     rel_up_header.setToolTip(
@@ -1623,7 +1596,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     diff_secrete_table_widget.setHorizontalHeaderItem(4, const_conc_sec_header)
                     diff_secrete_table_widget.setHorizontalHeaderItem(5, sec_on_contact_header)
                     max_up_header = QTableWidgetItem("Max uptake by cell\n (amt/mcs/voxel)")
-                    max_up_header.setToolTip("Maximum uptake of the field chemical by cell or volume")
+                    max_up_header.setToolTip("Maximum uptake of the field chemical by cell or volume. Max and Rel uptake must be specified in pairs.")
                     diff_secrete_table_widget.setHorizontalHeaderItem(6, max_up_header)
                     rel_up_header = QTableWidgetItem("Relative uptake\n by cell/vol")
                     rel_up_header.setToolTip(
