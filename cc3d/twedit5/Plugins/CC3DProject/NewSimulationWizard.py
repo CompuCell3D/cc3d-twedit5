@@ -2176,15 +2176,29 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return True
 
         if self.currentId() == self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME):
-            # we only extract data from page here - it is not a validation strictly speaking
+            # we extract data from page here - not much validation done here.
             self.diffusion_vals_dict = self.getCurrentDiffusionFE_Values()
             # Get Additional properties and secretion and uptake values
             for solver_name, fields in self.diffusantDict.items():
                 for field_name in fields:
                     results = self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name, solver_name)
-                    for key in results:
-                        if "Invalid" in key and -1 in results[key]:
-                            return False  # secretion values bad
+                    for entry in results:
+                        paired = True  # Max and Rel uptakes must both have values per cell type and field.
+                        cell_type = ""
+                        for i in range(0, len(results[entry])):
+                            cell_type: str = results[entry][i]["CellType"]
+                            max_up: float = results[entry][i]["MaxUptake"]
+                            rel_up: float = results[entry][i]["RelativeUptakeRate"]
+                            if max_up > 0.0 >= rel_up:
+                                paired = False
+                            elif max_up <= 0.0 < rel_up:
+                                paired = False
+
+                        if not paired:
+                            QMessageBox.warning(self, "Uptake",
+                    f"Maximum and Relative uptake must both have valid values for cell type {cell_type} and field name {field_name}. ",
+                                                QMessageBox.Ok)
+                            return False
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
 
