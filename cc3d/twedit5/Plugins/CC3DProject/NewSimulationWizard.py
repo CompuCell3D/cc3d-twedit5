@@ -144,6 +144,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         # Adhesion flex:
         self.binding_formula_molecule_pairGB.setTitle(ADHESION_BINDING_FORMULA_MOL_PAIR_GB_TITLE)
         self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
+        self.neighbor_orderLB.setText("Neighbor order:")
+        self.neighbor_orderLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
+        self.neighbor_orderLE.setText(str(DEFAULT_NEIGHBOR_ORDER))
+        self.neighbor_orderLE.setAlignment(Qt.AlignCenter)
+        self.neighbor_orderLE.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
         self.af_data: dict[int, str] = {}  # row -> molecule
         self.af_formula = {}  # dict[ formula_name -> formula ]
         self.af_mol_density: dict[str, dict[str, float]] = {}  # dict[celltype, dict[mol, density]]
@@ -2090,19 +2095,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.binding_formula4_label.setFont(descr_font)
 
         self.binding_formula_molecular_pairTable.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
-
-        adhesion_page_layout: QLayout = adhesion_page.layout()
-        self.neighbor_order_layout = QHBoxLayout()
-        self.neighbor_orderLB = QLabel("Neighbor order:")
-        self.neighbor_orderLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
-        self.neighbor_order_layout.addWidget(self.neighbor_orderLB)
-        self.neighbor_orderLE = QLineEdit(DEFAULT_NEIGHBOR_ORDER)
-        self.neighbor_orderLE.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
-        self.neighbor_orderLE.setAlignment(Qt.AlignCenter)
-        self.neighbor_order_layout.addWidget(self.neighbor_orderLE)
-        h_spacer = QSpacerItem(700, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.neighbor_order_layout.addItem(h_spacer)
-        adhesion_page_layout.addLayout(self.neighbor_order_layout)
 
     def onBindingFormulaSelected(self):
         sender_button = self.sender()

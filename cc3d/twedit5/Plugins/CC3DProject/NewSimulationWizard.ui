@@ -2262,6 +2262,33 @@ p, li { white-space: pre-wrap; }
       </item>
      </layout>
     </item>
+    <item>
+     <layout class="QHBoxLayout" name="neighbor_order_horizontalLayout">
+      <item>
+       <widget class="QLabel" name="neighbor_orderLB">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="neighbor_orderLE"/>
+      </item>
+      <item>
+       <spacer name="neighbor_order_horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>600</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
   <widget class="QWizardPage" name="wizardPage_contactMultiCad">
