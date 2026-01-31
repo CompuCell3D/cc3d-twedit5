@@ -106,6 +106,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if sys.platform.startswith('win'):
             self.setWizardStyle(QWizard.ClassicStyle)
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.nameLE.setFocus()
+        self.nameLE.selectAll()
+
     def nextId(self):  # Override nextId() to set page sequence as needed:
         newId = self.currentId()
         print("Page id: ", newId)
