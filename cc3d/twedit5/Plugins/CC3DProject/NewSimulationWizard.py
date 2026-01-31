@@ -2191,13 +2191,28 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                             rel_up: float = results[entry][i]["RelativeUptakeRate"]
                             if max_up > 0.0 >= rel_up:
                                 paired = False
+                                # we break immediately when we detect an erro so that we can display it
+                                # immediately to the user
+                                break
                             elif max_up <= 0.0 < rel_up:
                                 paired = False
+                                # we break immediately when we detect an erro so that we can display it
+                                # immediately to the user
+                                break
 
                         if not paired:
-                            QMessageBox.warning(self, "Uptake",
-                    f"Maximum and Relative uptake must both have valid values for cell type {cell_type} and field name {field_name}. ",
-                                                QMessageBox.Ok)
+                            QMessageBox.warning(
+                                self,
+                                "Invalid Uptake Configuration",
+                                (
+                                    "The uptake settings are incomplete.\n\n"
+                                    f"Cell type:  {cell_type}\n"
+                                    f"Field name: {field_name}\n\n"
+                                    "Both *Maximum Uptake* and *Relative Uptake* must be provided.\n"
+                                    "Please enter valid values for both fields before continuing."
+                                ),
+                                QMessageBox.Ok
+                            )
                             return False
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
