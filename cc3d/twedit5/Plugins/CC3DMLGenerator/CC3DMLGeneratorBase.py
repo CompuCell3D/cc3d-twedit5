@@ -1423,9 +1423,9 @@ class CC3DMLGeneratorBase:
                                 uptake_attributes_dict["Type"] = secr_dict["CellType"]
                                 uptake_attributes_dict["MaxUptake"] = secr_dict["MaxUptake"]
                                 uptake_attributes_dict["RelativeUptakeRate"] = secr_dict["RelativeUptakeRate"]
-                                try:  # DO not print out xml element if uptake values not set above 0.0:
-                                    if float(secr_dict["MaxUptake"]) > 0.0 \
-                                            and float(secr_dict["RelativeUptakeRate"]) > 0.0:
+                                try:  # DO not print out xml element if uptake values < 0.0 or not a float:
+                                    if float(secr_dict["MaxUptake"]) >= 0.0 \
+                                            and float(secr_dict["RelativeUptakeRate"]) >= 0.0:
                                         secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
                                 except ValueError:
                                     print("MaxUpdate or RelativeUpdate not a float.")
@@ -2136,9 +2136,9 @@ class CC3DMLGeneratorBase:
                                 uptake_attributes_dict["MaxUptake"] = secr_dict["MaxUptake"]
                                 uptake_attributes_dict["RelativeUptakeRate"] = secr_dict["RelativeUptakeRate"]
 
-                                try:  # DO not print out xml element if uptake values not set above 0.0:
-                                    if float(secr_dict["MaxUptake"]) > 0.0 \
-                                            and float(secr_dict["RelativeUptakeRate"]) > 0.0:
+                                try:  # DO not print out xml element if uptake values < 0.0:
+                                    if float(secr_dict["MaxUptake"]) >= 0.0 \
+                                            and float(secr_dict["RelativeUptakeRate"]) >= 0.0:
                                         secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
                                 except ValueError:
                                     print("MaxUpdate or RelativeUpdate not a float.")
@@ -2387,9 +2387,9 @@ class CC3DMLGeneratorBase:
                                                           "RelativeUptakeRate": secr_dict[
                                                               "RelativeUptakeRate"]}
 
-                                try:  # DO not print out xml element if uptake values not set above 0.0:
-                                    if float(secr_dict["MaxUptake"]) > 0.0 \
-                                            and float(secr_dict["RelativeUptakeRate"]) > 0.0:
+                                try:  # DO not print out xml element if uptake values < 0.0:
+                                    if float(secr_dict["MaxUptake"]) >= 0.0 \
+                                            and float(secr_dict["RelativeUptakeRate"]) >= 0.0:
                                         secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
                                 except ValueError:
                                     print("MaxUpdate or RelativeUpdate not a float.")

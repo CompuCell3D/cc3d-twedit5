@@ -1155,8 +1155,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def decayCoeffChanged(self, cell_item: QTableWidgetItem, diff_algo: str):
         if diff_algo.strip() == REACT_DIFF_SOLVER_FE:  # Param for this solver is yes/no only
             return
-        #print(diff_algo.strip() + ", diff_algo ")
-        #print(REACT_DIFF_SOLVER_FE)
         if not self.checkIfNumber(cell_item.text()):
             cell_item.setText(DEFAULT_DECAY_COEFF)
 
@@ -1787,7 +1785,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     if max_uptake < 0.0:
                         max_uptake = 0.0
                 except ValueError:
-                    max_uptake = 0.0
+                    max_uptake = "-"
                 try:
                     if not ss_solver:
                         rel_uptake = float(str(field_table.item(row, 7).text()))
@@ -1798,12 +1796,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     elif rel_uptake > 1.0:
                         rel_uptake = 1.0
                 except ValueError:
-                    rel_uptake = 0.0
+                    rel_uptake = "-"
 
                 diff_fe_secr_dict = {}
                 diff_fe_secr_dict["CellType"] = cell_type
-                diff_fe_secr_dict["MaxUptake"] = max_uptake
-                diff_fe_secr_dict["RelativeUptakeRate"] = rel_uptake
+                diff_fe_secr_dict["MaxUptake"] = str(max_uptake)
+                diff_fe_secr_dict["RelativeUptakeRate"] = str(rel_uptake)
                 diff_fe_secr_dict["Rate"] = rate
                 if not ss_solver:
                     if not on_contact_with == "-":
@@ -2188,22 +2186,44 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 for field_name in fields:
                     results = self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name, solver_name)
                     for entry in results:
-                        paired = True  # Max and Rel uptakes must both have values per cell type and field.
                         cell_type = ""
                         for i in range(0, len(results[entry])):
+                            paired = True  # Max and Rel uptakes must both have values per cell type and field.
                             cell_type: str = results[entry][i]["CellType"]
-                            max_up: float = results[entry][i]["MaxUptake"]
-                            rel_up: float = results[entry][i]["RelativeUptakeRate"]
-                            if max_up > 0.0 >= rel_up:
+                            # MaxUptake and RelativeUptakeRate are either "-" or a number
+                            max_up_str = str(results[entry][i]["MaxUptake"]).strip()
+                            rel_up_str = str(results[entry][i]["RelativeUptakeRate"]).strip()
+                            if max_up_str == "-" and rel_up_str == "-":
+                                paired = True
+                            elif max_up_str == "-" or rel_up_str == "-":
                                 paired = False
                                 # we break immediately when we detect an error, so that we can display it
                                 # immediately to the user
                                 break
-                            elif max_up <= 0.0 < rel_up:
-                                paired = False
-                                # we break immediately when we detect an error, so that we can display it
-                                # immediately to the user
-                                break
+                            else:
+                                try:
+                                    max_up = float(max_up_str)
+                                except ValueError:
+                                    # Should not reach this as diff_secretion_table_item_changed() should
+                                    # take care of communicating errors to user. This error fails silently.
+                                    max_up = 0.0
+                                try:
+                                    rel_up = float(rel_up_str)
+                                except ValueError:
+                                    # Should not reach this as diff_secretion_table_item_changed() should
+                                    # take care of communicating errors to user. This error fails silently.
+                                    rel_up = 0.0
+
+                                if max_up > 0.0 >= rel_up:
+                                    paired = False
+                                    # we break immediately when we detect an error, so that we can display it
+                                    # immediately to the user
+                                    break
+                                elif max_up <= 0.0 < rel_up:
+                                    paired = False
+                                    # we break immediately when we detect an error, so that we can display it
+                                    # immediately to the user
+                                    break
 
                         if not paired:
                             QMessageBox.warning(
