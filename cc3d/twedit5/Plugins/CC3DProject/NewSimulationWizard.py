@@ -2187,8 +2187,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     results = self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name, solver_name)
                     for entry in results:
                         cell_type = ""
+                        paired = True  # Max and Rel uptakes must both have values per cell type and field.
                         for i in range(0, len(results[entry])):
-                            paired = True  # Max and Rel uptakes must both have values per cell type and field.
                             cell_type: str = results[entry][i]["CellType"]
                             # MaxUptake and RelativeUptakeRate are either "-" or a number
                             max_up_str = str(results[entry][i]["MaxUptake"]).strip()
