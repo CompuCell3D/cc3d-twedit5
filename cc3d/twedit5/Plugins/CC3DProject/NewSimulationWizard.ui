@@ -2272,7 +2272,14 @@ p, li { white-space: pre-wrap; }
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="neighbor_orderLE"/>
+       <widget class="QSpinBox" name="neighbor_order_SB">
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+       </widget>
       </item>
       <item>
        <spacer name="neighbor_order_horizontalSpacer">

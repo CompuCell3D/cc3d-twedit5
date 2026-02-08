@@ -54,7 +54,7 @@ DEFAULT_MOLECULE_DENSITY = '1.0'
 DEFAULT_MEDIUM_DENSITY = '0.0'  # molecule density in medium
 DEFAULT_BINDING_PARAMETER = '0.5'
 DEFAULT_BINDING_PARAM_MOL_SAME = '1.0'
-DEFAULT_NEIGHBOR_ORDER = '4'
+DEFAULT_NEIGHBOR_ORDER = 4
 NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Adhesion Flex algorithm will check each time it needs to do a " \
                                     "energy calculation."
 NEIGHBOR_ORDER_TOOLTIP_2 = "Integer > 0, typically between 2 and 4. Higher is more computationally intensive."
@@ -146,9 +146,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
         self.neighbor_orderLB.setText("Neighbor order:")
         self.neighbor_orderLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
-        self.neighbor_orderLE.setText(str(DEFAULT_NEIGHBOR_ORDER))
-        self.neighbor_orderLE.setAlignment(Qt.AlignCenter)
-        self.neighbor_orderLE.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
+
+        self.neighbor_order_SB.setValue(DEFAULT_NEIGHBOR_ORDER)
+        self.neighbor_order_SB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
+
         self.af_data: dict[int, str] = {}  # row -> molecule
         self.af_formula = {}  # dict[ formula_name -> formula ]
         self.af_mol_density: dict[str, dict[str, float]] = {}  # dict[celltype, dict[mol, density]]
@@ -2543,13 +2544,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # af_mol_density: holds dict of dict of mol densities in each cell type {cell-> {mol-> density}}
             self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
             try:
-                neighbor_order_str = str(self.neighbor_orderLE.text())
-                if neighbor_order_str.isdigit():
-                    try:
-                        value = int(neighbor_order_str)
-                        self.af_neighbor_order = value
-                    except ValueError:
-                        pass  # do nothing as default neighborhood value already set.
+                self.af_neighbor_order = self.neighbor_order_SB.value()
+
             except AttributeError:
                 pass  # do nothing as default neighborhood value already set.
 
