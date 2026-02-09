@@ -15,6 +15,7 @@ from cc3d.twedit5.Plugins.CC3DMLGenerator.CC3DMLGeneratorBase import CC3DMLGener
 from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
 from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
+from cc3d.twedit5.Plugins.CC3DProject.AdhesionFlexCalcsPopupForm import AdhesionFlexCalcsPopupForm
 
 MAC = "qt_mac_set_native_menubar" in dir()
 # Wizard pages:
@@ -48,6 +49,42 @@ MAX_AND_REL_UPTAKE_TOOLTIP = "Both max uptake and relative uptake must be set"
 DEFAULT_DIFF_COEFF = '0.01'
 DEFAULT_DECAY_COEFF = '0.001'
 GLOBAL_DECAY_COEFF = '0.0001'
+
+# AdhesionFlex plugin:
+DEFAULT_MOLECULE_DENSITY = '1.0'
+DEFAULT_MEDIUM_DENSITY = '0.0'  # molecule density in medium
+DEFAULT_BINDING_PARAMETER = '0.5'
+DEFAULT_BINDING_PARAM_MOL_SAME = '1.0'
+DEFAULT_NEIGHBOR_ORDER = 4
+NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Adhesion Flex algorithm will check each time it needs to do a " \
+                                    "energy calculation."
+NEIGHBOR_ORDER_TOOLTIP_2 = "Integer > 0, typically between 2 and 4. Higher is more computationally intensive."
+
+ADHESION_MOLECULE_TABLE_LABEL = "Adhesion Molecule"  # column label for Adhesion molecule table
+ADHESION_CALC_DESCR = "The total adhesion energy for a cell is calculated by summing all of the individual contact energies " \
+                      "between it and each neighbor. The individual contact energy is the binding parameter of the " \
+                      "two adhesion molecules times the user defined binding formula which is a " \
+                      "function of the density of the two adhesion molecules in each cell type. "
+
+ADHESION_FLEX_HTML_LINK = "See https://compucell3dreferencemanual.readthedocs.io/en/latest/adhesion_flex_plugin.html for " \
+                      "further information."
+ADHESION_TABLE_HEADER_FONT_SIZE = 10
+ADHESION_SMALL_FONT_SIZE = 8
+ADHESION_FLEX_DESCRIPTION = "This plugin defines adhesion between cells. The adhesion energy of the system is obtained " \
+                            "by calculating the adhesion energy between each cell and its neighbors. " \
+                            "In AdhesionFlex, a larger Binding Parameter corresponds with a stronger interaction."
+DEFAULT_AF_FORMULA_NAME = "Binary"
+DEFAULT_BINDING_FORMULAS = ["avg(Molecule1, Molecule2)", "max(Molecule1, Molecule2)", "min(Molecule1, Molecule2)",
+                            "-(Molecule1 * Molecule2)"]
+DEFAULT_BINDING_FORMULAS_DESCR = ["Interactions controlled by the average density of the two molecules.",
+                                  "Interactions controlled by weakest, versus weak-strong (or weak-weak).",
+                                  "Interactions controlled by strong-strong, versus weak-strong (or weak-weak).",
+                                  "Increases adhesion as the product of the two adhesion molecule's density in each cell"
+                                  " type. Example of a user defined formula. Must use 'Molecule1' and 'Molecule2' labels."
+                                  " See muParser library for allowable math functions."]
+BINDING_FORMULA_TOOL_TIP = "This is a binary function that takes two arguments -  Molecule1 and Molecule2. " \
+                           "The allowed functions are those given by muParser - see http://muparser.sourceforge.net/"
+ADHESION_BINDING_FORMULA_MOL_PAIR_GB_TITLE = "Binding formula for molecule pair (highlight cell(s) to change):"
 
 # Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
 TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
@@ -91,6 +128,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             if DEFAULT_LENGTH_UNIT in unit:
                 self.voxel_length_unitsCB.setCurrentText(unit)
         self.voxel_length_factorLE.setText(DEFAULT_LENGTH_FACTOR)
+        #self.binding_formula_molecular_pairTable.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+
         self.updateUi()
 
         self.typeTable = []
@@ -103,6 +142,21 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.field_table_dict = {}  # {field -> QTableWidget}
         self.diff_solver_info_textBrowser.clear()
         self.diff_solver_info_textBrowser.setHtml(get_diffusion_solv_description_html())
+        # Adhesion flex:
+        self.binding_formula_molecule_pairGB.setTitle(ADHESION_BINDING_FORMULA_MOL_PAIR_GB_TITLE)
+        self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
+        self.neighbor_orderLB.setText("Neighbor order:")
+        self.neighbor_orderLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
+
+        self.neighbor_order_SB.setValue(DEFAULT_NEIGHBOR_ORDER)
+        self.neighbor_order_SB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
+
+        self.af_data: dict[int, str] = {}  # row -> molecule
+        self.af_formula = {}  # dict[ formula_name -> formula ]
+        self.af_mol_density: dict[str, dict[str, float]] = {}  # dict[celltype, dict[mol, density]]
+        self.af_mol_mol_param: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
+        self.af_mol_mol_bind_formula: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding formula]]
+
         if sys.platform.startswith('win'):
             self.setWizardStyle(QWizard.ClassicStyle)
 
@@ -217,7 +271,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
 
             molecule = str(self.afMoleculeLE.text()).strip()
-
+            # TODO: Check if molecule starts with letter (no digit)?
             if event.key() == Qt.Key_Return:
 
                 if molecule != "":
@@ -340,6 +394,19 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         if _flag:
             self.lengthConstraintCHB.setChecked(not _flag)
+
+    @pyqtSlot(bool)
+    def on_adhesionFlexCHB_toggled(self, _flag):
+        if _flag:  # Include Volume and Surface flex plugins:
+            self.volumeLocalFlexCHB.setChecked(_flag)
+            self.surfaceLocalFlexCHB.setChecked(_flag)
+        if self.contactCHB.isChecked():
+            QMessageBox.warning(self, "Adhesion and Contact plugins may interfere", "Contact plugin may interfere with "
+                                                "Adhesion plugin as it is a different way to compute adhesion energy "
+                                                "between cells. You may need to set Contact plugin energies to zero to "
+                                                "confirm Adhesion plugin behavior.", QMessageBox.Ok)
+
+
 
     @pyqtSlot(bool)  # signature of the signal emited by the button
     def on_growthCHB_toggled(self, _flag):
@@ -828,47 +895,77 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def on_afMoleculeAddPB_clicked(self):
 
         molecule = str(self.afMoleculeLE.text()).strip()
-
         rows = self.afTable.rowCount()
-
         if molecule == "":
             return
 
-        # check if molecule with this name already exist
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        columns = self.afTable.columnCount()  # Add celltype column headers
+        if columns < 2:
+            column_names = []
+            column_names.append(ADHESION_MOLECULE_TABLE_LABEL)
+            for row in range(self.cellTypeTable.rowCount()):
+                cell_type = str(self.cellTypeTable.item(row, 0).text())
+                column_names.append(cell_type)
 
+            self.afTable.setColumnCount(len(column_names))
+            self.afTable.setHorizontalHeaderLabels(column_names)
+            self.afTable.verticalHeader().setVisible(False)
+            for i in range(0, self.afTable.columnCount()):
+                self.afTable.horizontalHeaderItem(i).setFont(header_font)
+
+            # self.afTable.resizeColumnsToContents()  # remove for columns of same width
+
+        # check if molecule with this name already exist
         molecule_already_exists = False
         for rowId in range(rows):
             name = str(self.afTable.item(rowId, 0).text()).strip()
-
             if name == molecule:
                 molecule_already_exists = True
                 break
 
         if molecule_already_exists:
             QMessageBox.warning(self, "Molecule Name Already Exists",
-
                                 "Molecule name already exist. Please choose different name", QMessageBox.Ok)
-
             return
 
         self.afTable.insertRow(rows)
 
         molecule_item = QTableWidgetItem(molecule)
-
-        self.afTable.setItem(rows, 0, molecule_item)
+        molecule_item.setTextAlignment(Qt.AlignCenter)
+        for i in range(0, self.afTable.columnCount()):
+            if i == 0:
+                self.afTable.setItem(rows, 0, molecule_item)
+            else:
+                if self.afTable.horizontalHeaderItem(i).text() == "Medium":
+                    density_item = QTableWidgetItem(str(DEFAULT_MEDIUM_DENSITY))
+                else:
+                    density_item = QTableWidgetItem(str(DEFAULT_MOLECULE_DENSITY))
+                density_item.setFont(header_font)
+                density_item.setTextAlignment(Qt.AlignCenter)
+                tool_tip = "Density of " + molecule + " in " + self.afTable.horizontalHeaderItem(i).text()
+                density_item.setToolTip(tool_tip)
+                self.afTable.setItem(rows, i, density_item)
+        self.afTable.resizeRowsToContents()
+        self.afTable.resizeColumnsToContents()
+        self.afTable.horizontalHeader().setStretchLastSection(True)
+        self.updateAdhesionInteractionMatrix(molecule, rows)
+        self.update_binding_formula_mol_pair_table(molecule, rows)
 
         # reset molecule entry line
         self.afMoleculeLE.setText("")
-
         return
 
     @pyqtSlot()  # signature of the signal emited by the button
+    def on_calc_detailsPB_clicked(self):
+        self.displayAdhesionCalcDetails()
+
+    @pyqtSlot()  # signature of the signal emited by the button
     def on_clearAFTablePB_clicked(self):
-
-        rows = self.afTable.rowCount()
-
-        for i in range(rows - 1, -1, -1):
-            self.afTable.removeRow(i)
+        self.clearAFTable()
+        self.clearAdhesionInteractionMatrix()
+        self.clearBindingFormulaMolecularPairTable()
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_cmcMoleculeAddPB_clicked(self):
@@ -1109,8 +1206,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 break
 
     def checkIfNumber(self, value: str):
-        #if value == ".":
-        #    return True
         if value.isdecimal():
             return True
         try:
@@ -1121,6 +1216,123 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                                     "Please specify a number for the value",
                                     QMessageBox.Ok)
             return False
+
+    def clearTableWidget(self, table_widget_to_be_cleared: QTableWidget):
+        rows = table_widget_to_be_cleared.rowCount()
+        for i in range(rows - 1, -1, -1):
+            table_widget_to_be_cleared.removeRow(i)
+
+    def clearAFTable(self):
+        try:
+            self.clearTableWidget(self.afTable)  # do not clear column headers
+        except NameError:
+            print(" -> self.afTable does not exist.")
+
+
+    def clearAdhesionInteractionMatrix(self):
+        try:
+            self.clearTableWidget(self.interaction_matrixTable)
+            self.interaction_matrixTable.clear()  # clear headers
+        except NameError:
+            print(" -> self.interaction_matrixTable does not exist.")
+
+    def clearBindingFormulaMolecularPairTable(self):
+        try:
+            self.clearTableWidget(self.binding_formula_molecular_pairTable)  # do not clear column headers
+        except NameError:
+            print(" -> self.binding_formula_molecular_pairTable does not exist.")
+
+    def updateAdhesionInteractionMatrix(self, molecule, insert_row):
+        molecule_count = self.afTable.rowCount()
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+
+        column_names = []
+        for row in range(self.afTable.rowCount()):
+            molecule_name = str(self.afTable.item(row, 0).text())
+            column_names.append(molecule_name)
+
+        self.interaction_matrixTable.setColumnCount(len(column_names))
+        self.interaction_matrixTable.setHorizontalHeaderLabels(column_names)
+        for i in range(0, self.interaction_matrixTable.columnCount()):
+            self.interaction_matrixTable.horizontalHeaderItem(i).setFont(header_font)
+
+        for row in range(0, molecule_count):
+            if row == insert_row:
+                self.interaction_matrixTable.insertRow(row)
+            binding_par_item = QTableWidgetItem(str(DEFAULT_BINDING_PARAMETER))
+            binding_par_item.setFont(header_font)
+            binding_par_item.setTextAlignment(Qt.AlignCenter)
+            tool_tip = "Binding parameter between the two molecules, used to calculate the binding energy."
+            binding_par_item.setToolTip(tool_tip)
+            for column in range(0, molecule_count):
+                if row <= column:
+                    if insert_row == column:
+                        if row == column:
+                            binding_par_item.setText(str(DEFAULT_BINDING_PARAM_MOL_SAME))
+                        self.interaction_matrixTable.setItem(row, column, binding_par_item)
+                else:  # bottom of matrix assumed the same as top half:
+                    redundant_val = QTableWidgetItem("-")
+                    redundant_val.setTextAlignment(Qt.AlignCenter)
+                    redundant_val.setFlags(redundant_val.flags() & ~Qt.ItemIsEditable)  # not editable
+                    self.interaction_matrixTable.setItem(row, column, redundant_val)
+
+        self.interaction_matrixTable.setVerticalHeaderLabels(column_names)  # matrix, so col - row headers same.
+        if self.interaction_matrixTable.rowCount() > 0:
+            for i in range(0, self.interaction_matrixTable.rowCount()):
+                self.interaction_matrixTable.verticalHeaderItem(i).setFont(header_font)
+        self.interaction_matrixTable.verticalHeader().setVisible(True)
+        self.interaction_matrixTable.resizeRowsToContents()
+        self.interaction_matrixTable.resizeColumnsToContents()
+
+    def update_binding_formula_mol_pair_table(self, mol: str, new_mol_row: int):
+        molecule_count = self.afTable.rowCount()
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+
+        column_names = []
+        for row in range(self.afTable.rowCount()):
+            molecule_name = str(self.afTable.item(row, 0).text())
+            column_names.append(molecule_name)
+
+        self.binding_formula_molecular_pairTable.setColumnCount(len(column_names))
+        self.binding_formula_molecular_pairTable.setHorizontalHeaderLabels(column_names)
+        for i in range(0, self.binding_formula_molecular_pairTable.columnCount()):
+            self.binding_formula_molecular_pairTable.horizontalHeaderItem(i).setFont(header_font)
+            self.binding_formula_molecular_pairTable.horizontalHeaderItem(i).setToolTip(BINDING_FORMULA_TOOL_TIP)
+
+        for row in range(0, molecule_count):
+            if row == new_mol_row:
+                self.binding_formula_molecular_pairTable.insertRow(row)
+            binding_par_item = QTableWidgetItem(str(DEFAULT_BINDING_FORMULAS[0]))
+            binding_par_item.setFont(header_font)
+            binding_par_item.setTextAlignment(Qt.AlignCenter)
+            tool_tip = str(DEFAULT_BINDING_FORMULAS[0])
+            binding_par_item.setToolTip(tool_tip)
+            for column in range(0, molecule_count):
+                if row <= column:
+                    if new_mol_row == column:
+                        self.binding_formula_molecular_pairTable.setItem(row, column, binding_par_item)
+                else:  # bottom of matrix assumed the same as top half:
+                    redundant_val = QTableWidgetItem("-")
+                    redundant_val.setTextAlignment(Qt.AlignCenter)
+                    redundant_val.setFlags(redundant_val.flags() & ~Qt.ItemIsEditable)  # not editable
+                    self.binding_formula_molecular_pairTable.setItem(row, column, redundant_val)
+
+        self.binding_formula_molecular_pairTable.verticalHeader().setVisible(True)
+        self.binding_formula_molecular_pairTable.setVerticalHeaderLabels(column_names)  # matrix, so col - row headers same.
+        if self.binding_formula_molecular_pairTable.rowCount() > 0:
+            for i in range(0, self.binding_formula_molecular_pairTable.rowCount()):
+                self.binding_formula_molecular_pairTable.verticalHeaderItem(i).setFont(header_font)
+                self.binding_formula_molecular_pairTable.verticalHeaderItem(i).setToolTip(BINDING_FORMULA_TOOL_TIP)
+
+        self.binding_formula_molecular_pairTable.resizeRowsToContents()
+        #self.binding_formula_molecular_pairTable.resizeColumnsToContents()
+
+
+    def displayAdhesionCalcDetails(self):
+        popup = AdhesionFlexCalcsPopupForm(self)
+        popup.exec_()
 
     def x_bcTypeChanged(self, index):
         tab_idx = self.bcs_tab.currentIndex()
@@ -1725,7 +1937,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.field_table_dict[field] = diff_secrete_table_widget
 
     # Secretion on contact: Expect a comma separated string of cell types to check: 'cell1, cell2, cell3'
-    def checkIfValidCellType(self, cell_types_str) -> bool:
+    def checkIfValidCellType(self, cell_types_str) -> bool:  # TODO: Is this necessary? more description needed...
         type_list = cell_types_str.split(",")
         for new_type in type_list:
             found = False
@@ -1942,6 +2154,74 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # print(diffusion_vals_dict)
         return diffusion_vals_dict
 
+    def setUpAdhesionFlexPage(self):
+        adhesion_page: QWizardPage = self.get_page_by_name(ADHESION_FLEX_PAGE_NAME)
+
+        self.adhesion_infoLabel.setText(ADHESION_FLEX_DESCRIPTION)
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        self.adhesion_calc_descr_label.setFont(header_font)
+        self.adhesion_calc_descr_label.setText(ADHESION_CALC_DESCR)
+        self.adhesion_calc_descr_label.setWordWrap(True)
+        descr_font = QFont()
+        descr_font.setPointSize(ADHESION_SMALL_FONT_SIZE)
+        self.binding_formula1RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula1RB.setText(DEFAULT_BINDING_FORMULAS[0])
+        self.binding_formula1RB.setFont(header_font)
+        self.binding_formula1RB.setChecked(True)
+        self.binding_formula1_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[0])
+        self.binding_formula1_label.setFont(descr_font)
+
+        self.binding_formula2RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula2RB.setText(DEFAULT_BINDING_FORMULAS[1])
+        self.binding_formula2RB.setFont(header_font)
+        self.binding_formula2RB.setChecked(False)
+        self.binding_formula2_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[1])
+        self.binding_formula2_label.setFont(descr_font)
+
+        self.binding_formula3RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula3RB.setText(DEFAULT_BINDING_FORMULAS[2])
+        self.binding_formula3RB.setFont(header_font)
+        self.binding_formula3RB.setChecked(False)
+        self.binding_formula3_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[2])
+        self.binding_formula3_label.setFont(descr_font)
+
+        self.binding_formula4RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula4RB.setText(DEFAULT_BINDING_FORMULAS[3])
+        self.binding_formula4RB.setFont(header_font)
+        self.binding_formula4RB.setChecked(False)
+        self.binding_formula4_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[3])
+        self.binding_formula4_label.setFont(descr_font)
+
+        self.binding_formula_molecular_pairTable.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+
+    def onBindingFormulaSelected(self):
+        sender_button = self.sender()
+        cell_font = QFont()
+        cell_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        new_formula = ""
+        if isinstance(sender_button, QRadioButton) and sender_button.isChecked():
+            if DEFAULT_BINDING_FORMULAS[0] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[0]
+            elif DEFAULT_BINDING_FORMULAS[1] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[1]
+            elif DEFAULT_BINDING_FORMULAS[2] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[2]
+            elif DEFAULT_BINDING_FORMULAS[3] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[3]
+
+            selected_formula_cells = self.binding_formula_molecular_pairTable.selectedItems()
+            for cell in selected_formula_cells:
+                #print(f"Selected cell text: {cell.text()}")
+                #print(f"Selected cell row: {cell.row()}")
+                #print(f"Selected cell column: {cell.column()}")
+                update_item = QTableWidgetItem(new_formula)
+                update_item.setFont(cell_font)
+                update_item.setToolTip(new_formula)
+                # check if editable first:
+                if self.binding_formula_molecular_pairTable.item(cell.row(), cell.column()).flags() & Qt.ItemIsEditable:
+                    self.binding_formula_molecular_pairTable.setItem(cell.row(), cell.column(), update_item)
+            self.binding_formula_molecular_pairTable.resizeRowsToContents()
 
     def is_path_creatable(self, pathname: str) -> bool:
         '''
@@ -2114,6 +2394,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             if self.adhesionFlexCHB.isChecked():
                 self.setPage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME), self.get_page_by_name(ADHESION_FLEX_PAGE_NAME))
+                self.setUpAdhesionFlexPage()
+
             else:
                 self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
             return True
@@ -2242,22 +2524,63 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
 
-        if self.currentId() == self.get_page_by_name("AdhesionFlex Plugin"):
-
-            if not self.afTable.rowCount():
-
-                QMessageBox.warning(self, "Missing information",
-                                    "Please specify at least one adhesion molecule name "
-                                    "to be used in AdhesionFlex plugin",
-                                    QMessageBox.Ok)
+        if self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
+            issues_found = self.validateAdhesionFlexPage()
+            if len(issues_found) > 0:
+                issues_str = ""
+                for issue in issues_found:
+                    if issues_str == "":
+                        issues_str = issue
+                    else:
+                        issues_str = issues_str + ", \n" + issue
+                QMessageBox.warning(self, "Missing information", issues_str, QMessageBox.Ok)
 
                 return False
-
             else:
-
-                return True
-
+                print("Adhesion flex page get data section !!!!")
         return True
+
+    def validateAdhesionFlexPage(self) -> list[str]:
+        issues = []
+        if not self.afTable.rowCount() or self.afTable.rowCount() < 1:
+            issues.append("Please specify at least one adhesion molecule name to be used in AdhesionFlex plugin")
+
+        # Check conc of adhesion mol in cell type is >= 0
+        for row in range(0, self.afTable.rowCount()):
+            for col in range(1, self.afTable.columnCount()):
+                val_str = str(self.afTable.item(row, col).text()).strip()
+                try:
+                    if float(val_str) < 0.0:
+                        issues.append(f"Adhesion molecule conc {val_str} is less than zero")
+                except ValueError:
+                    issues.append(f"Adhesion molecule conc {val_str} is not a valid number")
+
+        # Check that adhesion mol binding param is a number:
+        for row in range(0, self.interaction_matrixTable.rowCount()):
+            for col in range(0, self.interaction_matrixTable.columnCount()):
+                val_str = str(self.interaction_matrixTable.item(row, col).text()).strip()
+                if val_str != "-":
+                    try:
+                        if float(val_str):
+                            pass
+                    except ValueError:
+                        issues.append(f"Adhesion molecule binding param value: {val_str} is not a valid number")
+
+        # Check if formulas have either Molecule1 or Molecule2 in them. In future validate with MuParser as well.
+        valid_mol_names = ("Molecule1", "Molecule2")
+        for row in range(0, self.binding_formula_molecular_pairTable.rowCount()):
+            for col in range(0, self.binding_formula_molecular_pairTable.columnCount()):
+                formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
+                if formula != "-":
+                    found = False
+                    for name in valid_mol_names:
+                        if name in formula:
+                            found = True
+                    if not found:
+                        issues.append(f"{formula} does not contain 'Molecule1' and/or 'Molecule2'.")
+
+        return issues
+
 
     def makeProjectDirectories(self, dir, name):
 
@@ -2362,20 +2685,79 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             self.cellTypeData[cell_type] = [row, freeze]
 
-        self.af_data = {}
+        # Adhesion flex data here:
+        if self.adhesionFlexCHB.isChecked():
+            # af_data : dict that holds row from afTable and adhesion mol name {int, str}
+            # af_formula: holds dictionary of binding formulas {formula name -> formula}
+            # af_mol_mol_param: holds list of (mol1, mol2, binding param) tuple
+            # af_mol_density: holds dict of dict of mol densities in each cell type {cell-> {mol-> density}}
+            self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
+            try:
+                self.af_neighbor_order = self.neighbor_order_SB.value()
 
-        for row in range(self.afTable.rowCount()):
-            molecule = str(self.afTable.item(row, 0).text())
+            except AttributeError:
+                pass  # do nothing as default neighborhood value already set.
 
-            self.af_data[row] = molecule
+            for row in range(self.afTable.rowCount()):
+                molecule = str(self.afTable.item(row, 0).text())
+                self.af_data[row] = molecule  # Probably can deprecate this in the future
 
-        self.af_formula = str(self.bindingFormulaLE.text()).strip()
+            # generate mol-mol binding list here:
+            for row in range(self.interaction_matrixTable.rowCount()):
+                for col in range(self.interaction_matrixTable.columnCount()):
+                    if str(self.interaction_matrixTable.item(row, col).text()).strip() != "-":
+                        mol1 = str(self.interaction_matrixTable.verticalHeaderItem(row).text())
+                        mol2 = str(self.interaction_matrixTable.horizontalHeaderItem(col).text())
+                        bind_par = str(self.interaction_matrixTable.item(row, col).text()).strip()
+                        try:
+                            bind_par_float = float(bind_par)
+                            new_mol_mol_bind = (mol1, mol2, bind_par)
+                        except ValueError:
+                            bind_par = DEFAULT_BINDING_PARAMETER
+                            new_mol_mol_bind = (mol1, mol2, bind_par)
+                        self.af_mol_mol_param.append(new_mol_mol_bind)
 
+            # generate dictionary of molecule densities in each cell type:
+            for col in range(1, self.afTable.columnCount()):
+                cell = str(self.afTable.horizontalHeaderItem(col).text())
+                mol_density = {}
+                for row in range(self.afTable.rowCount()):
+                    mol = str(self.afTable.item(row, 0).text()).strip()
+                    density = str(self.afTable.item(row, col).text()).strip()
+                    try:
+                        density_float = float(density)
+                        if density_float < 0:  # density cannot be less than zero
+                            density = DEFAULT_MOLECULE_DENSITY
+                    except ValueError:
+                        density = DEFAULT_MOLECULE_DENSITY
+                    mol_density[mol] = density
+                self.af_mol_density[cell] = mol_density
+
+            # grab formula for each adhesion  mol-mol pair:
+            for row in range(self.binding_formula_molecular_pairTable.rowCount()):
+                for col in range(self.binding_formula_molecular_pairTable.columnCount()):
+                    if str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip() != "-":
+                        mol1 = str(self.binding_formula_molecular_pairTable.verticalHeaderItem(row).text())
+                        mol2 = str(self.binding_formula_molecular_pairTable.horizontalHeaderItem(col).text())
+                        bind_formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
+                        if bind_formula != "":
+                            new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                        else:
+                            bind_formula = DEFAULT_BINDING_FORMULAS[0]
+                            new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                        formula_found = False
+                        for key in self.af_formula:
+                            if self.af_formula[key] == bind_formula:
+                                formula_found = True
+                        if not formula_found:
+                            new_name = DEFAULT_AF_FORMULA_NAME + "_" + str(len(self.af_formula))
+                            self.af_formula[new_name] = bind_formula
+                        self.af_mol_mol_bind_formula.append(new_mol_mol_bind_formula)
+
+        #  ContactMultiCad data:
         cmc_table = []
-
         for row in range(self.cmcTable.rowCount()):
             cadherin = str(self.cmcTable.item(row, 0).text())
-
             cmc_table.append(cadherin)
 
         self.pde_field_data = {}  # Need to add all the new settings/values to this
@@ -2551,14 +2933,17 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def generateXML(self, generator):
         cell_type_dict = self.cellTypeData
         args = []
-
         kwds = {}
 
         kwds['insert_root_element'] = generator.cc3d
         kwds['data'] = cell_type_dict
         kwds['generalPropertiesData'] = self.generalPropertiesDict
         kwds['afData'] = self.af_data
-        kwds['formula'] = self.af_formula
+        kwds['afFormula'] = self.af_formula
+        kwds['afBindingParams'] = self.af_mol_mol_param
+        kwds['afMoleculeDensities'] = self.af_mol_density
+        kwds['afMolMolBindingFormulas'] = self.af_mol_mol_bind_formula
+        kwds['afNeighborOrder'] = self.af_neighbor_order
         kwds['chemotaxisData'] = self.chemotaxisData
         kwds['pdeFieldData'] = self.pde_field_data
         kwds['secretionData'] = self.secretion_data
