@@ -42,9 +42,7 @@ requirements:
     - pyqtwebkit
     - qscintilla2
     - sphinx
+    - lxml
     - pywin32 # [win]
 
-test:
-  imports:
-    - sys
-    - cc3d.twedit5
+
