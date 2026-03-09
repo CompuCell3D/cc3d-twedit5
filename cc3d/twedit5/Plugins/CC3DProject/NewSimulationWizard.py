@@ -7,6 +7,7 @@ from PyQt5 import *
 import os
 import sys
 from . import ui_newsimulationwizard
+
 from collections import OrderedDict
 import cc3d
 from cc3d.core.XMLUtils import ElementCC3D
@@ -16,6 +17,7 @@ from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
 from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
 from cc3d.twedit5.Plugins.CC3DProject.AdhesionFlexCalcsPopupForm import AdhesionFlexCalcsPopupForm
+from cc3d.twedit5.Plugins.CC3DProject.ContactPluginWidget import ContactPluginWidget
 
 MAC = "qt_mac_set_native_menubar" in dir()
 # Wizard pages:
@@ -29,6 +31,7 @@ CELL_TYPE_SPEC_PAGE_NAME = "Cell Type Specification"
 CELL_PROP_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
 SECRETION_PAGE_NAME = "Secretion Plugin"  # deprecated for now
 CHEMOTAXIS_PAGE_NAME = "Chemotaxis Plugin"
+CONTACT_PAGE_NAME = "Contact Plugin"
 CONTACT_MULTICAD_PAGE_NAME = "ContactMultiCad Plugin"
 ADHESION_FLEX_PAGE_NAME = "AdhesionFlex Plugin"
 CONFIG_COMPLETE_PAGE_NAME = "Configuration Complete!"
@@ -109,7 +112,21 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.mainProjDir = ""
         self.simulationFilesDir = ""
         self.projectPath = ""
+
         self.setupUi(self)
+
+        # Contact plugin Wizard page generation:
+        self.contact_form: QWidget = ContactPluginWidget()
+        c_container = self.findChild(QWidget, "contact_container")
+        #print(f" Class name: {self.contact_form.__class__.__name__} ")
+        if c_container.layout() is None:
+            c_container_layout = QVBoxLayout()
+            c_container.setLayout(c_container_layout)
+        else:
+            c_container_layout = c_container.layout()
+        c_container_layout.addWidget(self.contact_form)
+        c_container.setLayout(c_container_layout)
+
         self.diff_secretion = None  # Holds Diffusion secretion info
 
         # This dictionary holds references to certain pages e.g. plugin configuration pages are inserted on demand
@@ -188,6 +205,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
                 elif self.adhesionFlexCHB.isChecked():
                     return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+                elif self.contactCHB.isChecked():
+                    return self.get_page_id_by_name(CONTACT_PAGE_NAME)
                 elif self.contactMultiCadCHB.isChecked():
                     return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
                 else:
@@ -197,6 +216,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
             elif self.adhesionFlexCHB.isChecked():
                 return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
             elif self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
@@ -204,11 +225,20 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         elif self.currentId() == self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME):
             if self.adhesionFlexCHB.isChecked():
                 return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
             elif self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
                 return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
+            if self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
+            elif self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
             if self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
@@ -281,7 +311,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 else:
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
-
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
+            pass
         # last page
         elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
 
@@ -1081,6 +1112,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.removePage(self.get_page_id_by_name(SECRETION_PAGE_NAME))  # deprecated
         self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(CONTACT_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME))  # Do not use.
@@ -2154,6 +2186,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # print(diffusion_vals_dict)
         return diffusion_vals_dict
 
+    def setUpContactPluginPage(self):
+        contact_page: QWizardPage = self.get_page_by_name(CONTACT_PAGE_NAME)
+        # TODO: fill out
+
     def setUpAdhesionFlexPage(self):
         adhesion_page: QWizardPage = self.get_page_by_name(ADHESION_FLEX_PAGE_NAME)
 
@@ -2386,6 +2422,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
 
+            if self.contactCHB.isChecked():
+                self.setPage(self.get_page_id_by_name(CONTACT_PAGE_NAME), self.get_page_by_name(CONTACT_PAGE_NAME))
+
+            else:
+                self.removePage(self.get_page_id_by_name(CONTACT_PAGE_NAME))
+
             if self.contactMultiCadCHB.isChecked():
                 self.setPage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME), self.get_page_by_name(CONTACT_MULTICAD_PAGE_NAME))
 
@@ -2523,6 +2565,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                             return False
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
+
+        if self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
+            # TODO: fill out as necessary to validate user data
+            # issues_found = self.validateContactPage()
+            pass
 
         if self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
             issues_found = self.validateAdhesionFlexPage()
