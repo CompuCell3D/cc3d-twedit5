@@ -118,7 +118,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         # Contact plugin Wizard page generation:
         self.contact_form: QWidget = ContactPluginWidget()
         c_container = self.findChild(QWidget, "contact_container")
-        #print(f" Class name: {self.contact_form.__class__.__name__} ")
         if c_container.layout() is None:
             c_container_layout = QVBoxLayout()
             c_container.setLayout(c_container_layout)
@@ -126,6 +125,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             c_container_layout = c_container.layout()
         c_container_layout.addWidget(self.contact_form)
         c_container.setLayout(c_container_layout)
+        self.contact_form.ui.contact_value_LE.setText("My Values")
 
         self.diff_secretion = None  # Holds Diffusion secretion info
 

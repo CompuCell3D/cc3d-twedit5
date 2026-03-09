@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_contactPluginWidget(object):
     def setupUi(self, contactPluginWidget):
         contactPluginWidget.setObjectName("contactPluginWidget")
-        contactPluginWidget.resize(400, 300)
+        contactPluginWidget.resize(598, 458)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(contactPluginWidget)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.verticalLayout = QtWidgets.QVBoxLayout()
@@ -24,6 +24,16 @@ class Ui_contactPluginWidget(object):
         self.verticalLayout.addWidget(self.label)
         self.groupBox = QtWidgets.QGroupBox(contactPluginWidget)
         self.groupBox.setObjectName("groupBox")
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.groupBox)
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_3.addItem(spacerItem)
+        self.contact_val_LB = QtWidgets.QLabel(self.groupBox)
+        self.contact_val_LB.setObjectName("contact_val_LB")
+        self.verticalLayout_3.addWidget(self.contact_val_LB)
+        self.contact_value_LE = QtWidgets.QLineEdit(self.groupBox)
+        self.contact_value_LE.setObjectName("contact_value_LE")
+        self.verticalLayout_3.addWidget(self.contact_value_LE)
         self.verticalLayout.addWidget(self.groupBox)
         self.verticalLayout_2.addLayout(self.verticalLayout)
 
@@ -35,3 +45,4 @@ class Ui_contactPluginWidget(object):
         contactPluginWidget.setWindowTitle(_translate("contactPluginWidget", "Form"))
         self.label.setText(_translate("contactPluginWidget", "Contact plugin widget layout"))
         self.groupBox.setTitle(_translate("contactPluginWidget", "Contact widget info:"))
+        self.contact_val_LB.setText(_translate("contactPluginWidget", "Contact value:"))

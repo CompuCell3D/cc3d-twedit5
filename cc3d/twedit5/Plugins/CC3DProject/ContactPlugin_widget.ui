@@ -28,6 +28,31 @@
        <property name="title">
         <string>Contact widget info:</string>
        </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="contact_val_LB">
+          <property name="text">
+           <string>Contact value:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="contact_value_LE"/>
+        </item>
+       </layout>
       </widget>
      </item>
     </layout>
