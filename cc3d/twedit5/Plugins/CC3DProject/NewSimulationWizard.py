@@ -116,7 +116,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.setupUi(self)
 
         # Contact plugin Wizard page generation:
-        self.contact_form: QWidget = ContactPluginWidget()
+        self.contact_form = ContactPluginWidget()
         c_container = self.findChild(QWidget, "contact_container")
         if c_container.layout() is None:
             c_container_layout = QVBoxLayout()
@@ -125,7 +125,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             c_container_layout = c_container.layout()
         c_container_layout.addWidget(self.contact_form)
         c_container.setLayout(c_container_layout)
-        self.contact_form.ui.contact_value_LE.setText("My Values")
 
         self.diff_secretion = None  # Holds Diffusion secretion info
 
@@ -311,8 +310,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 else:
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
+
         elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
             pass
+
         # last page
         elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
 
@@ -438,6 +439,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                                                 "confirm Adhesion plugin behavior.", QMessageBox.Ok)
 
 
+    @pyqtSlot(bool)
+    def on_internalContactCB_toggled(self, _flag):
+        if _flag:
+            self.contactCHB.setChecked(_flag)  # Contact plugin required for InternalContact plugin
 
     @pyqtSlot(bool)  # signature of the signal emited by the button
     def on_growthCHB_toggled(self, _flag):
@@ -602,9 +607,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         # picking solver name
         solver_name = str(self.solverCB.currentText()).strip()
-
         solver_name_item = QTableWidgetItem(solver_name)
-
         self.fieldTable.setItem(rows, 1, solver_name_item)
 
         # reset cell type entry line
@@ -644,11 +647,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_secrAddOnContactPB_clicked(self):
-
         cell_type = str(self.secrOnContactCellTypeCB.currentText())
-
         current_text = str(self.secrOnContactLE.text())
-
         current_types = current_text.split(',')
 
         if current_text != "":
@@ -2188,7 +2188,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     def setUpContactPluginPage(self):
         contact_page: QWizardPage = self.get_page_by_name(CONTACT_PAGE_NAME)
-        # TODO: fill out
+        cell_types: list[str] = []
+        for row in range(self.cellTypeTable.rowCount()):
+            cell_type = str(self.cellTypeTable.item(row, 0).text())
+            cell_types.append(cell_type)
+        self.contact_form.initContactMatrix(cell_types)
+        if self.internalContactCB.isChecked():
+            self.contact_form.initInternalContactMatrix(cell_types)
+
+
 
     def setUpAdhesionFlexPage(self):
         adhesion_page: QWizardPage = self.get_page_by_name(ADHESION_FLEX_PAGE_NAME)
@@ -2422,8 +2430,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
 
-            if self.contactCHB.isChecked():
+            if self.contactCHB.isChecked():  # internalContactCHB is checked in setUpContactPluginPage()
                 self.setPage(self.get_page_id_by_name(CONTACT_PAGE_NAME), self.get_page_by_name(CONTACT_PAGE_NAME))
+                self.setUpContactPluginPage()
 
             else:
                 self.removePage(self.get_page_id_by_name(CONTACT_PAGE_NAME))

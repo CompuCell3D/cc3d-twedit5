@@ -2310,7 +2310,7 @@ p, li { white-space: pre-wrap; }
         <item>
          <widget class="QLabel" name="label_5">
           <property name="text">
-           <string>TextLabel</string>
+           <string/>
           </property>
          </widget>
         </item>
@@ -2326,9 +2326,6 @@ p, li { white-space: pre-wrap; }
            </size>
           </property>
          </spacer>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="lineEdit"/>
         </item>
        </layout>
       </item>
