@@ -1,4 +1,4 @@
-"""
+r"""
 ideally instead hard-coding snippets we should use XML Schema or RelaxNG formats to describe and help generate CC3DML
 And use a single ML generator another one is in
 cc3d\twedit5\Plugins\CC3DProject\CC3DXMLGenerator.py
@@ -232,14 +232,26 @@ class CC3DMLGeneratorBase:
             abrev = time_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("MCSConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["mcsConversionFactor"])
+        m_element.ElementCC3D("MCSConversionFactor", {
+                # as of now using "id" inside <Meteadat> child
+                # element will lead to code crash with older versions of CC3D. Therefore, we are delaying this way of identifying
+                # XML Units specification inside <Metadata>
+                # "id": "mcs_conv_factor",
+                "DisplayName": display_name,
+                "Units": abrev
+            }, gpd["mcsConversionFactor"])
         length_labels: list[str] = gpd["voxelConversionUnits"].rstrip(")").split("(")
         display_name = length_labels[0].strip()
         if len(length_labels) > 1:
             abrev = length_labels[1]
         else:
             abrev = "-"
-        m_element.ElementCC3D("VoxelConversionFactor", {"DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
+        m_element.ElementCC3D("VoxelConversionFactor", {
+            # as of now using "id" inside <Meteadat> child
+            # element will lead to code crash with older versions of CC3D. Therefore, we are delaying this way of identifying
+            # XML Units specification inside <Metadata>
+            # "id": "voxel_conv_factor",
+            "DisplayName": display_name, "Units": abrev}, gpd["voxelConversionFactor"])
 
     @GenerateDecorator('Metadata', ['', ''])
     def generateMetadataDebugOutputFrequency(self, *args, **kwds):
@@ -941,56 +953,89 @@ class CC3DMLGeneratorBase:
             af_data = kwds['afData']
         except LookupError:
             af_data = {}
-
         try:
-            formula = kwds['formula']
+            formulas: dict = kwds['afFormula']
         except LookupError:
-
-            formula = ''
+            formulas = {}
+        try:
+            binding_params: list = kwds['afBindingParams']
+        except LookupError:
+            binding_params = []
+        try:
+            mol_densities: dict = kwds['afMoleculeDensities']
+        except LookupError:
+            mol_densities = {}
+        try:
+            mol_mol_bind_formulas: list = kwds['afMolMolBindingFormulas']
+        except LookupError:
+            mol_mol_bind_formulas = []
+        try:
+            af_neighbor_order = kwds['afNeighborOrder']
+        except LookupError:
+            mol_mol_bind_formulas = []
 
         m_element.addComment("newline")
-
         m_element.addComment(
             "Specification of adhesion energies as a function of cadherin concentration at cell membranes")
-
         m_element.addComment(
-            "Adhesion energy is a function of two cells in ocntact. the functional form is specified by the user")
+            "Adhesion energy is a function of two cells in contact. the functional form is specified by the user")
 
-        # writing AdhesionMolecule elements
+        if mol_densities is not None and len(mol_densities) > 0:  # Check if legacy default adhesion plugin is in use.
+            # writing AdhesionMolecule elements
+            for idx, props in af_data.items():
+                attr_dict = {"Molecule": props}
+                m_element.ElementCC3D("AdhesionMolecule", attr_dict)
 
-        for idx, props in af_data.items():
-            attr_dict = {"Molecule": props}
-            m_element.ElementCC3D("AdhesionMolecule", attr_dict)
+            # writing AdhesionMoleculeDensity elements
+            for type_name in cell_type_data.keys():
+                mols = mol_densities[type_name]
+                for molecule in mols.keys():
+                    density = mols[molecule]
+                    attr_dict = {"CellType": type_name, "Molecule": molecule, "Density": density}
+                    m_element.ElementCC3D("AdhesionMoleculeDensity", attr_dict)
 
-        # writing AdhesionMoleculeDensity elements
-        for type_name in cell_type_data.keys():
+            # writing binding formula
+            for formula_name, formula in formulas.items():
+                bf_element = m_element.ElementCC3D("BindingFormula", {'Name': formula_name})
+                bf_element.ElementCC3D("Formula", {}, formula)
+                var_element = bf_element.ElementCC3D("Variables")
+                adh_matrix_element = var_element.ElementCC3D("AdhesionInteractionMatrix")
+                for mol_mol_formula in mol_mol_bind_formulas:
+                    if formula in mol_mol_formula:
+                        mol1, mol2, f = mol_mol_formula
+                        for mol_mol_bind in binding_params:
+                            if mol1 == mol_mol_bind[0] and mol2 == mol_mol_bind[1]:
+                                bind_val = mol_mol_bind[2]
+                                attr_dict = {"Molecule1": mol1, "Molecule2": mol2}
+                                adh_matrix_element.ElementCC3D("BindingParameter", attr_dict, bind_val)
+            m_element.ElementCC3D("NeighborOrder", {}, af_neighbor_order)
 
-            for idx, afprops in af_data.items():
-                attr_dict = {"CellType": type_name, "Molecule": afprops, "Density": 1.1}
-                m_element.ElementCC3D("AdhesionMoleculeDensity", attr_dict)
+        else:   # Default, use if no Adhesion Flex info:
+            # writing AdhesionMoleculeDensity elements
+            for type_name in cell_type_data.keys():
+                for idx, afprops in af_data.items():
+                    attr_dict = {"CellType": type_name, "Molecule": afprops, "Density": 1.1}
+                    m_element.ElementCC3D("AdhesionMoleculeDensity", attr_dict)
 
-        # writing binding formula
+            # writing binding formula
+            bf_element = m_element.ElementCC3D("BindingFormula", {'Name': 'Binary'})
+            # Default formula:
+            bf_element.ElementCC3D("Formula", {}, "avg(Molecule1, Molecule2)")
+            var_element = bf_element.ElementCC3D("Variables")
+            adh_matrix_element = var_element.ElementCC3D("AdhesionInteractionMatrix")
 
-        bf_element = m_element.ElementCC3D("BindingFormula", {'Name': 'Binary'})
+            repetition_dict = {}
+            for idx1, afprops1 in af_data.items():
+                for idx2, afprops2 in af_data.items():
+                    if afprops2 + '_' + afprops1 in list(repetition_dict.keys()):  # to avoid duplicate entries
+                        continue
+                    else:
+                        repetition_dict[afprops1 + '_' + afprops2] = 0
+                    attr_dict = {"Molecule1": afprops1, "Molecule2": afprops2}
+                    adh_matrix_element.ElementCC3D("BindingParameter", attr_dict, 0.5)
 
-        bf_element.ElementCC3D("Formula", {}, formula)
-
-        var_element = bf_element.ElementCC3D("Variables")
-
-        adh_matrix_element = var_element.ElementCC3D("AdhesionInteractionMatrix")
-
-        repetition_dict = {}
-
-        for idx1, afprops1 in af_data.items():
-            for idx2, afprops2 in af_data.items():
-                if afprops2 + '_' + afprops1 in list(repetition_dict.keys()):  # to avoid duplicate entries
-                    continue
-                else:
-                    repetition_dict[afprops1 + '_' + afprops2] = 0
-                attr_dict = {"Molecule1": afprops1, "Molecule2": afprops2}
-                adh_matrix_element.ElementCC3D("BindingParameter", attr_dict, 0.5)
-
-        m_element.ElementCC3D("NeighborOrder", {}, 4)
+            m_element.ElementCC3D("NeighborOrder", {}, 4)
+            # END of default Adhesion Flex plugin
 
     @GenerateDecorator('Plugin', ['Name', 'Chemotaxis'])
     def generateChemotaxisPlugin(self, *args, **kwds):
@@ -1291,7 +1336,9 @@ class CC3DMLGeneratorBase:
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
-                diff_field_params = diffusion_algo_data[field_name]
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[field_name]
                 if diff_field_params is not None:
                     diff_field_coeffs = diff_field_params["Coefficients"]
                     diff_field_bcs = diff_field_params["BoundaryConditions"]
@@ -1409,7 +1456,12 @@ class CC3DMLGeneratorBase:
                                 uptake_attributes_dict["Type"] = secr_dict["CellType"]
                                 uptake_attributes_dict["MaxUptake"] = secr_dict["MaxUptake"]
                                 uptake_attributes_dict["RelativeUptakeRate"] = secr_dict["RelativeUptakeRate"]
-                                secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+                                try:  # DO not print out xml element if uptake values < 0.0 or not a float:
+                                    if float(secr_dict["MaxUptake"]) >= 0.0 \
+                                            and float(secr_dict["RelativeUptakeRate"]) >= 0.0:
+                                        secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+                                except ValueError:
+                                    print("MaxUpdate or RelativeUpdate not a float.")
                                 rate = secr_dict["Rate"]
                                 attribute_dict = {"Type": secr_dict["CellType"]}
                                 if secr_dict["SecretionType"] == 'uniform':
@@ -1925,9 +1977,11 @@ class CC3DMLGeneratorBase:
             secr_specified = False
             if solver == 'ReactionDiffusionSolverFE':
                 diff_field_elem = m_element.ElementCC3D("DiffusionField", {"Name": field_name})
-                diff_field_params = diffusion_algo_data[field_name]
-                if "AutoscaleDiffusion" in diff_field_params:
-                    auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[field_name]
+                    if "AutoscaleDiffusion" in diff_field_params:
+                        auto_timestep_elem = diff_field_elem.ElementCC3D('AutoscaleDiffusion')
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, field_name)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
@@ -2114,7 +2168,14 @@ class CC3DMLGeneratorBase:
                                 uptake_attributes_dict["Type"] = secr_dict["CellType"]
                                 uptake_attributes_dict["MaxUptake"] = secr_dict["MaxUptake"]
                                 uptake_attributes_dict["RelativeUptakeRate"] = secr_dict["RelativeUptakeRate"]
-                                secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+
+                                try:  # DO not print out xml element if uptake values < 0.0:
+                                    if float(secr_dict["MaxUptake"]) >= 0.0 \
+                                            and float(secr_dict["RelativeUptakeRate"]) >= 0.0:
+                                        secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+                                except ValueError:
+                                    print("MaxUpdate or RelativeUpdate not a float.")
+
                                 rate = secr_dict["Rate"]
                                 attribute_dict = {"Type": secr_dict["CellType"]}
                                 if secr_dict["SecretionType"] == 'uniform':
@@ -2239,7 +2300,9 @@ class CC3DMLGeneratorBase:
                 diff_data = diff_field_elem.ElementCC3D("DiffusionData")
                 diff_data.ElementCC3D("FieldName", {}, fieldName)
                 secr_data = diff_field_elem.ElementCC3D("SecretionData")
-                diff_field_params = diffusion_algo_data[fieldName]
+                diff_field_params = None
+                if diffusion_algo_data is not None and len(diffusion_algo_data) > 0:
+                    diff_field_params = diffusion_algo_data[fieldName]
                 if diff_field_params is not None:
                     diff_field_coeffs = diff_field_params["Coefficients"]
                     diff_field_bcs = diff_field_params["BoundaryConditions"]
@@ -2356,7 +2419,14 @@ class CC3DMLGeneratorBase:
                                                           "MaxUptake": secr_dict["MaxUptake"],
                                                           "RelativeUptakeRate": secr_dict[
                                                               "RelativeUptakeRate"]}
-                                secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+
+                                try:  # DO not print out xml element if uptake values < 0.0:
+                                    if float(secr_dict["MaxUptake"]) >= 0.0 \
+                                            and float(secr_dict["RelativeUptakeRate"]) >= 0.0:
+                                        secr_data.ElementCC3D("Uptake", uptake_attributes_dict, "")
+                                except ValueError:
+                                    print("MaxUpdate or RelativeUpdate not a float.")
+
                                 rate = secr_dict["Rate"]
                                 attribute_dict = {"Type": secr_dict["CellType"]}
                                 if secr_dict["SecretionType"] == 'uniform':

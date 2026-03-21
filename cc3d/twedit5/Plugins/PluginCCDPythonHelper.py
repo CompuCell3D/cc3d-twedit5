@@ -223,21 +223,21 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
         self.initialize()
 
         # useful regular expressions
-        self.nonwhitespaceRegex = re.compile('^[\s]*[\S]+')
+        self.nonwhitespaceRegex = re.compile(r'^[\s]*[\S]+')
 
-        self.commentRegex = re.compile('^[\s]*#')
+        self.commentRegex = re.compile(r'^[\s]*#')
 
-        self.defFunRegex = re.compile('^[\s]*def')
-
-        # block statement - : followed by whitespaces at the end of the line
-        self.blockStatementRegex = re.compile(':[\s]*$')
+        self.defFunRegex = re.compile(r'^[\s]*def')
 
         # block statement - : followed by whitespaces at the end of the line
-        self.blockStatementWithCommentRegex = re.compile(':[\s]*[#]+[\s\S]*$')
+        self.blockStatementRegex = re.compile(r':[\s]*$')
+
+        # block statement - : followed by whitespaces at the end of the line
+        self.blockStatementWithCommentRegex = re.compile(r':[\s]*[#]+[\s\S]*$')
 
         # line with comment at the end first group matches anythin except '#' the remaining
         # group catches the rest of the line
-        self.lineWithCommentAtTheEndRegex = re.compile('([^#]*)([\s\S]*)')
+        self.lineWithCommentAtTheEndRegex = re.compile(r'([^#]*)([\s\S]*)')
 
         self.skipCommentsFlag = False
 
@@ -621,9 +621,9 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
     def includeExtraFieldsImports(self, _editor):
 
-        player_from_import_regex = re.compile('^[\s]*from[\s]*cc3d.*cpp.*PlayerPython[\s]*import[\s]*\*')
+        player_from_import_regex = re.compile(r'^[\s]*from[\s]*cc3d.*cpp.*PlayerPython[\s]*import[\s]*\*')
 
-        compu_cell_setup_import_regex = re.compile('^[\s]*from[\s]*cc3d[\s]*import[\s]*CompuCellSetup')
+        compu_cell_setup_import_regex = re.compile(r'^[\s]*from[\s]*cc3d[\s]*import[\s]*CompuCellSetup')
 
         cur_line, cur_col = _editor.getCursorPosition()
 
@@ -657,7 +657,7 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
     def findEntryLineForCellAttributes(self, _editor):
 
-        getCoreSimulationObjectsRegex = re.compile('^[\s]*sim.*CompuCellSetup\.getCoreSimulationObjects')
+        getCoreSimulationObjectsRegex = re.compile(r'^[\s]*sim.*CompuCellSetup\.getCoreSimulationObjects')
 
         text = ''
 
@@ -681,7 +681,7 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
             # check for comment code  - #add extra attributes here
 
-            attrib_comment_regex = re.compile('^[\s]*#[\s]*add[\s]*extra[\s]*attrib')
+            attrib_comment_regex = re.compile(r'^[\s]*#[\s]*add[\s]*extra[\s]*attrib')
 
             for line in range(found_line, _editor.lines()):
 
@@ -715,6 +715,17 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
         text = ''
 
+        indent_width = _editor.indentationWidth()
+
+        if indent_width <= 0:
+            QMessageBox.warning(
+                self.__ui,
+                "Indentation warning",
+                "Indentation width is not set by QScintilla. Using default value (4)."
+            )
+            indent_width = 4
+
+
         for line in range(_line, -1, -1):
 
             text = str(_editor.text(line))
@@ -735,11 +746,11 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
                         # we insert code snippet increasing indentation after beginning of block statement
 
                         indentation_levels = (_editor.indentation(
-                            line) + _editor.indentationWidth()) // _editor.indentationWidth()
+                            line) + indent_width) // indent_width
 
                         # if this is non-zero indentations in the code are inconsistent
                         indentation_level_consistency = not (_editor.indentation(
-                            line) + _editor.indentationWidth()) % _editor.indentationWidth()
+                            line) + indent_width) % indent_width
 
                         if not indentation_level_consistency:
                             QMessageBox.warning(self.__ui, "Possible indentation problems",
@@ -753,10 +764,10 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
                     else:
                         # we use indentation of the previous line
 
-                        indentation_levels = (_editor.indentation(line)) // _editor.indentationWidth()
+                        indentation_levels = (_editor.indentation(line)) // indent_width
 
                         # if this is non-zero indentations in the code are inconsistent
-                        indentation_level_consistency = not (_editor.indentation(line)) % _editor.indentationWidth()
+                        indentation_level_consistency = not (_editor.indentation(line)) % indent_width
 
                         if not indentation_level_consistency:
                             QMessageBox.warning(self.__ui, "Possible indentation problems",

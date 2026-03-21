@@ -1207,6 +1207,12 @@ self.stop_simulation()
 ----------  # @Submenu@ Set Max MCS
 self.set_max_mcs(MAX_MCS)
 
+----------  # @Submenu@ Get Model Units
+conversion_factors = self.get_unit_conversion_factors()
+print("conversion_factors.length_unit=", conversion_factors.length_unit, "conversion_factors.length_scaling_factor=", conversion_factors.length_scaling_factor)
+print("conversion_factors.time_unit=", conversion_factors.time_unit, "conversion_factors.time_scaling_factor=", conversion_factors.time_scaling_factor)
+
+
 ----------  # @Submenu@ Change Steppable Frequency
 self.frequency = NEW_FREQUENCY
 

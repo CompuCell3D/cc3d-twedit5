@@ -144,7 +144,7 @@ class Worker(QThread, QObject):
 
         if sys.platform.startswith('win'):
             msg = f'<br><br>Now open a terminal (ideally Visual Studio 2015 shell) and do the following:<br><br>' \
-                  f'c:\CompuCell3D\conda-shell.bat<br><br>' \
+                  f'c:\\CompuCell3D\\conda-shell.bat<br><br>' \
                   f'cd {build_dir}<br>' \
                   f'nmake<br>' \
                   f'nmake install'
