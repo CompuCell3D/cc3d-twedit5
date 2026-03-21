@@ -715,6 +715,17 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
         text = ''
 
+        indent_width = _editor.indentationWidth()
+
+        if indent_width <= 0:
+            QMessageBox.warning(
+                self.__ui,
+                "Indentation warning",
+                "Indentation width is not set by QScintilla. Using default value (4)."
+            )
+            indent_width = 4
+
+
         for line in range(_line, -1, -1):
 
             text = str(_editor.text(line))
@@ -735,11 +746,11 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
                         # we insert code snippet increasing indentation after beginning of block statement
 
                         indentation_levels = (_editor.indentation(
-                            line) + _editor.indentationWidth()) // _editor.indentationWidth()
+                            line) + indent_width) // indent_width
 
                         # if this is non-zero indentations in the code are inconsistent
                         indentation_level_consistency = not (_editor.indentation(
-                            line) + _editor.indentationWidth()) % _editor.indentationWidth()
+                            line) + indent_width) % indent_width
 
                         if not indentation_level_consistency:
                             QMessageBox.warning(self.__ui, "Possible indentation problems",
@@ -753,10 +764,10 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
                     else:
                         # we use indentation of the previous line
 
-                        indentation_levels = (_editor.indentation(line)) // _editor.indentationWidth()
+                        indentation_levels = (_editor.indentation(line)) // indent_width
 
                         # if this is non-zero indentations in the code are inconsistent
-                        indentation_level_consistency = not (_editor.indentation(line)) % _editor.indentationWidth()
+                        indentation_level_consistency = not (_editor.indentation(line)) % indent_width
 
                         if not indentation_level_consistency:
                             QMessageBox.warning(self.__ui, "Possible indentation problems",

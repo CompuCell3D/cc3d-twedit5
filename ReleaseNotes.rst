@@ -1,6 +1,30 @@
 Release Notes
 =============
 
+Version 4.8.0
+-------------
+**2026-02-14**
+
+New features:
+ - Added support for AdhesionFlex Plugin configuration in the Simulation Wizard
+ - Added support for defining and retrieving model unit conversion factors
+ - Added support for units metadata in simulation specifications
+ - Added improved validation for wizard-generated simulation configurations
+
+Improvements:
+ - Improved Simulation Wizard usability and workflow
+ - Improved handling and display of adhesion and molecular binding parameters
+ - Improved reliability and consistency of XML generation
+ - Improved error handling, validation, and user feedback
+ - Improved internal code structure and maintainability
+
+Bug fixes:
+ - Fixed issues related to XML generation and metadata handling
+ - Fixed incorrect default parameter handling in wizard-generated configurations
+ - Fixed validation issues and potential crashes in the Simulation Wizard
+ - Multiple minor bug fixes and stability improvements
+
+
 Version 4.7.0
 -------------
 **2025-06-21**
