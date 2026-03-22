@@ -31,7 +31,7 @@ CELL_TYPE_SPEC_PAGE_NAME = "Cell Type Specification"
 CELL_PROP_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
 SECRETION_PAGE_NAME = "Secretion Plugin"  # deprecated for now
 CHEMOTAXIS_PAGE_NAME = "Chemotaxis Plugin"
-CONTACT_PAGE_NAME = "Contact Plugin"
+CONTACT_PAGE_NAME = "Contact and Internal contact Plugins"
 CONTACT_MULTICAD_PAGE_NAME = "ContactMultiCad Plugin"
 ADHESION_FLEX_PAGE_NAME = "AdhesionFlex Plugin"
 CONFIG_COMPLETE_PAGE_NAME = "Configuration Complete!"
@@ -116,7 +116,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.setupUi(self)
 
         # Contact plugin Wizard page generation:
-        self.contact_form = ContactPluginWidget()
+        self.contact_form = ContactPluginWidget(None, self.setUseInternalContactPlugin)
+
         c_container = self.findChild(QWidget, "contact_container")
         if c_container.layout() is None:
             c_container_layout = QVBoxLayout()
@@ -1273,6 +1274,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.clearTableWidget(self.binding_formula_molecular_pairTable)  # do not clear column headers
         except NameError:
             print(" -> self.binding_formula_molecular_pairTable does not exist.")
+
+    def setUseInternalContactPlugin(self, use: bool):
+        # ContactPluginWidget will set up internal contact energy matrix based on cell types used in contact energy matrix.
+        self.internalContactCB.setChecked(use)
+
 
     def updateAdhesionInteractionMatrix(self, molecule, insert_row):
         molecule_count = self.afTable.rowCount()
