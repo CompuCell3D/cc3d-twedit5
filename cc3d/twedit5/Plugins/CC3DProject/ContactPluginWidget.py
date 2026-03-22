@@ -9,6 +9,10 @@ CONTACT_SMALL_FONT_SIZE = 8
 DEFAULT_CONTACT_ENERGY = '10.0'
 DEFAULT_MIX_ENERGY = '2.0'
 DEFAULT_SORT_ENERGY = '20'
+DEFAULT_CONTACT_NEIGHBOR_ORDER = 2
+NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Contact(Internal) plugin algorithm will check " \
+                           "each time it needs to do an energy calculation."
+NEIGHBOR_ORDER_TOOLTIP_2 = "Integer > 0, typically between 2 and 4. Higher is more computationally intensive."
 RESET_MATRIX_TABLES_PB_TEXT = "Reset to default"
 RESET_MATRIX_TABLES_PB_TOOLTIP = "Reset contact energies and neighbor order to default values."
 
@@ -23,6 +27,12 @@ class ContactPluginWidget(QWidget):
         self.contact_internal_callBack = contact_internal_call_back
         self.ui.contact_reset_tablesPB.setText(RESET_MATRIX_TABLES_PB_TEXT)
         self.ui.contact_reset_tablesPB.setToolTip(RESET_MATRIX_TABLES_PB_TOOLTIP)
+        self.ui.contact_neighborSB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
+        self.ui.contact_neighborSB.setValue(DEFAULT_CONTACT_NEIGHBOR_ORDER)
+        self.ui.contact_neighborLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
+        self.ui.contact_internal_neighborSB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
+        self.ui.contact_internal_neighborSB.setValue(DEFAULT_CONTACT_NEIGHBOR_ORDER)
+        self.ui.internal_neighborLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
 
     @pyqtSlot(bool)
     def on_contact_internalCB_toggled(self, is_checked):

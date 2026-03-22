@@ -129,7 +129,7 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <widget class="QLabel" name="label_2">
+             <widget class="QLabel" name="contact_neighborLB">
               <property name="text">
                <string>Neighbor order:</string>
               </property>
