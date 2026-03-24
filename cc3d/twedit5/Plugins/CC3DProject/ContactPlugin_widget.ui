@@ -28,11 +28,11 @@
        <item>
         <widget class="QGroupBox" name="presetsGB">
          <property name="title">
-          <string>Preset energies:</string>
+          <string>Preset contact energies:</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
-           <widget class="QRadioButton" name="cells_mixRB">
+           <widget class="QCheckBox" name="cells_mixCB">
             <property name="font">
              <font>
               <pointsize>11</pointsize>
@@ -44,7 +44,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QRadioButton" name="cells_sortRB">
+           <widget class="QCheckBox" name="cells_sortCB">
             <property name="font">
              <font>
               <pointsize>11</pointsize>
