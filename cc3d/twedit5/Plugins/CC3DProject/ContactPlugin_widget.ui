@@ -17,10 +17,36 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QLabel" name="contact_plugin_descrLB">
-       <property name="text">
-        <string>Contact plugin widget layout</string>
+      <widget class="QGroupBox" name="contact_descrGB">
+       <property name="title">
+        <string/>
        </property>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="QLabel" name="contact_plugin_descrLB">
+          <property name="text">
+           <string>Contact plugin widget description</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="contact_internal_plugin_descrLB">
+          <property name="text">
+           <string>Internal contact description</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="contact_plugin_descr2LB">
+          <property name="text">
+           <string>More description</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
      <item>
@@ -59,7 +85,7 @@
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer">
+        <spacer name="clear_tables_hSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -75,7 +101,7 @@
         <widget class="QCheckBox" name="contact_internalCB">
          <property name="font">
           <font>
-           <pointsize>11</pointsize>
+           <pointsize>10</pointsize>
           </font>
          </property>
          <property name="text">
@@ -86,9 +112,21 @@
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="clear_tables_hLayout">
+      <layout class="QHBoxLayout" name="more_info_hLayout">
        <item>
-        <spacer name="clear_tables_hSpacer">
+        <widget class="QPushButton" name="contact_more_infoPB">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Contact info</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="more_info_hSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -101,17 +139,16 @@
         </spacer>
        </item>
        <item>
-        <spacer name="clear_tables_hSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QPushButton" name="contact_internal_more_infoPB">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
+         <property name="text">
+          <string>Internal Contact info</string>
          </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </item>

@@ -1,10 +1,11 @@
-from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt, pyqtSlot, QUrl
+from PyQt5.QtGui import QFont, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem
 
 from cc3d.twedit5.Plugins.CC3DProject.ui_contactpluginwidget import Ui_contactPluginWidget
 
 CONTACT_TABLE_HEADER_FONT_SIZE = 10
+CONTACT_DESCR_FONT_SIZE = 11
 CONTACT_SMALL_FONT_SIZE = 8
 DEFAULT_CONTACT_ENERGY = '10.0'
 DEFAULT_MIX_ENERGY = '2.0'
@@ -14,8 +15,33 @@ MEDIUM_CELL_TYPE = "Medium"
 NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Contact(Internal) plugin algorithm will check " \
                            "each time it needs to do an energy calculation."
 NEIGHBOR_ORDER_TOOLTIP_2 = "Integer > 0, typically between 2 and 4. Higher is more computationally intensive."
-RESET_MATRIX_TABLES_PB_TEXT = "Reset to default"
+CONTACT_ENERGY_TABLE_CELL_TOOLTIP = "Contact energy per unit area between the two cells, used to calculate total contact energy."
+RESET_MATRIX_TABLES_PB_TEXT = "Reset to default(s)"
 RESET_MATRIX_TABLES_PB_TOOLTIP = "Reset contact energies and neighbor order to default values."
+
+CONTACT_PLUGIN_DESCR = "Contact Plugin: computes the adhesion energy between neighboring cells. " \
+                       "In essence, it describes how cells “stick” to each other. Contact energy is contrived. " \
+                       "It is merely a way to replicate the properties of a cell’s membrane, " \
+                       "the bindings of the nano-structures on its surface, and its environment (the Medium). " \
+                       "For more realistic interactions use AdhesionFlex plugin instead."
+CONTACT_PLUGIN_DESCR_2 = "Two cell types that have high contact energy will not “want to” adhere to each other. " \
+                         "If possible, those cells may separate, effectively reducing the total energy to stay in " \
+                         "that position. Conversely, low contact energy “encourages” cell types to bind. As contact " \
+                         "energy is lowered, it also increases the surface of the contact. \n\nContact energy " \
+                         "is constantly re-calculated each time a cell’s surface changes. Contact energy is defined " \
+                         "as a matrix that compares each cell type against each other cell type. "
+
+CONTACT_INTERNAL_PLUGIN_DESCR = "Internal Contact Plugin: controls how easily sub-cells within the same compartment " \
+                                "adhere to each other. The Internal Contact Plugin can help control the shape and " \
+                                "arrangement of a compartmentalized cell. The standard Contact Plugin is included to " \
+                                "control how clusters interact with one another. The core idea here is to have different " \
+                                "contact energies between subcells belonging to the same cluster and different energies " \
+                                "for cells belonging to different clusters. Technically subcells of a cluster are “regular” " \
+                                "CompuCell3D cells (cell types). "
+
+CONTACT_URL = "https://compucell3dreferencemanual.readthedocs.io/en/latest/contact_plugin.html"
+CONTACT_INTERNAL_URL = "https://compucell3dreferencemanual.readthedocs.io/en/latest/compartments.html"
+
 
 class ContactPluginWidget(QWidget):
     def __init__(self, parent=None, contact_internal_call_back=None):
@@ -26,6 +52,8 @@ class ContactPluginWidget(QWidget):
         self.contact_cell_cell_energy: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
         self.internal_contact_cell_cell_energy: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
         self.contact_internal_callBack = contact_internal_call_back
+        descr_font = QFont()
+        descr_font.setPointSize(CONTACT_DESCR_FONT_SIZE)
         self.ui.contact_reset_tablesPB.setText(RESET_MATRIX_TABLES_PB_TEXT)
         self.ui.contact_reset_tablesPB.setToolTip(RESET_MATRIX_TABLES_PB_TOOLTIP)
         self.ui.contact_neighborSB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
@@ -34,6 +62,21 @@ class ContactPluginWidget(QWidget):
         self.ui.contact_internal_neighborSB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
         self.ui.contact_internal_neighborSB.setValue(DEFAULT_CONTACT_NEIGHBOR_ORDER)
         self.ui.internal_neighborLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
+        self.ui.contact_plugin_descrLB.setText(CONTACT_PLUGIN_DESCR)
+        self.ui.contact_plugin_descrLB.setWordWrap(True)
+        self.ui.contact_internal_plugin_descrLB.setText(CONTACT_INTERNAL_PLUGIN_DESCR)
+        self.ui.contact_internal_plugin_descrLB.setWordWrap(True)
+        self.ui.contact_plugin_descr2LB.setText(CONTACT_PLUGIN_DESCR_2)
+        self.ui.contact_plugin_descr2LB.setFont(descr_font)
+        self.ui.contact_plugin_descr2LB.setWordWrap(True)
+        contact_internal_link_str = "CC3D web page: " + CONTACT_INTERNAL_URL
+        self.ui.contact_internal_more_infoPB.setToolTip(contact_internal_link_str)
+        self.ui.contact_internal_more_infoPB.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(CONTACT_INTERNAL_URL)))
+        contact_link_str = "CC3D web page: " + CONTACT_URL
+        self.ui.contact_more_infoPB.setToolTip(contact_link_str)
+        self.ui.contact_more_infoPB.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(CONTACT_URL)))
 
     @pyqtSlot(bool)
     def on_contact_reset_tablesPB_clicked(self):
@@ -45,22 +88,23 @@ class ContactPluginWidget(QWidget):
         self.ui.cells_sortCB.blockSignals(True)
         self.ui.cells_sortCB.setChecked(False)
         self.ui.cells_sortCB.blockSignals(False)
+        self.ui.contact_neighborSB.setValue(DEFAULT_CONTACT_NEIGHBOR_ORDER)
 
     @pyqtSlot(bool)
     def on_cells_mixCB_toggled(self, is_checked):
         if is_checked:
             self.ui.cells_sortCB.setChecked(False)
             self.setUpCellMixingContactEnergiesMatrix()
-        else:
-            self.fillContactMatrixWithDefault()
+        # else:  # let user decide through on_contact_reset_tablesPB_clicked()
+            # self.fillContactMatrixWithDefault()
 
     @pyqtSlot(bool)
     def on_cells_sortCB_toggled(self, is_checked):
         if is_checked:
             self.ui.cells_mixCB.setChecked(False)
             self.setUpSortedCellsContactEnergiesMatrix()
-        else:
-            self.fillContactMatrixWithDefault()
+        # else:
+            # self.fillContactMatrixWithDefault()
 
     @pyqtSlot(bool)
     def on_contact_internalCB_toggled(self, is_checked):
@@ -99,7 +143,7 @@ class ContactPluginWidget(QWidget):
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
                         energy_par_item.setTextAlignment(Qt.AlignCenter)
-                        tool_tip = "Contact energy per unit area between the two cells, used to calculate total contact energy."
+                        tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
                         energy_par_item.setToolTip(tool_tip)
                         self.ui.contact_matrix_table.setItem(row, column, energy_par_item)
                 #else:  # bottom of matrix assumed the same as top half, always filled with '-'
@@ -115,11 +159,11 @@ class ContactPluginWidget(QWidget):
                     cell_to_update: QTableWidgetItem = self.ui.internal_contact_matrix_table.item(row, column)
                     if cell_to_update:
                         cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
-                    else:  # create new table cell (QTableWidgetItem):
+                    else:  # create new table cell:
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
                         energy_par_item.setTextAlignment(Qt.AlignCenter)
-                        tool_tip = "Contact energy per unit area between the two cells, used to calculate total contact energy."
+                        tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
                         energy_par_item.setToolTip(tool_tip)
                         self.ui.internal_contact_matrix_table.setItem(row, column, energy_par_item)
                 #else:  # bottom of matrix assumed the same as top half, always filled with '-'
@@ -153,7 +197,7 @@ class ContactPluginWidget(QWidget):
                     binding_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                     binding_par_item.setFont(header_font)
                     binding_par_item.setTextAlignment(Qt.AlignCenter)
-                    tool_tip = "Contact energy per unit area between the two cells, used to calculate total contact energy."
+                    tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
                     binding_par_item.setToolTip(tool_tip)
                     self.ui.contact_matrix_table.setItem(row, column, binding_par_item)
                 else:  # bottom of matrix assumed the same as top half:
@@ -200,7 +244,7 @@ class ContactPluginWidget(QWidget):
                     binding_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                     binding_par_item.setFont(header_font)
                     binding_par_item.setTextAlignment(Qt.AlignCenter)
-                    tool_tip = "Contact energy per unit area between the two cells, used to calculate total contact energy."
+                    tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
                     binding_par_item.setToolTip(tool_tip)
                     self.ui.internal_contact_matrix_table.setItem(row, column, binding_par_item)
                 else:  # bottom of matrix assumed the same as top half:
@@ -237,11 +281,11 @@ class ContactPluginWidget(QWidget):
                                 cell_to_update.setText(str('0.0'))
                             else:
                                 cell_to_update.setText(str(DEFAULT_SORT_ENERGY))
-                    else:  # create new table cell (QTableWidgetItem):
+                    else:  # create new table cell:
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
                         energy_par_item.setTextAlignment(Qt.AlignCenter)
-                        tool_tip = "Contact energy per unit area between the two cells, used to calculate total contact energy."
+                        tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
                         energy_par_item.setToolTip(tool_tip)
                         self.ui.contact_matrix_table.setItem(row, column, energy_par_item)
                 # else:  # bottom of matrix assumed the same as top half, always filled with '-'
@@ -262,11 +306,11 @@ class ContactPluginWidget(QWidget):
                                 cell_to_update.setText(str(DEFAULT_MIX_ENERGY))
                         else:  # Same cell type contact:
                             cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
-                    else:  # create new table cell (QTableWidgetItem):
+                    else:  # create new table cell if none there:
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
                         energy_par_item.setTextAlignment(Qt.AlignCenter)
-                        tool_tip = "Contact energy per unit area between the two cells, used to calculate total contact energy."
+                        tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
                         energy_par_item.setToolTip(tool_tip)
                         self.ui.contact_matrix_table.setItem(row, column, energy_par_item)
                 # else:  # bottom of matrix assumed the same as top half, always filled with '-'
@@ -276,7 +320,7 @@ class ContactPluginWidget(QWidget):
 
     def setContactNeighborOrder(self, val: int) -> bool:
         if isinstance(val, int):
-            if 0 >= int(val) >= 10:
+            if 0 >= int(val) <= 10:
                 self.ui.contact_neighborSB.setValue(val)
                 return True
             else:
@@ -290,7 +334,7 @@ class ContactPluginWidget(QWidget):
 
     def setInternalContactNeighborOrder(self, val: int) -> bool:
         if isinstance(val, int):
-            if 0 >= int(val) >= 10:
+            if 0 >= int(val) <= 10:
                 self.ui.contact_internal_neighborSB.setValue(val)
                 return True
             else:
