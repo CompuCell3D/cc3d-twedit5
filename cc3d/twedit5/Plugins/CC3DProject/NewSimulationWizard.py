@@ -1098,6 +1098,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.setUpValidators()
 
+        # Compartments plugin deprecated, use Contact and Contact Internal plugins
+        self.compartmentCHB.setEnabled(False)
+
         # Multi cad plugin is being deprecated
         self.contactMultiCadCHB.setEnabled(False)
 
@@ -2582,9 +2585,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
 
         if self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
-            # TODO: fill out as necessary to validate user data
-            # issues_found = self.validateContactPage()
-            pass
+            issues_found = self.validateContactPage()
+            if len(issues_found) > 0:
+                issues_str = ""
+                for issue in issues_found:
+                    if issues_str == "":
+                        issues_str = issue
+                    else:
+                        issues_str = issues_str + ", \n" + issue
+                QMessageBox.warning(self, "Missing information", issues_str, QMessageBox.Ok)
+                return False
 
         if self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
             issues_found = self.validateAdhesionFlexPage()
@@ -2600,6 +2610,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return False
             else:
                 print("Adhesion flex page get data section !!!!")
+
         return True
 
     def validateAdhesionFlexPage(self) -> list[str]:
@@ -2643,6 +2654,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         return issues
 
+    def validateContactPage(self) -> list[str]:
+        issues = self.contact_form.validateContactPage()
+
+        return issues
 
     def makeProjectDirectories(self, dir, name):
 
