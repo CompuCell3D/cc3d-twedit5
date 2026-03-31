@@ -3021,6 +3021,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         kwds['afMoleculeDensities'] = self.af_mol_density
         kwds['afMolMolBindingFormulas'] = self.af_mol_mol_bind_formula
         kwds['afNeighborOrder'] = self.af_neighbor_order
+        kwds['contact_energies'] = self.contact_form.getContactEnergyMatrix()
+        kwds['contact_neighbor_order'] = self.contact_form.getContactNeighborOrder()
+        kwds['internal_contact_energies'] = self.contact_form.getInternalContactEnergyMatrix()
+        kwds['internal_contact_neighbor_order'] = self.contact_form.getInternalContactNeighborOrder()
         kwds['chemotaxisData'] = self.chemotaxisData
         kwds['pdeFieldData'] = self.pde_field_data
         kwds['secretionData'] = self.secretion_data

@@ -632,44 +632,44 @@ class CC3DMLGeneratorBase:
 
     @GenerateDecorator('Plugin', ['Name', 'Contact'])
     def generateContactPlugin(self, *args, **kwds):
-
         m_element = self.mElement
 
         try:
-            contact_matrix = kwds['contactMatrix']
+            contact_matrix = kwds['contact_energies']
         except LookupError:
-
-            contact_matrix = {}
+            contact_matrix = []
 
         try:
-            n_order = kwds['NeighborOrder']
+            #n_order = kwds['NeighborOrder']
+            n_order = kwds['contact_neighbor_order']
         except LookupError:
             n_order = 4
 
         m_element.addComment("Specification of adhesion energies")
 
-        for type_name1, type_name2 in self.decorated_type_pairs:
-            try:
+        if len(contact_matrix) > 0:
+            for type_name1, type_name2, contact_energy in contact_matrix:
                 attrDict = {"Type1": type_name1, "Type2": type_name2}
-            except LookupError:
-                continue
+                m_element.ElementCC3D("Energy", attrDict, contact_energy)
 
-            try:
-                # first see if energy exists
-
-                energy = contact_matrix[type_name1][type_name2][0]
-
-            except LookupError:
-
-                try:  # try reverse order
-
-                    energy = contact_matrix[type_name2][type_name1][0]
-
+        else:
+            for type_name1, type_name2 in self.decorated_type_pairs:
+                try:
+                    attrDict = {"Type1": type_name1, "Type2": type_name2}
                 except LookupError:
-                    # use default value
-                    energy = 10.0
+                    continue
 
-            m_element.ElementCC3D("Energy", attrDict, energy)
+                try:
+                    # first see if energy exists
+                    energy = contact_matrix[type_name1][type_name2][0]
+                except LookupError:
+                    try:  # try reverse order
+                        energy = contact_matrix[type_name2][type_name1][0]
+                    except LookupError:
+                        # use default value
+                        energy = 10.0
+
+                m_element.ElementCC3D("Energy", attrDict, energy)
 
         m_element.ElementCC3D("NeighborOrder", {}, n_order)
 
@@ -698,40 +698,46 @@ class CC3DMLGeneratorBase:
         m_element = self.mElement
 
         try:
-            contact_matrix = kwds['contactMatrix']
+            contact_matrix = kwds['internal_contact_energies']
         except LookupError:
-            contact_matrix = {}
+            contact_matrix = []
 
         try:
-            n_order = kwds['NeighborOrder']
+            n_order = kwds['internal_contact_neighbor_order']
         except LookupError:
             n_order = 4
 
         m_element.addComment("Specification of internal adhesion energies")
 
-        for type_name1, type_name2 in self.decorated_type_pairs:
+        if len(contact_matrix) > 0:
+            for type_name1, type_name2, contact_energy in contact_matrix:
+                attrDict = {"Type1": type_name1, "Type2": type_name2}
+                m_element.ElementCC3D("Energy", attrDict, contact_energy)
+        else:
+            for type_name1, type_name2 in self.decorated_type_pairs:
 
-            try:
-                attr_dict = {"Type1": type_name1, "Type2": type_name2}
-            except LookupError:
-                continue
-
-            try:
-                # first see if energy exists
-                energy = contact_matrix[type_name1][type_name2][0]
-            except LookupError:
                 try:
-                    # try reverse order
-                    energy = contact_matrix[type_name2][type_name1][0]
+                    attr_dict = {"Type1": type_name1, "Type2": type_name2}
                 except LookupError:
-                    # use default value
-                    energy = 10.0
+                    continue
 
-            m_element.ElementCC3D("Energy", attr_dict, energy)
+                try:
+                    # first see if energy exists
+                    energy = contact_matrix[type_name1][type_name2][0]
+                except LookupError:
+                    try:
+                        # try reverse order
+                        energy = contact_matrix[type_name2][type_name1][0]
+                    except LookupError:
+                        # use default value
+                        energy = 10.0
+
+                m_element.ElementCC3D("Energy", attr_dict, energy)
 
         m_element.ElementCC3D("NeighborOrder", {}, n_order)
 
     @GenerateDecorator('Plugin', ['Name', 'ContactCompartment'])
+    #  Deprecated plugin, use Contact internal plugin. Remove at some point.
     def generateCompartmentPlugin(self, *args, **kwds):
 
         m_element = self.mElement
