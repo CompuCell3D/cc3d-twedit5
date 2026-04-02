@@ -3,6 +3,7 @@ from PyQt5.QtGui import QFont, QDesktopServices
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QMessageBox
 
 from cc3d.twedit5.Plugins.CC3DProject.ui_contactpluginwidget import Ui_contactPluginWidget
+from cc3d.twedit5.Plugins.CC3DProject.ContactPlugin_descr import get_contact_plugin_description_html
 
 CONTACT_TABLE_HEADER_FONT_SIZE = 10
 CONTACT_DESCR_FONT_SIZE = 11
@@ -64,21 +65,23 @@ class ContactPluginWidget(QWidget):
         self.ui.contact_internal_neighborSB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
         self.ui.contact_internal_neighborSB.setValue(DEFAULT_CONTACT_NEIGHBOR_ORDER)
         self.ui.internal_neighborLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
-        self.ui.contact_plugin_descrLB.setText(CONTACT_PLUGIN_DESCR)
-        self.ui.contact_plugin_descrLB.setWordWrap(True)
-        self.ui.contact_internal_plugin_descrLB.setText(CONTACT_INTERNAL_PLUGIN_DESCR)
-        self.ui.contact_internal_plugin_descrLB.setWordWrap(True)
-        self.ui.contact_plugin_descr2LB.setText(CONTACT_PLUGIN_DESCR_2)
-        self.ui.contact_plugin_descr2LB.setFont(descr_font)
-        self.ui.contact_plugin_descr2LB.setWordWrap(True)
-        contact_internal_link_str = "CC3D web page: " + CONTACT_INTERNAL_URL
-        self.ui.contact_internal_more_infoPB.setToolTip(contact_internal_link_str)
-        self.ui.contact_internal_more_infoPB.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl(CONTACT_INTERNAL_URL)))
-        contact_link_str = "CC3D web page: " + CONTACT_URL
-        self.ui.contact_more_infoPB.setToolTip(contact_link_str)
-        self.ui.contact_more_infoPB.clicked.connect(
-            lambda: QDesktopServices.openUrl(QUrl(CONTACT_URL)))
+       # self.ui.contact_plugin_descrLB.setText(CONTACT_PLUGIN_DESCR)
+       # self.ui.contact_plugin_descrLB.setWordWrap(True)
+      #  self.ui.contact_internal_plugin_descrLB.setText(CONTACT_INTERNAL_PLUGIN_DESCR)
+      #  self.ui.contact_internal_plugin_descrLB.setWordWrap(True)
+      #  self.ui.contact_plugin_descr2LB.setText(CONTACT_PLUGIN_DESCR_2)
+      #  self.ui.contact_plugin_descr2LB.setFont(descr_font)
+      #  self.ui.contact_plugin_descr2LB.setWordWrap(True)
+        self.ui.contact_plugin_textBrowser.clear()
+        self.ui.contact_plugin_textBrowser.setHtml(get_contact_plugin_description_html())
+      #  contact_internal_link_str = "CC3D web page: " + CONTACT_INTERNAL_URL
+      #  self.ui.contact_internal_more_infoPB.setToolTip(contact_internal_link_str)
+      #  self.ui.contact_internal_more_infoPB.clicked.connect(
+      #      lambda: QDesktopServices.openUrl(QUrl(CONTACT_INTERNAL_URL)))
+      #  contact_link_str = "CC3D web page: " + CONTACT_URL
+      #  self.ui.contact_more_infoPB.setToolTip(contact_link_str)
+      #  self.ui.contact_more_infoPB.clicked.connect(
+      #      lambda: QDesktopServices.openUrl(QUrl(CONTACT_URL)))
 
     @pyqtSlot(bool)
     def on_contact_reset_tablesPB_clicked(self):
@@ -187,21 +190,35 @@ class ContactPluginWidget(QWidget):
         except ValueError:
             return False
 
-    def checkEnergyValue(self, item: QTableWidgetItem):
-        column = item.column()
-        row = item.row()
+    def checkContactEnergyValue(self, item: QTableWidgetItem) -> bool:
+        cell_1 = self.ui.contact_matrix_table.horizontalHeaderItem(item.column()).text()
+        cell_2 = self.ui.contact_matrix_table.verticalHeaderItem(item.row()).text()
         val_str = item.text()
-        if self.checkIfNumber(val_str):
-            if float(val_str) < 0.0:
-                item.setText(DEFAULT_CONTACT_ENERGY)
-                QMessageBox.warning(self, "Energy below 0",
-                                    "Energy value must be >= 0.0.",
-                                    QMessageBox.Ok)
-        else:
+        if not self.checkIfNumber(val_str):
             item.setText(DEFAULT_CONTACT_ENERGY)
             QMessageBox.warning(self, "Not a number",
-                                "Please specify a number for the energy value",
+                                f"Please specify a number for the {cell_1} - {cell_2} contact energy value",
                                 QMessageBox.Ok)
+            return False
+        else:
+            return True
+
+    def checkContactInternalEnergyValue(self, item: QTableWidgetItem) -> bool:
+        cell_1 = self.ui.internal_contact_matrix_table.horizontalHeaderItem(item.column()).text()
+        cell_2 = self.ui.internal_contact_matrix_table.verticalHeaderItem(item.row()).text()
+        val_str = item.text()
+        # can also be "-", need to check:
+        if val_str.strip() == "-":
+            return True
+        if not self.checkIfNumber(val_str):
+            item.setText(DEFAULT_CONTACT_ENERGY)
+            QMessageBox.warning(self, "Not a number",
+                                f"Please specify a number or '-' for the {cell_1} - {cell_2} "
+                                f"contact internal energy value",
+                                QMessageBox.Ok)
+            return False
+        else:
+            return True
 
     def validateContactPage(self) -> list[str]:
         issues = []
@@ -253,7 +270,7 @@ class ContactPluginWidget(QWidget):
         self.ui.contact_matrix_table.verticalHeader().setVisible(True)
         self.ui.contact_matrix_table.resizeRowsToContents()
         self.ui.contact_matrix_table.resizeColumnsToContents()
-        self.ui.contact_matrix_table.itemChanged.connect(self.checkEnergyValue)
+        self.ui.contact_matrix_table.itemChanged.connect(self.checkContactEnergyValue)
         self.ui.contact_matrix_table.blockSignals(False)
 
     def initInternalContactMatrix(self, cell_types: list[str]):
@@ -266,7 +283,7 @@ class ContactPluginWidget(QWidget):
         if self.ui.internal_contact_matrix_table.rowCount() > 0:
             self.clearMatrixTable(self.ui.internal_contact_matrix_table)
         self.ui.internal_contact_matrix_table.blockSignals(True)
-        
+
         header_font = QFont()
         header_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
         cell_type_count = len(cell_types)
@@ -310,7 +327,7 @@ class ContactPluginWidget(QWidget):
         self.ui.internal_contact_matrix_table.verticalHeader().setVisible(True)
         self.ui.internal_contact_matrix_table.resizeRowsToContents()
         self.ui.internal_contact_matrix_table.resizeColumnsToContents()
-        self.ui.internal_contact_matrix_table.itemChanged.connect(self.checkEnergyValue)
+        self.ui.internal_contact_matrix_table.itemChanged.connect(self.checkContactInternalEnergyValue)
         self.ui.internal_contact_matrix_table.blockSignals(False)
 
     def setUpSortedCellsContactEnergiesMatrix(self):

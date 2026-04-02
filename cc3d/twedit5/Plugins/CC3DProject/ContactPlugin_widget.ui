@@ -6,43 +6,61 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>598</width>
-    <height>458</height>
+    <width>631</width>
+    <height>498</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="leftMargin">
+    <number>5</number>
+   </property>
+   <property name="topMargin">
+    <number>5</number>
+   </property>
+   <property name="rightMargin">
+    <number>5</number>
+   </property>
+   <property name="bottomMargin">
+    <number>5</number>
+   </property>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QGroupBox" name="contact_descrGB">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="title">
         <string/>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
         <item>
-         <widget class="QLabel" name="contact_plugin_descrLB">
-          <property name="text">
-           <string>Contact plugin widget description</string>
+         <widget class="QTextBrowser" name="contact_plugin_textBrowser">
+          <property name="font">
+           <font>
+            <pointsize>15</pointsize>
+           </font>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="contact_internal_plugin_descrLB">
-          <property name="text">
-           <string>Internal contact description</string>
-          </property>
-          <property name="wordWrap">
+          <property name="openExternalLinks">
            <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="contact_plugin_descr2LB">
-          <property name="text">
-           <string>More description</string>
           </property>
          </widget>
         </item>
@@ -50,123 +68,84 @@
       </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QGroupBox" name="presetsGB">
-         <property name="title">
-          <string>Preset contact energies:</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <widget class="QCheckBox" name="cells_mixCB">
-            <property name="font">
-             <font>
-              <pointsize>11</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Cells mix</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="cells_sortCB">
-            <property name="font">
-             <font>
-              <pointsize>11</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Cells sort</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <spacer name="clear_tables_hSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="contact_internalCB">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Use Internal Contact plugin</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="more_info_hLayout">
-       <item>
-        <widget class="QPushButton" name="contact_more_infoPB">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Contact info</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="more_info_hSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QPushButton" name="contact_internal_more_infoPB">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Internal Contact info</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QHBoxLayout" name="horizontalLayout"/>
      </item>
      <item>
       <layout class="QHBoxLayout" name="energy_matrices_hLayout">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
        <item>
         <widget class="QGroupBox" name="contact_matrixGB">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="title">
           <string>Contact energy matrix:</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
           <item>
-           <widget class="QTableWidget" name="contact_matrix_table"/>
+           <widget class="QTableWidget" name="contact_matrix_table">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>11</pointsize>
+             </font>
+            </property>
+           </widget>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
              <widget class="QLabel" name="contact_neighborLB">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
               <property name="text">
                <string>Neighbor order:</string>
               </property>
@@ -174,6 +153,11 @@
             </item>
             <item>
              <widget class="QSpinBox" name="contact_neighborSB">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
               <property name="maximum">
                <number>10</number>
               </property>
@@ -201,33 +185,188 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="contact_reset_tablesPB">
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
+        <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0,0,0">
+         <property name="sizeConstraint">
+          <enum>QLayout::SetMaximumSize</enum>
          </property>
-         <property name="text">
-          <string>Reset table(s)</string>
-         </property>
-        </widget>
+         <item>
+          <widget class="QGroupBox" name="presetsGB">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>65</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="title">
+            <string>Preset contact energies:</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <property name="leftMargin">
+             <number>5</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>5</number>
+            </property>
+            <property name="bottomMargin">
+             <number>5</number>
+            </property>
+            <item>
+             <widget class="QCheckBox" name="cells_mixCB">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Cells mix</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="cells_sortCB">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Cells sort</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="contact_reset_tablesPB">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>11</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Reset table(s)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Preferred</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="contact_internalCB">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>18</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Use Internal Contact plugin</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QGroupBox" name="internal_contact_matrixGB">
          <property name="enabled">
           <bool>false</bool>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
          <property name="title">
           <string>Internal contact energy matrix:</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_5">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>5</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
           <item>
-           <widget class="QTableWidget" name="internal_contact_matrix_table"/>
+           <widget class="QTableWidget" name="internal_contact_matrix_table">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="baseSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>11</pointsize>
+             </font>
+            </property>
+           </widget>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
              <widget class="QLabel" name="internal_neighborLB">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
               <property name="text">
                <string>Internal Neighbor order:</string>
               </property>
@@ -235,6 +374,11 @@
             </item>
             <item>
              <widget class="QSpinBox" name="contact_internal_neighborSB">
+              <property name="font">
+               <font>
+                <pointsize>11</pointsize>
+               </font>
+              </property>
               <property name="maximum">
                <number>10</number>
               </property>

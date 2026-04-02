@@ -923,6 +923,7 @@ class Ui_NewSimulationWizard(object):
         self.wizardPage_contact = QtWidgets.QWizardPage()
         self.wizardPage_contact.setObjectName("wizardPage_contact")
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout(self.wizardPage_contact)
+        self.horizontalLayout_6.setContentsMargins(5, 5, 5, 5)
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
         self.verticalLayout_28 = QtWidgets.QVBoxLayout()
         self.verticalLayout_28.setObjectName("verticalLayout_28")
