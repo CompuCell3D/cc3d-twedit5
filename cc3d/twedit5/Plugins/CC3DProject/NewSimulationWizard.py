@@ -439,6 +439,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                                                 "between cells. You may need to set Contact plugin energies to zero to "
                                                 "confirm Adhesion plugin behavior.", QMessageBox.Ok)
 
+    @pyqtSlot(bool)
+    def on_contactCHB_toggled(self, _flag):
+        if _flag:
+            self.volumeFlexCHB.setChecked(True)  # Typically want VolumeFlex plugin used (user can always uncheck this)
 
     @pyqtSlot(bool)
     def on_internalContactCB_toggled(self, _flag):
