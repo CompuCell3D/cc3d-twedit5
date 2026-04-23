@@ -1,9 +1,10 @@
 from PyQt5.QtCore import Qt, pyqtSlot, QUrl
-from PyQt5.QtGui import QFont, QDesktopServices
+from PyQt5.QtGui import QFont, QPalette, QColor, QPixmap
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QMessageBox
 
 from cc3d.twedit5.Plugins.CC3DProject.ui_contactpluginwidget import Ui_contactPluginWidget
 from cc3d.twedit5.Plugins.CC3DProject.ContactPlugin_descr import get_contact_plugin_description_html
+from cc3d.twedit5.Plugins.CC3DProject.InternalContactPlugin_descr import get_internal_contact_plugin_description_html
 
 CONTACT_TABLE_HEADER_FONT_SIZE = 10
 CONTACT_DESCR_FONT_SIZE = 11
@@ -65,23 +66,24 @@ class ContactPluginWidget(QWidget):
         self.ui.contact_internal_neighborSB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
         self.ui.contact_internal_neighborSB.setValue(DEFAULT_CONTACT_NEIGHBOR_ORDER)
         self.ui.internal_neighborLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
-       # self.ui.contact_plugin_descrLB.setText(CONTACT_PLUGIN_DESCR)
-       # self.ui.contact_plugin_descrLB.setWordWrap(True)
-      #  self.ui.contact_internal_plugin_descrLB.setText(CONTACT_INTERNAL_PLUGIN_DESCR)
-      #  self.ui.contact_internal_plugin_descrLB.setWordWrap(True)
-      #  self.ui.contact_plugin_descr2LB.setText(CONTACT_PLUGIN_DESCR_2)
-      #  self.ui.contact_plugin_descr2LB.setFont(descr_font)
-      #  self.ui.contact_plugin_descr2LB.setWordWrap(True)
+
+        contact_descr_style = """
+        table { font-size:11px; border: 0px light gray;}
+        caption { font-size:12px; text-align: center; }
+        td { text-align: center;}
+        """
         self.ui.contact_plugin_textBrowser.clear()
+        palette = self.ui.contact_plugin_textBrowser.palette()
+        palette.setColor(QPalette.Base, QColor(230, 230, 230))  # background color
+        self.ui.contact_plugin_textBrowser.setPalette(palette)
         self.ui.contact_plugin_textBrowser.setHtml(get_contact_plugin_description_html())
-      #  contact_internal_link_str = "CC3D web page: " + CONTACT_INTERNAL_URL
-      #  self.ui.contact_internal_more_infoPB.setToolTip(contact_internal_link_str)
-      #  self.ui.contact_internal_more_infoPB.clicked.connect(
-      #      lambda: QDesktopServices.openUrl(QUrl(CONTACT_INTERNAL_URL)))
-      #  contact_link_str = "CC3D web page: " + CONTACT_URL
-      #  self.ui.contact_more_infoPB.setToolTip(contact_link_str)
-      #  self.ui.contact_more_infoPB.clicked.connect(
-      #      lambda: QDesktopServices.openUrl(QUrl(CONTACT_URL)))
+
+        self.ui.internal_contact_textBrowser.clear()
+        palette = self.ui.internal_contact_textBrowser.palette()
+        palette.setColor(QPalette.Base, QColor(230, 230, 230))
+        self.ui.internal_contact_textBrowser.setPalette(palette)
+        self.ui.internal_contact_textBrowser.document().setDefaultStyleSheet(contact_descr_style)
+        self.ui.internal_contact_textBrowser.setHtml(get_internal_contact_plugin_description_html())
 
     @pyqtSlot(bool)
     def on_contact_reset_tablesPB_clicked(self):
@@ -190,35 +192,40 @@ class ContactPluginWidget(QWidget):
         except ValueError:
             return False
 
+    def checkEnergyValue(self, val: str) -> bool:
+        # can also be "-", need to check:
+        if val.strip() == "-":
+            return True
+        if not self.checkIfNumber(val):
+            return False
+        else:
+            return True
+
     def checkContactEnergyValue(self, item: QTableWidgetItem) -> bool:
         cell_1 = self.ui.contact_matrix_table.horizontalHeaderItem(item.column()).text()
         cell_2 = self.ui.contact_matrix_table.verticalHeaderItem(item.row()).text()
         val_str = item.text()
-        if not self.checkIfNumber(val_str):
+        if self.checkEnergyValue(val_str):
+            return True
+        else:
             item.setText(DEFAULT_CONTACT_ENERGY)
             QMessageBox.warning(self, "Not a number",
                                 f"Please specify a number for the {cell_1} - {cell_2} contact energy value",
                                 QMessageBox.Ok)
             return False
-        else:
-            return True
 
     def checkContactInternalEnergyValue(self, item: QTableWidgetItem) -> bool:
         cell_1 = self.ui.internal_contact_matrix_table.horizontalHeaderItem(item.column()).text()
         cell_2 = self.ui.internal_contact_matrix_table.verticalHeaderItem(item.row()).text()
         val_str = item.text()
-        # can also be "-", need to check:
-        if val_str.strip() == "-":
+        if self.checkEnergyValue(val_str):
             return True
-        if not self.checkIfNumber(val_str):
+        else:
             item.setText(DEFAULT_CONTACT_ENERGY)
             QMessageBox.warning(self, "Not a number",
-                                f"Please specify a number or '-' for the {cell_1} - {cell_2} "
-                                f"contact internal energy value",
+                                f"Please specify a number for the {cell_1} - {cell_2} contact internal energy value",
                                 QMessageBox.Ok)
             return False
-        else:
-            return True
 
     def validateContactPage(self) -> list[str]:
         issues = []
