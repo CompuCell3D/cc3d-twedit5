@@ -432,11 +432,14 @@ class ContactPluginWidget(QWidget):
                     cell1 = str(self.ui.contact_matrix_table.verticalHeaderItem(row).text())
                     cell2 = str(self.ui.contact_matrix_table.horizontalHeaderItem(col).text())
                     contact_energy = str(self.ui.contact_matrix_table.item(row, col).text()).strip()
-                    try:
-                        contact_energy_float = float(contact_energy)
+                    if contact_energy == "-":  # Valid if no cell-cell contact
                         new_cell_cell_bind = (cell1, cell2, contact_energy)
-                    except ValueError:
-                        new_cell_cell_bind = (cell1, cell2, DEFAULT_CONTACT_ENERGY)
+                    else:
+                        try:
+                            contact_energy_float = float(contact_energy)
+                            new_cell_cell_bind = (cell1, cell2, contact_energy)
+                        except ValueError:
+                            new_cell_cell_bind = (cell1, cell2, DEFAULT_CONTACT_ENERGY)
                     self.contact_cell_cell_energy.append(new_cell_cell_bind)
         return self.contact_cell_cell_energy
 
@@ -448,12 +451,15 @@ class ContactPluginWidget(QWidget):
                     cell1 = str(self.ui.internal_contact_matrix_table.verticalHeaderItem(row).text())
                     cell2 = str(self.ui.internal_contact_matrix_table.horizontalHeaderItem(col).text())
                     contact_energy = str(self.ui.internal_contact_matrix_table.item(row, col).text()).strip()
-                    try:
-                        contact_energy_float = float(contact_energy)
+                    if contact_energy == "-":  # Valid if no cell-cell contact
                         new_cell_cell_bind = (cell1, cell2, contact_energy)
-                    except ValueError:
-                        contact_energy = DEFAULT_CONTACT_ENERGY
-                        new_cell_cell_bind = (cell1, cell2, contact_energy)
+                    else:
+                        try:
+                            contact_energy_float = float(contact_energy)
+                            new_cell_cell_bind = (cell1, cell2, contact_energy)
+                        except ValueError:
+                            contact_energy = DEFAULT_CONTACT_ENERGY
+                            new_cell_cell_bind = (cell1, cell2, contact_energy)
                     self.internal_contact_cell_cell_energy.append(new_cell_cell_bind)
         return self.internal_contact_cell_cell_energy
 
