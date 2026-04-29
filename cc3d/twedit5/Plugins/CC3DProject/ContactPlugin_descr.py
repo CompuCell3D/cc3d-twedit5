@@ -20,7 +20,7 @@ def get_contact_plugin_description_html():
       neighbor order specifies the range of neighboring pixels to calculate the contact energy. Higher order is typically 
       more accurate but requires more computational effort.
     </p>
-    <p {FONT_SIZE}><a href="https://compucell3dreferencemanual.readthedocs.io/en/latest/contact_plugin.html">Contact plugin information at CC3D website </a>
+    <p {FONT_SIZE}><a href="https://compucell3dreferencemanual.readthedocs.io/en/latest/contact_plugin.html">Contact plugin information at the CC3D Reference Manual website </a>
     </p>"""
 
     return contact_plugin_descr

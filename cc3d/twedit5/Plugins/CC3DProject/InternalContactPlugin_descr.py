@@ -87,7 +87,7 @@ def get_internal_contact_plugin_description_html():
     
      </p>
     <p {FONT_SIZE}>
-     <a href="https://compucell3dreferencemanual.readthedocs.io/en/latest/compartments.html#compartmentalized-cells-contactinternal-plugin">Internal Contact plugin information at CC3D website. </a>
+     <a href="https://compucell3dreferencemanual.readthedocs.io/en/latest/compartments.html#compartmentalized-cells-contactinternal-plugin">Internal Contact plugin information at the CC3D Reference Manual website. </a>
       </p>
     """
     return int_contact_plugin_descr
