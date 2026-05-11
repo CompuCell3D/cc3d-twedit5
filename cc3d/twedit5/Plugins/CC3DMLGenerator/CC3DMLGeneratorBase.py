@@ -659,15 +659,15 @@ class CC3DMLGeneratorBase:
                 except LookupError:
                     continue
 
-                try:
+            #    try:
                     # first see if energy exists
-                    energy = contact_matrix[type_name1][type_name2][0]
-                except LookupError:
-                    try:  # try reverse order
-                        energy = contact_matrix[type_name2][type_name1][0]
-                    except LookupError:
-                        # use default value
-                        energy = 10.0
+            #        energy = contact_matrix[type_name1][type_name2][0]
+            #    except LookupError:
+            #        try:  # try reverse order
+            #            energy = contact_matrix[type_name2][type_name1][0]
+             #       except LookupError:
+                # use default value
+                energy = 10.0
 
                 m_element.ElementCC3D("Energy", attrDict, energy)
 

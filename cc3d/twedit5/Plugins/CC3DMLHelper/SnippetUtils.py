@@ -4,6 +4,7 @@ from cc3d.core import XMLUtils
 from cc3d.core.XMLUtils import CC3DXMLListPy
 from .adhesionflexdlg import AdhesionFlexDlg
 from .celltypedlg import CellTypeDlg
+from .contactPlugin_dlg import ContactPluginDlg
 from .pottsdlg import PottsDlg
 import functools
 import re
@@ -65,7 +66,7 @@ class SnippetDecorator(object):
 
             moduleAttributeLabel = self.moduleName[0]
 
-            taskFlag, moduleAlias = obj.warnIfModuleExists(editor, self.moduleType, self.moduleName)
+            taskFlag, moduleAlias = obj.warnIfModuleExists(editor, self.moduleType, self.moduleName)  # Module check
 
             if taskFlag == MB_CANCEL:
                 return
@@ -675,46 +676,97 @@ class SnippetUtils(object):
     @SnippetDecorator('Plugin', ['Name', ['Contact']])
     def handleContact(self, *args, **kwds):
 
+        editor = kwds['editor']  # Need to get cell types?
+        cell_types = kwds["data"]
+        existing_contact_energies = kwds['contact_energies']
+        dlg = ContactPluginDlg(cell_types, editor, self.__ui)
+        if len(existing_contact_energies) > 0:
+            success = dlg.setContactEnergyMatrixInformation(existing_contact_energies)
+        ret = dlg.exec_()
         root_element = kwds['root_element']
 
-        contactMatrix = {}
+        contact_matrix = dlg.getContactEnergyMatrixInformation()
 
-        if root_element:
-            contactMatrix = self.extractElementListProperties(root_element,
+
+        # Do not use UI, just insert xml template:
+        if len(contact_matrix) < 1 or contact_matrix is None:
+            contactMatrix = {}
+
+            if root_element:
+                contactMatrix = self.extractElementListProperties(root_element,
                                                               ['Energy', 'Double', ['Type1', '', False, True],
                                                                ['Type2', '', False, True]])
 
-        kwds['contactMatrix'] = contactMatrix
+            #kwds['contactMatrix'] = contactMatrix
+            kwds['contact_energies'] = contactMatrix
 
-        kwds['NeighborOrder'] = self.getNeighborOrder(root_element)
+            # kwds['NeighborOrder'] = self.getNeighborOrder(root_element)
+            kwds['contact_neighbor_order'] = self.getNeighborOrder(root_element)
 
         # we use existing entries to rewrite contact matrix
+        else:
+            kwds['contact_energies'] = contact_matrix
+            kwds['contact_neighbor_order'] = dlg.getContactNeighborOrder()
 
         newXMLElement = self.generator.generateContactPlugin(*args, **kwds)
-
         newSnippet = newXMLElement.getCC3DXMLElementString()
+
+        if dlg.use_internal_contact_plugin:  # Add contact internal snippet
+            contact_internal_matrix = dlg.getContactInternalEnergyMatrixInformation()
+            kwds['internal_contact_energies'] = contact_internal_matrix
+            new_contact_internal_XMLElement = self.generator.generateContactInternalPlugin(*args, **kwds)
+            new_contact_internal_energies_snippet = new_contact_internal_XMLElement.getCC3DXMLElementString()
+            newSnippet += new_contact_internal_energies_snippet
 
         return newSnippet
 
     @SnippetDecorator('Plugin', ['Name', ['ContactInternal']])
     def handleContactInternal(self, *args, **kwds):
-
+        # The gui also allows user to update the Contact plugin with new energies
+        editor = kwds['editor']
+        cell_types = kwds["data"]
+        existing_contact_energies = kwds['contact_energies']
+        dlg = ContactPluginDlg(cell_types, editor, self.__ui)
+        if len(existing_contact_energies) > 0:
+            success = dlg.setContactEnergyMatrixInformation(existing_contact_energies)
+        dlg.setUseInternalContactPlugin(True)
+        ret = dlg.exec_()
         root_element = kwds['root_element']
 
-        contactMatrix = {}
+        internal_contact_matrix = dlg.getContactInternalEnergyMatrixInformation()
+        contact_matrix = []
+        contact_matrix = dlg.getContactEnergyMatrixInformation()
+        kwds['contact_energies'] = contact_matrix
+        kwds['contact_neighbor_order'] = dlg.getContactNeighborOrder()
+        kwds['internal_contact_energies'] = internal_contact_matrix
+        kwds['internal_contact_neighbor_order'] = dlg.getContactNeighborOrder()
+        contactMatrix = {}  # only needed if contact internal xml entries already exist.
+
+        # Contact plugin settings may already exist, so comment them out as user can change them while
+        # adding Contact Internal plugin settings
+
+                # AttributeError: 'SnippetDecorator' object has no attribute 'cc3dmlHelper':
+        contactBegin, contactEnd = self.cc3dmlHelper.findModuleLine(_editor=editor, _moduleType="Plugin",
+                                                                            _moduleName=["Name", "Contact"])
+        self.commentOutExistingCode(editor, contactBegin, contactEnd)
 
         if root_element:
             contactMatrix = self.extractElementListProperties(root_element,
                                                               ['Energy', 'Double', ['Type1', '', False, True],
                                                                ['Type2', '', False, True]])
 
-        kwds['contactMatrix'] = contactMatrix
-
-        kwds['NeighborOrder'] = self.getNeighborOrder(root_element)
+       # kwds['contactMatrix'] = contactMatrix
+       # kwds['NeighborOrder'] = self.getNeighborOrder(root_element)
 
         newXMLElement = self.generator.generateContactInternalPlugin(*args, **kwds)
 
+        new_contact_energies_snippet = ""
+        if contact_matrix is not None and len(contact_matrix) > 0:
+            new_contact_matrix_xml_element = self.generator.generateContactPlugin(*args, **kwds)
+            new_contact_energies_snippet = new_contact_matrix_xml_element.getCC3DXMLElementString()
+
         newSnippet = newXMLElement.getCC3DXMLElementString()
+        newSnippet += new_contact_energies_snippet
 
         return newSnippet
 
@@ -1089,6 +1141,8 @@ class SnippetUtils(object):
             newSnippet = newXMLElement.getCC3DXMLElementString()
 
         return newSnippet
+
+
 
     @SnippetDecorator('Potts', ['', []], 'Potts', 'CPM Configuration')
     def handlePottsCPMConfiguration(self, *args, **kwds):

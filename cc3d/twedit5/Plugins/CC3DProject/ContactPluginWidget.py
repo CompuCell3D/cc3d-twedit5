@@ -47,7 +47,7 @@ CONTACT_INTERNAL_URL = "https://compucell3dreferencemanual.readthedocs.io/en/lat
 
 class ContactPluginWidget(QWidget):
     """ Class that holds QT5 gui object for user entered values for Contact and Contact internal plugins. """
-
+# TODO: add flag to see if contact matrix values have changed from init vals.
     def __init__(self, parent=None, contact_internal_call_back=None):
         super().__init__(parent)
         self.ui = Ui_contactPluginWidget()
@@ -419,12 +419,41 @@ class ContactPluginWidget(QWidget):
             print("setInternalContactNeighborOrder(): val is not an int.")
             return False
 
-    def setContactEnergyMatrix(self, cell_cell_energies: list[tuple[str, str, str]]):
-        # TODO
-        pass
+    def setContactEnergyMatrix(self, cell_cell_energies: list[tuple[str, str, str]]) -> bool:
+        # each tuple is of form: (cell type, cell type, energy value) all as strs
+        if cell_cell_energies is None or len(cell_cell_energies) < 1:
+            return False
+        else:
+            if len(cell_cell_energies[0]) < 3:
+                return False
+            table_cell_font = QFont()
+            table_cell_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
+            c_c_e = 0  # keep track of cell-cell energies updated from list
+            for row in range(0, self.ui.contact_matrix_table.rowCount()):
+                for column in range(0, self.ui.contact_matrix_table.columnCount()):
+                    if len(cell_cell_energies) > c_c_e:
+                        curr_tuple = cell_cell_energies[c_c_e]
+                        cell1 = str(self.ui.contact_matrix_table.verticalHeaderItem(row).text())
+                        cell2 = str(self.ui.contact_matrix_table.horizontalHeaderItem(column).text())
+                        if (str(curr_tuple[0]) == cell1 or str(curr_tuple[0]) == cell2) and \
+                                (str(curr_tuple[1]) == cell1 or str(curr_tuple[1]) == cell2):
+                            if row <= column:
+                                c_c_e += 1
+                                cell_to_update: QTableWidgetItem = self.ui.contact_matrix_table.item(row, column)
+                                if cell_to_update:
+                                    cell_to_update.setText(str(curr_tuple[2]))
+                                else:  # create new table cell (QTableWidgetItem):
+                                    energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
+                                    energy_par_item.setFont(table_cell_font)
+                                    energy_par_item.setTextAlignment(Qt.AlignCenter)
+                                    tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
+                                    energy_par_item.setToolTip(tool_tip)
+                                    self.ui.contact_matrix_table.setItem(row, column, energy_par_item)
+                        # else:  # bottom of matrix assumed the same as top half, always filled with '-'
+            return True
 
     def getContactEnergyMatrix(self) -> list[tuple[str, str, str]]:
-
+        self.contact_cell_cell_energy
         # generate cell-cell contact energy list here:
         for row in range(self.ui.contact_matrix_table.rowCount()):
             for col in range(self.ui.contact_matrix_table.columnCount()):
