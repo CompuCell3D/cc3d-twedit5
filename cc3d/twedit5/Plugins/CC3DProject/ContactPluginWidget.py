@@ -47,7 +47,7 @@ CONTACT_INTERNAL_URL = "https://compucell3dreferencemanual.readthedocs.io/en/lat
 
 class ContactPluginWidget(QWidget):
     """ Class that holds QT5 gui object for user entered values for Contact and Contact internal plugins. """
-# TODO: add flag to see if contact matrix values have changed from init vals.
+
     def __init__(self, parent=None, contact_internal_call_back=None):
         super().__init__(parent)
         self.ui = Ui_contactPluginWidget()
@@ -87,6 +87,9 @@ class ContactPluginWidget(QWidget):
 
     @pyqtSlot(bool)
     def on_contact_reset_tablesPB_clicked(self):
+        """ Callback that resets Contact and Contact internal energies to default values.
+            Also unchecks cell mixing and cell sorting check boxes."""
+
         self.fillContactMatrixWithDefault()
         self.fillContactInternalMatrixWithDefault()
         self.ui.cells_mixCB.blockSignals(True)  # do not signal an event
@@ -100,6 +103,8 @@ class ContactPluginWidget(QWidget):
 
     @pyqtSlot(bool)
     def on_cells_mixCB_toggled(self, is_checked):
+        """ Sets contact energies to values where cells will mix."""
+
         if is_checked:
             self.ui.cells_sortCB.setChecked(False)
             self.setUpCellMixingContactEnergiesMatrix()
@@ -108,6 +113,8 @@ class ContactPluginWidget(QWidget):
 
     @pyqtSlot(bool)
     def on_cells_sortCB_toggled(self, is_checked):
+        """ Sets contact energies to values that will attempt to sort by cell type."""
+
         if is_checked:
             self.ui.cells_mixCB.setChecked(False)
             self.setUpSortedCellsContactEnergiesMatrix()
@@ -116,6 +123,8 @@ class ContactPluginWidget(QWidget):
 
     @pyqtSlot(bool)
     def on_contact_internalCB_toggled(self, is_checked):
+        """ Calls callback function that user wants contact internal plugin used or disabled. """
+
         if is_checked:
             self.initInternalContactMatrix(self.cell_types)
         else:
@@ -124,11 +133,15 @@ class ContactPluginWidget(QWidget):
             self.contact_internal_callBack(is_checked)
 
     def clearTableWidget(self, table_widget_to_be_cleared: QTableWidget):
+        """ Clears table of all rows """
+
         rows = table_widget_to_be_cleared.rowCount()
         for i in range(rows - 1, -1, -1):
             table_widget_to_be_cleared.removeRow(i)
 
     def clearMatrixTable(self, table_widget_to_be_cleared: QTableWidget):
+        """ Clears headers of table and then calls clearTableWidget() """
+
         try:
             self.clearTableWidget(table_widget_to_be_cleared)
             table_widget_to_be_cleared.clear()  # clear headers
@@ -338,6 +351,9 @@ class ContactPluginWidget(QWidget):
         self.ui.internal_contact_matrix_table.blockSignals(False)
 
     def setUpSortedCellsContactEnergiesMatrix(self):
+        """ Generates default contact energies for contact matrix that should lead to cell type sorting.
+            Updates the contact_matrix_table (QTableWidget) with new energy values."""
+
         table_cell_font = QFont()
         table_cell_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
         for row in range(0, self.ui.contact_matrix_table.rowCount()):
@@ -367,6 +383,9 @@ class ContactPluginWidget(QWidget):
                 # else:  # bottom of matrix assumed the same as top half, always filled with '-'
 
     def setUpCellMixingContactEnergiesMatrix(self):
+        """ Generates default contact energies for contact matrix that should lead to cell type mixing.
+                    Updates the contact_matrix_table (QTableWidget) with new values. """
+
         table_cell_font = QFont()
         table_cell_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
         for row in range(0, self.ui.contact_matrix_table.rowCount()):
@@ -492,11 +511,40 @@ class ContactPluginWidget(QWidget):
                     self.internal_contact_cell_cell_energy.append(new_cell_cell_bind)
         return self.internal_contact_cell_cell_energy
 
-    def setInternalContactEnergyMatrix(self, cell_cell_energies: list[tuple[str, str, str]]):
-        # TODO
-        pass
+    def setInternalContactEnergyMatrix(self, cell_cell_energies: list[tuple[str, str, str]]) -> bool:
+        # each tuple is of form: (cell type, cell type, energy value) all as strs
+        if cell_cell_energies is None or len(cell_cell_energies) < 1:
+            return False
+        else:
+            if len(cell_cell_energies[0]) < 3:
+                return False
+            table_cell_font = QFont()
+            table_cell_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
+            c_c_e = 0  # keep track of cell-cell energies updated from list
+            for row in range(0, self.ui.internal_contact_matrix_table.rowCount()):
+                for column in range(0, self.ui.internal_contact_matrix_table.columnCount()):
+                    if len(cell_cell_energies) > c_c_e:
+                        curr_tuple = cell_cell_energies[c_c_e]
+                        cell1 = str(self.ui.internal_contact_matrix_table.verticalHeaderItem(row).text())
+                        cell2 = str(self.ui.internal_contact_matrix_table.horizontalHeaderItem(column).text())
+                        if (str(curr_tuple[0]) == cell1 or str(curr_tuple[0]) == cell2) and \
+                                (str(curr_tuple[1]) == cell1 or str(curr_tuple[1]) == cell2):
+                            if row <= column:
+                                c_c_e += 1
+                                cell_to_update: QTableWidgetItem = self.ui.internal_contact_matrix_table.item(row, column)
+                                if cell_to_update:
+                                    cell_to_update.setText(str(curr_tuple[2]))
+                                else:  # create new table cell (QTableWidgetItem):
+                                    energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
+                                    energy_par_item.setFont(table_cell_font)
+                                    energy_par_item.setTextAlignment(Qt.AlignCenter)
+                                    tool_tip = CONTACT_ENERGY_TABLE_CELL_TOOLTIP
+                                    energy_par_item.setToolTip(tool_tip)
+                                    self.ui.internal_contact_matrix_table.setItem(row, column, energy_par_item)
+                        # else:  # bottom of matrix assumed the same as top half, always filled with '-'
+            return True
 
     def validateContactAndContactInteralEnergies(self) -> list[str]:
         issues: list[str] = []
-        # TODO
+        # TODO, needed?
         return issues

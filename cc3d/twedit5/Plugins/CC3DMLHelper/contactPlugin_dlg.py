@@ -30,21 +30,25 @@ class ContactPluginDlg(QDialog, ui_contactPlugin_dlg.Ui_contactPluginDlg):
             c_container_layout = c_container.layout()
         c_container_layout.addWidget(self.contact_form)
         c_container.setLayout(c_container_layout)
-
+        self.adjustSize()
         self.updateUi()
 
     def keyPressEvent(self, event):
+        # Currently not used.
         pass
         #    cell_type = str(self.cellTypeLE.text()).strip()
         #   if event.key() == Qt.Key_Return:
         # event.accept()
 
     def internalContactPluginInUseCallBack(self, use: bool):
-        # Callback for user checking the contact_form.on_contact_internalCB
+        """ Callback for user checking the contact_form.on_contact_internalCB """
+
         self.use_internal_contact_plugin = use
 
     def setUseInternalContactPlugin(self, use: bool):
-        # ContactPluginWidget will set up internal contact energy matrix based on cell types used in contact energy matrix.
+        """ ContactPluginWidget will set up internal contact energy matrix based on cell types used in contact
+            energy matrix. """
+
         self.use_internal_contact_plugin = use
         if use:
             self.contact_form.on_contact_internalCB_toggled(use)

@@ -412,7 +412,7 @@ class CC3DMLHelper(QObject,TweditPluginBase):
         if not cellTypeElement or cellTypeElement is None:
             return cellTypeDict
 
-        cellTypeElementVec = cellTypeElement.getElements("CellType")
+        #cellTypeElementVec = cellTypeElement.getElements("CellType")
 
         cellTypeElementVec = CC3DXMLListPy(cellTypeElement.getElements("CellType"))
 
@@ -463,7 +463,6 @@ class CC3DMLHelper(QObject,TweditPluginBase):
         if not contact_energyElement or contact_energyElement is None:
             return contact_energyiesList
 
-      #  contact_energyElementVec = contact_energyElement.getElements("Energy")
         contact_energyElementVec = CC3DXMLListPy(contact_energyElement.getElements("Energy"))
 
         for element in contact_energyElementVec:
@@ -478,9 +477,6 @@ class CC3DMLHelper(QObject,TweditPluginBase):
                 type2 = element.getAttribute('Type2')
 
             contact_energyiesList.append((type1, type2, contact_energy))
-
-       # print('contactEnergyElementVec=', contact_energyElementVec)
-       # print('contactEnergyElement=', dir(contact_energyElement))
 
         return contact_energyiesList
 
@@ -517,7 +513,7 @@ class CC3DMLHelper(QObject,TweditPluginBase):
         cellTypeData = self.getCellTypeData()
 
         contact_plugin_matrix = []
-        if "Contact" in _snippetName:
+        if _snippetName == "Contact" or _snippetName == "ContactInternal":
             contact_plugin_matrix = self.getContactMatrixData()
 
         gpd = self.getPottsData()
@@ -652,11 +648,8 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
                 beginLine = line
 
-                print('Module Line located: ', beginLine)
-
-                # return
-
-                # break
+                # print('Module Line located: ', beginLine)
+                break
 
         if beginLine >= 0:
 
