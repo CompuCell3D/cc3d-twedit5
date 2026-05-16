@@ -1,6 +1,22 @@
 Release Notes
 =============
 
+Version 4.9.0
+-------------
+**2026-05-16**
+
+New features:
+ - Improved Python helper snippet for opening files from generated code
+
+Improvements:
+ - Improved CMakeLists.txt generation for C++ plugin code generated using Twedit++
+ - Cleaned up package metadata handling
+
+Bug fixes:
+ - Fixed generated plugin CMakeLists.txt content for Twedit++ C++ plugin helper output
+ - Multiple minor cleanup and stability fixes
+
+
 Version 4.8.0
 -------------
 **2026-02-14**
@@ -103,4 +119,3 @@ Version 4.3.0
 
 New features:
  - Split code into 3 separate packages - cc3d-core, Player, Twedit
-
