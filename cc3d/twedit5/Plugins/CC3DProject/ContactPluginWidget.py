@@ -206,9 +206,6 @@ class ContactPluginWidget(QWidget):
             return False
 
     def checkEnergyValue(self, val: str) -> bool:
-        # can also be "-", need to check:
-        if val.strip() == "-":
-            return True
         if not self.checkIfNumber(val):
             return False
         else:
@@ -231,6 +228,9 @@ class ContactPluginWidget(QWidget):
         cell_1 = self.ui.internal_contact_matrix_table.horizontalHeaderItem(item.column()).text()
         cell_2 = self.ui.internal_contact_matrix_table.verticalHeaderItem(item.row()).text()
         val_str = item.text()
+        # can also be "-", need to check:
+        if val_str.strip() == "-":
+            return True
         if self.checkEnergyValue(val_str):
             return True
         else:

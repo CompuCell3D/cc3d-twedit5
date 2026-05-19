@@ -739,7 +739,7 @@ class SnippetUtils(object):
         kwds['contact_energies'] = contact_matrix
         kwds['contact_neighbor_order'] = dlg.getContactNeighborOrder()
         kwds['internal_contact_energies'] = internal_contact_matrix
-        kwds['internal_contact_neighbor_order'] = dlg.getContactNeighborOrder()
+        kwds['internal_contact_neighbor_order'] = dlg.getContactInternalNeighborOrder()
         contactMatrix = {}  # only needed if contact internal xml entries already exist.
 
         # Contact plugin settings may already exist, so comment them out as user can change them while

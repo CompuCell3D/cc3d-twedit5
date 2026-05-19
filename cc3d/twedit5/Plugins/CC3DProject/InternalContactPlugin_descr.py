@@ -4,6 +4,9 @@ FONT_SIZE = "style=\"font-size:11px\";"
 def get_internal_contact_plugin_description_html():
     int_contact_plugin_descr = f"""
      <p {FONT_SIZE}>
+     <a href="https://compucell3dreferencemanual.readthedocs.io/en/latest/compartments.html#compartmentalized-cells-contactinternal-plugin">Internal Contact plugin information at the CC3D Reference Manual website. </a>
+      </p>
+     <p {FONT_SIZE}>
         <b>Internal Contact Plugin:</b> controls how easily sub-cells within the same compartment
       adhere to each other. The Internal Contact Plugin can help control the shape and
       arrangement of a compartmentalized cell. The standard Contact Plugin is included to
@@ -86,9 +89,7 @@ def get_internal_contact_plugin_description_html():
         </table>
     
      </p>
-    <p {FONT_SIZE}>
-     <a href="https://compucell3dreferencemanual.readthedocs.io/en/latest/compartments.html#compartmentalized-cells-contactinternal-plugin">Internal Contact plugin information at the CC3D Reference Manual website. </a>
-      </p>
+   
     """
     return int_contact_plugin_descr
 

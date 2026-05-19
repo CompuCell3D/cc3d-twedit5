@@ -513,7 +513,7 @@ class CC3DMLHelper(QObject,TweditPluginBase):
         cellTypeData = self.getCellTypeData()
 
         contact_plugin_matrix = []
-        if _snippetName == "Contact" or _snippetName == "ContactInternal":
+        if _snippetName == "Plugins Contact" or _snippetName == "Plugins ContactInternal":
             contact_plugin_matrix = self.getContactMatrixData()
 
         gpd = self.getPottsData()
@@ -560,7 +560,7 @@ class CC3DMLHelper(QObject,TweditPluginBase):
             return
 
             # read freshly inserted cell type plugin
-        if "Contact" in _snippetName:
+        if _snippetName == "Plugins Contact" or _snippetName == "Plugins ContactInternal":
             self.handlerDict[snippetNameStr](data=cellTypeData, editor=editor, generalPropertiesData=gpd,
                                          contact_energies=contact_plugin_matrix,
                                          hiding_comments=hiding_comments)
