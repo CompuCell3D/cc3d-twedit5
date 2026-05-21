@@ -7,6 +7,7 @@ Version 4.9.0
 
 New features:
  - Improved Python helper snippet for opening files from generated code
+ - New Wizard dialog  for Contact and ContactInternal energy plugins
 
 Improvements:
  - Improved CMakeLists.txt generation for C++ plugin code generated using Twedit++
@@ -15,6 +16,7 @@ Improvements:
 Bug fixes:
  - Fixed generated plugin CMakeLists.txt content for Twedit++ C++ plugin helper output
  - Multiple minor cleanup and stability fixes
+ - fixed commenting out of XML snippets that have already one comment inside them
 
 
 Version 4.8.0
