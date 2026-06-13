@@ -100,7 +100,16 @@ class DevZoneDialog(QDialog, ui_dev_zone.Ui_DevZoneDlg):
             if ret == QMessageBox.No:
                 self.update_status(msg='Please select an <b>empty</b> build directory')
                 return False
-            shutil.rmtree(build_dir)
+            try:
+                shutil.rmtree(build_dir)
+            except OSError as e:
+                self.update_status(
+                    msg=f'Could not remove build directory <br><i>{build_dir}</i><br><br>'
+                        f'{e}<br><br>'
+                        f'Please close any programs using this directory, or select a different '
+                        f'empty build directory.'
+                )
+                return False
             build_dir.mkdir(exist_ok=True, parents=True)
         return True
 
