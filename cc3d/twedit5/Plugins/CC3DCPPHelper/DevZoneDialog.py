@@ -241,17 +241,22 @@ class Worker(QThread, QObject):
                       f'cd {build_dir}<br>' \
                       f'cmake --build . --config RelWithDebInfo --target install'
         elif sys.platform.startswith('darwin'):
-            msg = f'<br><br>Now open a terminal and do the following:<br><br>' \
-                  f'if you are on osx deactivate conda base env:<br>' \
-                  f'conda deactivate base<br>' \
-                  f'You also need to install SDK 10.10 (x86 processors) to /opt/MacOSX10.10.sdk<br>' \
-                  f'or SDK 11.3 (arm64 processors - M1, M2 etc...) to /opt/MacOSX11.3.sdk<br>' \
-                  f'get MacOSX10.10.sdk/MacOSX11.3.sdk ' \
-                  f'from https://github.com/phracker/MacOSX-SDKs only then you can run ' \
-                  f'compilation steps<br>' \
+            conda_activation_msg = self.conda_activation_msg(conda_specs=conda_specs)
+            msg = f'<br><br>Open a terminal and activate the same conda environment ' \
+                  f'used for configuration:<br><br>' \
+                  f'{conda_activation_msg}<br><br>' \
                   f'cd {build_dir}<br>' \
                   f'make<br>' \
-                  f'make install<br>'
+                  f'make install<br>' \
+                  f'<br>The macOS SDK must be installed before compilation. ' \
+                  f'This is a one-time setup task: install SDK 10.10 for x86 processors ' \
+                  f'to /opt/MacOSX10.10.sdk, or SDK 11.3 for arm64 processors ' \
+                  f'(M1, M2, etc.) to /opt/MacOSX11.3.sdk. ' \
+                  f'You can get MacOSX10.10.sdk or MacOSX11.3.sdk from ' \
+                  f'https://github.com/phracker/MacOSX-SDKs.<br>' \
+                  f'<br>If compilation still picks up the wrong conda environment, ' \
+                  f'use this fallback before activating the compile environment:<br>' \
+                  f'conda deactivate base<br>'
         else:
             msg = f'<br><br>Now open a terminal and do the following:<br><br>' \
                   f'cd {build_dir}<br>' \
