@@ -412,7 +412,7 @@ class CC3DMLHelper(QObject,TweditPluginBase):
         if not cellTypeElement or cellTypeElement is None:
             return cellTypeDict
 
-        cellTypeElementVec = cellTypeElement.getElements("CellType")
+        #cellTypeElementVec = cellTypeElement.getElements("CellType")
 
         cellTypeElementVec = CC3DXMLListPy(cellTypeElement.getElements("CellType"))
 
@@ -445,6 +445,42 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
         return cellTypeDict
 
+    def getContactMatrixData(self) -> list[tuple[str, str, str]]:
+        editor = self.__ui.getCurrentEditor()
+        cc3dXML2ObjConverter = XMLUtils.Xml2Obj()
+        try:
+            root_element = cc3dXML2ObjConverter.ParseString(str(editor.text()))
+        except xml.parsers.expat.ExpatError as e:
+            QMessageBox.critical(self.__ui, "Error Parsing CC3DML file", e.__str__())
+            print('GOT PARSING ERROR:', e)
+            return
+        root_element.getFirstElement('Plugin')
+        # print('root_element=', root_element)
+
+        contact_energyElement = root_element.getFirstElement("Plugin", d2mss({"Name": "Contact"}))
+        contact_energyiesList = []
+
+        if not contact_energyElement or contact_energyElement is None:
+            return contact_energyiesList
+
+        contact_energyElementVec = CC3DXMLListPy(contact_energyElement.getElements("Energy"))
+
+        for element in contact_energyElementVec:
+            type1 = "-"
+            type2 = "-"
+            contact_energy = element.getText()
+            if element.findAttribute('Type1'):
+                type1 = element.getAttribute('Type1')
+            else:
+                continue
+            if element.findAttribute('Type2'):
+                type2 = element.getAttribute('Type2')
+
+            contact_energyiesList.append((type1, type2, contact_energy))
+
+        return contact_energyiesList
+
+
     def __insertSnippet(self, _snippetName):
 
         # print "GOT REQUEST FOR SNIPPET ",_snippetName
@@ -475,6 +511,10 @@ class CC3DMLHelper(QObject,TweditPluginBase):
         # print 'root_element=',root_element
 
         cellTypeData = self.getCellTypeData()
+
+        contact_plugin_matrix = []
+        if _snippetName == "Plugins Contact" or _snippetName == "Plugins ContactInternal":
+            contact_plugin_matrix = self.getContactMatrixData()
 
         gpd = self.getPottsData()
 
@@ -519,10 +559,14 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
             return
 
-            # read freshly inseerted cell type plugin
-
-        self.handlerDict[snippetNameStr](data=cellTypeData, editor=editor, generalPropertiesData=gpd,
+            # read freshly inserted cell type plugin
+        if _snippetName == "Plugins Contact" or _snippetName == "Plugins ContactInternal":
+            self.handlerDict[snippetNameStr](data=cellTypeData, editor=editor, generalPropertiesData=gpd,
+                                         contact_energies=contact_plugin_matrix,
                                          hiding_comments=hiding_comments)
+        else:
+            self.handlerDict[snippetNameStr](data=cellTypeData, editor=editor, generalPropertiesData=gpd,
+                                            hiding_comments=hiding_comments)
 
         return
 
@@ -604,11 +648,8 @@ class CC3DMLHelper(QObject,TweditPluginBase):
 
                 beginLine = line
 
-                print('Module Line located: ', beginLine)
-
-                # return
-
-                # break
+                # print('Module Line located: ', beginLine)
+                break
 
         if beginLine >= 0:
 

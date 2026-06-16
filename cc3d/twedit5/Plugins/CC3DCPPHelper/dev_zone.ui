@@ -32,6 +32,13 @@
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QLabel" name="win_cmake_generator_label">
+         <property name="text">
+          <string>Windows CMake generator</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -47,6 +54,13 @@
         <widget class="QLineEdit" name="build_dir_LE">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify directory where intermediate compiler files for DeveloperZone shole be written to&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="win_cmake_generator_CB">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the CMake generator to use on Windows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>

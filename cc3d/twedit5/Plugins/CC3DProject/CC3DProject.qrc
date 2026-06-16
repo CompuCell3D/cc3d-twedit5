@@ -1,5 +1,5 @@
 <RCC>
-  <qresource>
+    <qresource>
     <file>icons/reset_32x32.png</file>
     <file>icons/reset_64x64.png</file>
     <file>icons/editor.png</file>
@@ -19,5 +19,6 @@
     <file>icons/player-icon.png</file>
     <file>icons/save-simulation.png</file>
     <file>icons/add-serializer.png</file>
+    <file>images/contact_internal_diagram.png</file>
   </qresource>
 </RCC>

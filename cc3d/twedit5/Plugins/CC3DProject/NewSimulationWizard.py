@@ -7,6 +7,7 @@ from PyQt5 import *
 import os
 import sys
 from . import ui_newsimulationwizard
+
 from collections import OrderedDict
 import cc3d
 from cc3d.core.XMLUtils import ElementCC3D
@@ -16,6 +17,7 @@ from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
 from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
 from cc3d.twedit5.Plugins.CC3DProject.AdhesionFlexCalcsPopupForm import AdhesionFlexCalcsPopupForm
+from cc3d.twedit5.Plugins.CC3DProject.ContactPluginWidget import ContactPluginWidget
 
 MAC = "qt_mac_set_native_menubar" in dir()
 # Wizard pages:
@@ -29,6 +31,7 @@ CELL_TYPE_SPEC_PAGE_NAME = "Cell Type Specification"
 CELL_PROP_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
 SECRETION_PAGE_NAME = "Secretion Plugin"  # deprecated for now
 CHEMOTAXIS_PAGE_NAME = "Chemotaxis Plugin"
+CONTACT_PAGE_NAME = "Contact and Internal contact Plugins"
 CONTACT_MULTICAD_PAGE_NAME = "ContactMultiCad Plugin"
 ADHESION_FLEX_PAGE_NAME = "AdhesionFlex Plugin"
 CONFIG_COMPLETE_PAGE_NAME = "Configuration Complete!"
@@ -109,7 +112,21 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.mainProjDir = ""
         self.simulationFilesDir = ""
         self.projectPath = ""
+
         self.setupUi(self)
+
+        # Contact plugin Wizard page generation:
+        self.contact_form = ContactPluginWidget(None, self.setUseInternalContactPlugin)
+
+        c_container = self.findChild(QWidget, "contact_container")
+        if c_container.layout() is None:
+            c_container_layout = QVBoxLayout()
+            c_container.setLayout(c_container_layout)
+        else:
+            c_container_layout = c_container.layout()
+        c_container_layout.addWidget(self.contact_form)
+        c_container.setLayout(c_container_layout)
+
         self.diff_secretion = None  # Holds Diffusion secretion info
 
         # This dictionary holds references to certain pages e.g. plugin configuration pages are inserted on demand
@@ -188,6 +205,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
                 elif self.adhesionFlexCHB.isChecked():
                     return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+                elif self.contactCHB.isChecked():
+                    return self.get_page_id_by_name(CONTACT_PAGE_NAME)
                 elif self.contactMultiCadCHB.isChecked():
                     return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
                 else:
@@ -197,6 +216,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
             elif self.adhesionFlexCHB.isChecked():
                 return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
             elif self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
@@ -204,11 +225,20 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         elif self.currentId() == self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME):
             if self.adhesionFlexCHB.isChecked():
                 return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
             elif self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
                 return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
+            if self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
+            elif self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
             if self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
@@ -281,6 +311,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 else:
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
+
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
+            pass
 
         # last page
         elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
@@ -406,7 +439,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                                                 "between cells. You may need to set Contact plugin energies to zero to "
                                                 "confirm Adhesion plugin behavior.", QMessageBox.Ok)
 
+    @pyqtSlot(bool)
+    def on_contactCHB_toggled(self, _flag):
+        if _flag:
+            self.volumeFlexCHB.setChecked(True)  # Typically want VolumeFlex plugin used (user can always uncheck this)
 
+    @pyqtSlot(bool)
+    def on_internalContactCB_toggled(self, _flag):
+        if _flag:
+            self.contactCHB.setChecked(_flag)  # Contact plugin required for InternalContact plugin
 
     @pyqtSlot(bool)  # signature of the signal emited by the button
     def on_growthCHB_toggled(self, _flag):
@@ -571,9 +612,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         # picking solver name
         solver_name = str(self.solverCB.currentText()).strip()
-
         solver_name_item = QTableWidgetItem(solver_name)
-
         self.fieldTable.setItem(rows, 1, solver_name_item)
 
         # reset cell type entry line
@@ -613,11 +652,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_secrAddOnContactPB_clicked(self):
-
         cell_type = str(self.secrOnContactCellTypeCB.currentText())
-
         current_text = str(self.secrOnContactLE.text())
-
         current_types = current_text.split(',')
 
         if current_text != "":
@@ -1066,6 +1102,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.setUpValidators()
 
+        # Compartments plugin deprecated, use Contact and Contact Internal plugins
+        self.compartmentCHB.setEnabled(False)
+
         # Multi cad plugin is being deprecated
         self.contactMultiCadCHB.setEnabled(False)
 
@@ -1081,6 +1120,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.removePage(self.get_page_id_by_name(SECRETION_PAGE_NAME))  # deprecated
         self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(CONTACT_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME))  # Do not use.
@@ -1241,6 +1281,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.clearTableWidget(self.binding_formula_molecular_pairTable)  # do not clear column headers
         except NameError:
             print(" -> self.binding_formula_molecular_pairTable does not exist.")
+
+    def setUseInternalContactPlugin(self, use: bool):
+        # ContactPluginWidget will set up internal contact energy matrix based on cell types used in contact energy matrix.
+        self.internalContactCB.setChecked(use)
+
 
     def updateAdhesionInteractionMatrix(self, molecule, insert_row):
         molecule_count = self.afTable.rowCount()
@@ -2154,6 +2199,18 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             # print(diffusion_vals_dict)
         return diffusion_vals_dict
 
+    def setUpContactPluginPage(self):
+        contact_page: QWizardPage = self.get_page_by_name(CONTACT_PAGE_NAME)
+        cell_types: list[str] = []
+        for row in range(self.cellTypeTable.rowCount()):
+            cell_type = str(self.cellTypeTable.item(row, 0).text())
+            cell_types.append(cell_type)
+        self.contact_form.initContactMatrix(cell_types)
+        if self.internalContactCB.isChecked():
+            self.contact_form.initInternalContactMatrix(cell_types)
+
+
+
     def setUpAdhesionFlexPage(self):
         adhesion_page: QWizardPage = self.get_page_by_name(ADHESION_FLEX_PAGE_NAME)
 
@@ -2386,6 +2443,13 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
 
+            if self.contactCHB.isChecked():  # internalContactCHB is checked in setUpContactPluginPage()
+                self.setPage(self.get_page_id_by_name(CONTACT_PAGE_NAME), self.get_page_by_name(CONTACT_PAGE_NAME))
+                self.setUpContactPluginPage()
+
+            else:
+                self.removePage(self.get_page_id_by_name(CONTACT_PAGE_NAME))
+
             if self.contactMultiCadCHB.isChecked():
                 self.setPage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME), self.get_page_by_name(CONTACT_MULTICAD_PAGE_NAME))
 
@@ -2524,6 +2588,18 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
                     self.diffusion_vals_dict[field_name]["Secretion"] = results
 
+        if self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
+            issues_found = self.validateContactPage()
+            if len(issues_found) > 0:
+                issues_str = ""
+                for issue in issues_found:
+                    if issues_str == "":
+                        issues_str = issue
+                    else:
+                        issues_str = issues_str + ", \n" + issue
+                QMessageBox.warning(self, "Missing information", issues_str, QMessageBox.Ok)
+                return False
+
         if self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
             issues_found = self.validateAdhesionFlexPage()
             if len(issues_found) > 0:
@@ -2538,6 +2614,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return False
             else:
                 print("Adhesion flex page get data section !!!!")
+
         return True
 
     def validateAdhesionFlexPage(self) -> list[str]:
@@ -2581,6 +2658,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         return issues
 
+    def validateContactPage(self) -> list[str]:
+        issues = self.contact_form.validateContactPage()
+
+        return issues
 
     def makeProjectDirectories(self, dir, name):
 
@@ -2944,6 +3025,10 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         kwds['afMoleculeDensities'] = self.af_mol_density
         kwds['afMolMolBindingFormulas'] = self.af_mol_mol_bind_formula
         kwds['afNeighborOrder'] = self.af_neighbor_order
+        kwds['contact_energies'] = self.contact_form.getContactEnergyMatrix()
+        kwds['contact_neighbor_order'] = self.contact_form.getContactNeighborOrder()
+        kwds['internal_contact_energies'] = self.contact_form.getInternalContactEnergyMatrix()
+        kwds['internal_contact_neighbor_order'] = self.contact_form.getInternalContactNeighborOrder()
         kwds['chemotaxisData'] = self.chemotaxisData
         kwds['pdeFieldData'] = self.pde_field_data
         kwds['secretionData'] = self.secretion_data
