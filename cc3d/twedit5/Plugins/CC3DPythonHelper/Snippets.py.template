@@ -3,12 +3,12 @@
 ----------  # @Submenu@ Open File In Simulation Output Directory
 file_obj, file_path = self.open_file_in_simulation_output_folder("<FILE_NAME>", mode='w')
 if file_obj is None:
-    return
+    raise OSError(f"Could not open file {file_path!r} in simulation output folder.")
 
 ----------  # @Submenu@ Open File In Parameter Scan Main  Output Directory
 file_obj, file_path = self.open_file_in_parameter_scan_main_output_folder("<FILE_NAME>", mode='w')
 if file_obj is None:
-    return
+    raise OSError(f"Could not open file {file_path!r} in parameter scan main output folder.")
 
 ----------  # @Submenu@ Open File In Simulation Output Directory (low-level)
 from pathlib import Path
@@ -652,7 +652,7 @@ surface_tension = cell.surfaceTension
 # READ ONLY ACCESS
 cluster_surface_tension = cell.clusterSurfaceTension
 
-===============  # @Menu@ Focal Point Placticity
+===============  # @Menu@ FPP - Focal Point Plasticity
 
 ----------  # @Submenu@ Link property: lambda
 # ld = link.getLambdaDistance()
@@ -695,19 +695,19 @@ link.setAnchorPoint([0.0, 1.0, 2.0])
 aid = link.getAnchorId()
 
 ----------  # @Submenu@ Link management: Create FPP Link
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Arguments are:
 # initiator: CellG, initiated: CellG, lambda_distance: float, target_distance: float, max_distance: float
 link = self.new_fpp_link(initiator, initiated, lambda_distance, target_distance, max_distance)
 
 ----------  # @Submenu@ Link management: Create FPP Internal Link (Within Cluster)
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Arguments are:
 # initiator: CellG, initiated: CellG, lambda_distance: float, target_distance: float, max_distance: float
 link = self.new_fpp_internal_link(initiator, initiated, lambda_distance, target_distance, max_distance)
 
 ----------  # @Submenu@ Link management: Create Anchor
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Arguments are cell: CellG lambda_distance: float, target_distance: float, max_distance: float
 # You can specify an anchor point with (float) keyword arguments "x", "y", "z" or with a (Point3D) keyword argument "pt"
 # link = self.new_fpp_anchor(cell, lambda_distance, target_distance, max_distance, x=0.0, y=1.0, z=2.0)
@@ -725,63 +725,63 @@ self.delete_fpp_link(link)
 self.remove_all_cell_fpp_links(cell)
 
 ----------  # @Submenu@ Link inventory: Get number of links
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 nl = self.get_number_of_fpp_links()
 
 ----------  # @Submenu@ Link inventory: Get number of internal links
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 nil = self.get_number_of_fpp_internal_links()
 
 ----------  # @Submenu@ Link inventory: Get number of anchors
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 na = self.get_number_of_fpp_anchors()
 
 ----------  # @Submenu@ Link inventory: Get link associated with two cells
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 link = self.get_fpp_link_by_cells(cell1, cell2)
 
 ----------  # @Submenu@ Link inventory: Get internal link associated with two cells
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 link = self.get_fpp_internal_link_by_cells(cell1, cell2)
 
 ----------  # @Submenu@ Link inventory: Get anchor assicated with a cell and anchor id
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 link = self.get_fpp_anchor_by_cell_and_id(cell, anchor_id)
 
 ----------  # @Submenu@ Link inventory: Get number of link junctions by type for a cell
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 njt = self.get_number_of_fpp_junctions_by_type(cell, attached_cell_type)
 
 ----------  # @Submenu@ Link inventory: Get number of internal link junctions by type for a cell
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 nijt = self.get_number_of_fpp_internal_junctions_by_type(cell, attached_cell_type)
 
 ----------  # @Submenu@ Visit: All links attached to a cell
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Visit all links attached to a cell
 for link in self.get_fpp_links_by_cell(cell):
     # operations here
 
 ----------  # @Submenu@ Visit: All internal links attached to a cell
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Visit all internal links attached to a cell in a cluster
 for link in self.get_fpp_internal_links_by_cell(cell):
     # operations here
 
 ----------  # @Submenu@ Visit: All anchors attached to a cell
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Visit all anchors attached to a cell
 for link in self.get_fpp_anchors_by_cell(cell):
     # operations here
 
 ----------  # @Submenu@ Visit: All cells attached to a cell by a link
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Visit all cells attached to a cell by a link
 for linked_cell in self.get_fpp_linked_cells(cell):
     # operations here
 
 ----------  # @Submenu@ Visit: All cells attached to a cell by an internal link
-# Make sure FocalPointPlacticity plugin is loaded
+# Make sure FocalPointPlasticity plugin is loaded
 # Visit all cells attached to a cell by an internal link
 for linked_cell in self.get_fpp_internal_linked_cells(cell):
     # operations here
