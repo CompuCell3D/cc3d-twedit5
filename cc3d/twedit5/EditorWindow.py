@@ -4327,6 +4327,16 @@ class EditorWindow(QMainWindow):
 
         pass
 
+    def configureAutoPairCharacters(self, _flag):
+
+        """
+
+            fcn handling AutoPairCharacters configuration change
+
+        """
+
+        self.configuration.setSetting("AutoPairCharacters", _flag)
+
     def configureAutocompletionThreshold(self, _value):
 
         """

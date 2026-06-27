@@ -152,6 +152,14 @@ class Ui_ConfigurationDlg(object):
 
         self.verticalLayout.addWidget(self.autocompletionCheckBox)
 
+        self.autoPairCharactersCheckBox = QtWidgets.QCheckBox(self.editingTab)
+
+        self.autoPairCharactersCheckBox.setChecked(True)
+
+        self.autoPairCharactersCheckBox.setObjectName("autoPairCharactersCheckBox")
+
+        self.verticalLayout.addWidget(self.autoPairCharactersCheckBox)
+
         self.quickTextDecodingCB = QtWidgets.QCheckBox(self.editingTab)
 
         self.quickTextDecodingCB.setChecked(True)
@@ -500,6 +508,10 @@ class Ui_ConfigurationDlg(object):
 
         self.autocompletionCheckBox.setText(_translate("ConfigurationDlg", "Enable Autocompletion"))
 
+        self.autoPairCharactersCheckBox.setToolTip(_translate("ConfigurationDlg", "Automatically insert matching closing quotes, parentheses, brackets, and braces"))
+
+        self.autoPairCharactersCheckBox.setText(_translate("ConfigurationDlg", "Auto-pair quotes and brackets"))
+
         self.quickTextDecodingCB.setToolTip(_translate("ConfigurationDlg", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -567,6 +579,5 @@ class Ui_ConfigurationDlg(object):
         self.okButton.setText(_translate("ConfigurationDlg", "OK"))
 
         self.cancelButton.setText(_translate("ConfigurationDlg", "Cancel"))
-
 
 

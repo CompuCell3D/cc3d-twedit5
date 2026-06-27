@@ -70,6 +70,8 @@ class Configuration:
 
         self.defaultConfigs["EnableAutocompletion"] = False
 
+        self.defaultConfigs["AutoPairCharacters"] = True
+
         self.defaultConfigs["EnableQuickTextDecoding"] = True
 
         self.defaultConfigs["AutocompletionThreshold"] = 2
@@ -166,7 +168,7 @@ class Configuration:
 
                     "RestoreTabsOnStartup", "EnableAutocompletion", "EnableQuickTextDecoding", "FRInSelection",
 
-                    "FRInAllSubfolders", "FRTransparencyEnable", "FROnLosingFocus", "FRAlways"]:
+                    "AutoPairCharacters", "FRInAllSubfolders", "FRTransparencyEnable", "FROnLosingFocus", "FRAlways"]:
 
             variant = self.settings.value(_key)
             if variant is not None:
@@ -263,7 +265,7 @@ class Configuration:
         if _key in ["UseTabSpaces", "DisplayLineNumbers", "FoldText", "TabGuidelines", "DisplayWhitespace",
                     "DisplayEOL", "WrapLines", "ShowWrapSymbol", "DontShowWrapLinesWarning",
                     "RestoreTabsOnStartup", "EnableAutocompletion", "EnableQuickTextDecoding", "FRInSelection",
-                    "FRInAllSubfolders", "FRTransparencyEnable", "FROnLosingFocus", "FRAlways"]:
+                    "AutoPairCharacters", "FRInAllSubfolders", "FRTransparencyEnable", "FROnLosingFocus", "FRAlways"]:
 
             self.settings.setValue(_key, QVariant(_value))
 

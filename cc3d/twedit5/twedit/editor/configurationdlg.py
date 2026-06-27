@@ -229,6 +229,9 @@ class ConfigurationDlg(QDialog, ui_configurationdlg.Ui_ConfigurationDlg):
         if configuration.setting("EnableAutocompletion") != self.autocompletionCheckBox.isChecked():
             configuration.updatedConfigs["EnableAutocompletion"] = self.autocompletionCheckBox.isChecked()
 
+        if configuration.setting("AutoPairCharacters") != self.autoPairCharactersCheckBox.isChecked():
+            configuration.updatedConfigs["AutoPairCharacters"] = self.autoPairCharactersCheckBox.isChecked()
+
         if configuration.setting("EnableQuickTextDecoding") != self.quickTextDecodingCB.isChecked():
             configuration.updatedConfigs["EnableQuickTextDecoding"] = self.quickTextDecodingCB.isChecked()
 
@@ -278,6 +281,8 @@ class ConfigurationDlg(QDialog, ui_configurationdlg.Ui_ConfigurationDlg):
         self.restoreTabsCheckBox.setChecked(configuration.setting("RestoreTabsOnStartup"))
 
         self.autocompletionCheckBox.setChecked(configuration.setting("EnableAutocompletion"))
+
+        self.autoPairCharactersCheckBox.setChecked(configuration.setting("AutoPairCharacters"))
 
         self.quickTextDecodingCB.setChecked(configuration.setting("EnableQuickTextDecoding"))
 
