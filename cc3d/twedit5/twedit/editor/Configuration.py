@@ -357,9 +357,9 @@ class Configuration:
 
             val = self.settings.value(key)
 
-            # if not val.isValid():
-
-            if not val:
+            # QSettings.value returns None only when the setting is missing.
+            # False, 0, empty lists, and empty strings are valid persisted values.
+            if val is None:
                 self.setSetting(key, self.defaultConfigs[key])
 
         # initialize self.modifiedKeyboardShortcuts
