@@ -232,6 +232,12 @@ class ConfigurationDlg(QDialog, ui_configurationdlg.Ui_ConfigurationDlg):
         if configuration.setting("AutoPairCharacters") != self.autoPairCharactersCheckBox.isChecked():
             configuration.updatedConfigs["AutoPairCharacters"] = self.autoPairCharactersCheckBox.isChecked()
 
+        if configuration.setting("EnableAutoSave") != self.autoSaveCheckBox.isChecked():
+            configuration.updatedConfigs["EnableAutoSave"] = self.autoSaveCheckBox.isChecked()
+
+        if configuration.setting("AutoSaveInterval") != self.autoSaveIntervalSpinBox.value():
+            configuration.updatedConfigs["AutoSaveInterval"] = self.autoSaveIntervalSpinBox.value()
+
         if configuration.setting("EnableQuickTextDecoding") != self.quickTextDecodingCB.isChecked():
             configuration.updatedConfigs["EnableQuickTextDecoding"] = self.quickTextDecodingCB.isChecked()
 
@@ -283,6 +289,10 @@ class ConfigurationDlg(QDialog, ui_configurationdlg.Ui_ConfigurationDlg):
         self.autocompletionCheckBox.setChecked(configuration.setting("EnableAutocompletion"))
 
         self.autoPairCharactersCheckBox.setChecked(configuration.setting("AutoPairCharacters"))
+
+        self.autoSaveCheckBox.setChecked(configuration.setting("EnableAutoSave"))
+
+        self.autoSaveIntervalSpinBox.setValue(configuration.setting("AutoSaveInterval"))
 
         self.quickTextDecodingCB.setChecked(configuration.setting("EnableQuickTextDecoding"))
 

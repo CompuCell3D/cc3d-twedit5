@@ -72,6 +72,10 @@ class Configuration:
 
         self.defaultConfigs["AutoPairCharacters"] = True
 
+        self.defaultConfigs["EnableAutoSave"] = True
+
+        self.defaultConfigs["AutoSaveInterval"] = 1000
+
         self.defaultConfigs["EnableQuickTextDecoding"] = True
 
         self.defaultConfigs["AutocompletionThreshold"] = 2
@@ -168,7 +172,8 @@ class Configuration:
 
                     "RestoreTabsOnStartup", "EnableAutocompletion", "EnableQuickTextDecoding", "FRInSelection",
 
-                    "AutoPairCharacters", "FRInAllSubfolders", "FRTransparencyEnable", "FROnLosingFocus", "FRAlways"]:
+                    "AutoPairCharacters", "EnableAutoSave", "FRInAllSubfolders", "FRTransparencyEnable",
+                    "FROnLosingFocus", "FRAlways"]:
 
             variant = self.settings.value(_key)
             if variant is not None:
@@ -191,7 +196,8 @@ class Configuration:
 
         elif _key in ["TabSpaces", "ZoomRange", "ZoomRangeFindDisplayWidget", "AutocompletionThreshold",
 
-                      "FRSyntaxIndex", "FROpacity", "CurrentTabIndex", "CurrentPanelIndex"]:  # integer values
+                      "AutoSaveInterval", "FRSyntaxIndex", "FROpacity", "CurrentTabIndex",
+                      "CurrentPanelIndex"]:  # integer values
 
             variant = self.settings.value(_key)
             if variant is not None:
@@ -265,13 +271,14 @@ class Configuration:
         if _key in ["UseTabSpaces", "DisplayLineNumbers", "FoldText", "TabGuidelines", "DisplayWhitespace",
                     "DisplayEOL", "WrapLines", "ShowWrapSymbol", "DontShowWrapLinesWarning",
                     "RestoreTabsOnStartup", "EnableAutocompletion", "EnableQuickTextDecoding", "FRInSelection",
-                    "AutoPairCharacters", "FRInAllSubfolders", "FRTransparencyEnable", "FROnLosingFocus", "FRAlways"]:
+                    "AutoPairCharacters", "EnableAutoSave", "FRInAllSubfolders", "FRTransparencyEnable",
+                    "FROnLosingFocus", "FRAlways"]:
 
             self.settings.setValue(_key, QVariant(_value))
 
         # integer values
         elif _key in ["TabSpaces", "ZoomRange", "ZoomRangeFindDisplayWidget", "AutocompletionThreshold",
-                      "FRSyntaxIndex", "FROpacity", "CurrentTabIndex", "CurrentPanelIndex"]:
+                      "AutoSaveInterval", "FRSyntaxIndex", "FROpacity", "CurrentTabIndex", "CurrentPanelIndex"]:
 
             self.settings.setValue(_key, _value)
 

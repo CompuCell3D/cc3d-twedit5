@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>530</width>
-    <height>446</height>
+    <width>590</width>
+    <height>503</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,20 +23,8 @@
       <attribute name="title">
        <string>Editing</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item row="0" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
           <layout class="QGridLayout" name="gridLayout">
@@ -188,6 +176,19 @@
             </widget>
            </item>
            <item>
+            <widget class="QCheckBox" name="autoSaveCheckBox">
+             <property name="toolTip">
+              <string>Automatically save modified named files after a short delay</string>
+             </property>
+             <property name="text">
+              <string>Enable Auto-save</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QCheckBox" name="quickTextDecodingCB">
              <property name="toolTip">
               <string>Enable text decoding based on the first 1000 characters. This can be less accurate than full text scanning, but documents open faster.</string>
@@ -201,9 +202,65 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
-             <item>
+            <layout class="QFormLayout" name="editingOptionsFormLayout">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+             </property>
+             <property name="labelAlignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="formAlignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="autoSaveIntervalLabel">
+               <property name="minimumSize">
+                <size>
+                 <width>210</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip">
+                <string>Delay in milliseconds after typing stops before autosave runs</string>
+               </property>
+               <property name="text">
+                <string>Auto-save timeout (ms)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QSpinBox" name="autoSaveIntervalSpinBox">
+               <property name="minimumSize">
+                <size>
+                 <width>90</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip">
+                <string>Delay in milliseconds after typing stops before autosave runs</string>
+               </property>
+               <property name="minimum">
+                <number>100</number>
+               </property>
+               <property name="maximum">
+                <number>600000</number>
+               </property>
+               <property name="singleStep">
+                <number>100</number>
+               </property>
+               <property name="value">
+                <number>1000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
               <widget class="QLabel" name="autocompletionLabel">
+               <property name="minimumSize">
+                <size>
+                 <width>210</width>
+                 <height>0</height>
+                </size>
+               </property>
                <property name="toolTip">
                 <string>Determines minimum number of characters after which autocompletion options will be displayed</string>
                </property>
@@ -212,8 +269,14 @@
                </property>
               </widget>
              </item>
-             <item>
+             <item row="1" column="1">
               <widget class="QSpinBox" name="autocompletionSpinBox">
+               <property name="minimumSize">
+                <size>
+                 <width>90</width>
+                 <height>0</height>
+                </size>
+               </property>
                <property name="minimum">
                 <number>1</number>
                </property>
@@ -228,20 +291,7 @@
          </item>
         </layout>
        </item>
-       <item row="0" column="1">
-        <spacer name="spacerItem1">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>204</width>
-           <height>291</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="1" column="0">
+       <item>
         <spacer name="spacerItem2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -250,6 +300,19 @@
           <size>
            <width>177</width>
            <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <spacer name="spacerItem1">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>204</width>
+           <height>291</height>
           </size>
          </property>
         </spacer>
@@ -342,19 +405,71 @@
                   </item>
                   <item>
                    <widget class="QComboBox" name="fontSizeComboBox">
-                    <item><property name="text"><string>8</string></property></item>
-                    <item><property name="text"><string>9</string></property></item>
-                    <item><property name="text"><string>10</string></property></item>
-                    <item><property name="text"><string>11</string></property></item>
-                    <item><property name="text"><string>12</string></property></item>
-                    <item><property name="text"><string>14</string></property></item>
-                    <item><property name="text"><string>16</string></property></item>
-                    <item><property name="text"><string>18</string></property></item>
-                    <item><property name="text"><string>20</string></property></item>
-                    <item><property name="text"><string>22</string></property></item>
-                    <item><property name="text"><string>24</string></property></item>
-                    <item><property name="text"><string>26</string></property></item>
-                    <item><property name="text"><string>28</string></property></item>
+                    <item>
+                     <property name="text">
+                      <string>8</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>9</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>10</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>11</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>12</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>14</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>16</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>18</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>20</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>22</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>24</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>26</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>28</string>
+                     </property>
+                    </item>
                    </widget>
                   </item>
                  </layout>
@@ -530,30 +645,112 @@
    <signal>toggled(bool)</signal>
    <receiver>spacesSpinBox</receiver>
    <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
   <connection>
    <sender>cancelButton</sender>
    <signal>clicked()</signal>
    <receiver>ConfigurationDlg</receiver>
    <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
   <connection>
    <sender>okButton</sender>
    <signal>clicked()</signal>
    <receiver>ConfigurationDlg</receiver>
    <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
   <connection>
    <sender>wrapLinesCheckBox</sender>
    <signal>toggled(bool)</signal>
    <receiver>showWrapSymbolCheckBox</receiver>
    <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
   <connection>
    <sender>autocompletionCheckBox</sender>
    <signal>toggled(bool)</signal>
    <receiver>autocompletionSpinBox</receiver>
    <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>autoSaveCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>autoSaveIntervalLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>autoSaveCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>autoSaveIntervalSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
  </connections>
 </ui>
