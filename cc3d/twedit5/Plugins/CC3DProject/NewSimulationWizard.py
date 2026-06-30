@@ -2701,6 +2701,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.generalPropertiesDict["MCS"] = self.mcsSB.value()
         self.generalPropertiesDict["LatticeType"] = str(self.latticeTypeCB.currentText())
         self.generalPropertiesDict["SimulationName"] = name
+        self.generalPropertiesDict["NumberOfProcessors"] = self.numberOfProcessorsSB.value()
+        self.generalPropertiesDict["DebugOutputFrequency"] = self.debugOutputFrequencySB.value()
+        self.generalPropertiesDict["NonParallelModule"] = "Potts" if self.nonParallelPottsCHB.isChecked() else None
         self.generalPropertiesDict["BoundaryConditions"] = OrderedDict()
         self.generalPropertiesDict["BoundaryConditions"]['x'] = self.xbcCB.currentText()
         self.generalPropertiesDict["BoundaryConditions"]['y'] = self.ybcCB.currentText()

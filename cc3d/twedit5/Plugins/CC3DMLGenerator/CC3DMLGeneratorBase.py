@@ -220,11 +220,12 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Basic properties simulation")
 
-        m_element.ElementCC3D("NumberOfProcessors", {}, 1)
+        m_element.ElementCC3D("NumberOfProcessors", {}, gpd.get("NumberOfProcessors", 1))
 
-        m_element.ElementCC3D("DebugOutputFrequency", {}, 10)
-        non_parallel_elem = m_element.ElementCC3D("NonParallelModule", {"Name": "Potts"})
-        non_parallel_elem.commentOutElement()
+        m_element.ElementCC3D("DebugOutputFrequency", {}, gpd.get("DebugOutputFrequency", 100))
+        non_parallel_module = gpd.get("NonParallelModule")
+        if non_parallel_module == "Potts":
+            m_element.ElementCC3D("NonParallelModule", {"Name": "Potts"})
         # assume format of 'display_name (unit_abrev)'
         time_labels: list[str] = gpd["mcsConversionUnits"].rstrip(")").split("(")
         display_name = time_labels[0].strip()
@@ -2499,4 +2500,3 @@ class CC3DMLGeneratorBase:
         xml_file = open(_fileName, 'w')
         xml_file.write('%s' % self.cc3d.CC3DXMLElement.getCC3DXMLElementString())
         xml_file.close()
-
