@@ -165,6 +165,7 @@ class ChangedTextHandler:
     def handleChangedText(self):
 
         self.editorWindow.updateTextSizeLabel()
+        self.editorWindow.scheduleAutoSave(self.editor)
 
     def handleModificationChanged(self, m):
 
@@ -454,6 +455,11 @@ class EditorWindow(QMainWindow):
         self.defaultEditor = None
 
         self.textChangedHandlers = {}
+        self.autoSavePendingEditors = set()
+        self.autoSaveTimer = QTimer(self)
+        self.autoSaveTimer.setSingleShot(True)
+        self.autoSaveTimer.setInterval(self.configuration.setting("AutoSaveInterval"))
+        self.autoSaveTimer.timeout.connect(self.performAutoSave)
 
         # class variables used in searches
 
@@ -1429,6 +1435,8 @@ class EditorWindow(QMainWindow):
         openFilesToRestore = [{}, {}]
 
         self.deactivateChangeSensing = True
+        self.autoSaveTimer.stop()
+        self.autoSavePendingEditors.clear()
 
         # determining index of the current tab
 
@@ -4327,6 +4335,40 @@ class EditorWindow(QMainWindow):
 
         pass
 
+    def configureAutoPairCharacters(self, _flag):
+
+        """
+
+            fcn handling AutoPairCharacters configuration change
+
+        """
+
+        self.configuration.setSetting("AutoPairCharacters", _flag)
+
+    def configureEnableAutoSave(self, _flag):
+
+        """
+
+            fcn handling EnableAutoSave configuration change
+
+        """
+
+        self.configuration.setSetting("EnableAutoSave", _flag)
+        if not _flag:
+            self.autoSaveTimer.stop()
+            self.autoSavePendingEditors.clear()
+
+    def configureAutoSaveInterval(self, _value):
+
+        """
+
+            fcn handling AutoSaveInterval configuration change
+
+        """
+
+        self.configuration.setSetting("AutoSaveInterval", _value)
+        self.autoSaveTimer.setInterval(_value)
+
     def configureAutocompletionThreshold(self, _value):
 
         """
@@ -5156,6 +5198,54 @@ class EditorWindow(QMainWindow):
         currentEditor.panel.setCurrentIndex(currentIndex)
 
         currentEditor.setFocus(Qt.MouseFocusReason)
+
+    def scheduleAutoSave(self, editor):
+
+        """
+
+            schedules autosave for a changed editor
+
+        """
+
+        if self.deactivateChangeSensing:
+            return
+
+        if not self.configuration.setting("EnableAutoSave"):
+            return
+
+        if editor is None or editor.isReadOnly():
+            return
+
+        file_name = self.getEditorFileName(editor)
+        if not file_name:
+            return
+
+        self.autoSavePendingEditors.add(editor)
+        self.autoSaveTimer.start(self.configuration.setting("AutoSaveInterval"))
+
+    def performAutoSave(self):
+
+        """
+
+            saves modified named documents after the configured autosave delay
+
+        """
+
+        if self.deactivateChangeSensing:
+            return
+
+        pending_editors = list(self.autoSavePendingEditors)
+        self.autoSavePendingEditors.clear()
+
+        for editor in pending_editors:
+            if editor is None or editor.isReadOnly() or not editor.isModified():
+                continue
+
+            file_name = self.getEditorFileName(editor)
+            if not file_name:
+                continue
+
+            self.saveFile(file_name, editor)
 
     def about(self):
 
