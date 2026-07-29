@@ -333,6 +333,96 @@ class %s(SteppableBasePy):
 
 ''' % (steppableName, self.steppableFrequency)
 
+    def generate_interactive_plot_steppable(self, plot_specs):
+        if not plot_specs:
+            return
+
+        steppable_name = "InteractivePlotSteppable"
+        if steppable_name not in self.generatedSteppableNames:
+            self.generatedSteppableNames.append(steppable_name)
+
+        self.steppableCodeLines += '''
+
+class {steppable_name}(SteppableBasePy):
+    def __init__(self, frequency={steppable_frequency}):
+        SteppableBasePy.__init__(self, frequency)
+        self.plot_windows = {{}}
+
+    def start(self):
+'''.format(steppable_name=steppable_name, steppable_frequency=self.steppableFrequency)
+
+        for plot_idx, plot_spec in enumerate(plot_specs):
+            plot_key = "plot_{idx}".format(idx=plot_idx)
+            self.steppableCodeLines += '''
+        self.plot_windows[{plot_key!r}] = self.add_new_plot_window(
+            title={title!r},
+            x_axis_title={x_axis_title!r},
+            y_axis_title={y_axis_title!r},
+            x_scale_type={x_scale!r},
+            y_scale_type={y_scale!r},
+            grid=True,
+            config_options={{'legend': {legend}}}
+        )
+'''.format(
+                plot_key=plot_key,
+                title=plot_spec.get("title", ""),
+                x_axis_title=plot_spec.get("x_axis_title", ""),
+                y_axis_title=plot_spec.get("y_axis_title", ""),
+                x_scale=plot_spec.get("x_scale", "linear"),
+                y_scale=plot_spec.get("y_scale", "linear"),
+                legend=bool(plot_spec.get("legend", True))
+            )
+
+            for series_idx, series_spec in enumerate(plot_spec.get("series", [])):
+                color = ["red", "green", "blue", "magenta", "cyan", "yellow"][series_idx % 6]
+                self.steppableCodeLines += '''
+        self.plot_windows[{plot_key!r}].add_plot({series_name!r}, style='Lines', color={color!r}, size=3)
+'''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), color=color)
+
+        self.steppableCodeLines += '''
+
+    def step(self, mcs):
+'''
+
+        for plot_idx, plot_spec in enumerate(plot_specs):
+            plot_key = "plot_{idx}".format(idx=plot_idx)
+            for series_idx, series_spec in enumerate(plot_spec.get("series", [])):
+                y_source = series_spec.get("y", "")
+                x_source = series_spec.get("x", "mcs")
+                x_expression = "max(mcs, 1)" if plot_spec.get("x_scale") == "log" else "mcs"
+                series_var = "y_value_{plot_idx}_{series_idx}".format(plot_idx=plot_idx, series_idx=series_idx)
+                source_type = series_spec.get("source_type", "custom")
+                if source_type == "cell_type":
+                    type_attr = "t_{cell_type}".format(cell_type=y_source)
+                    self.steppableCodeLines += '''
+        {series_var} = len(self.cell_list_by_type(getattr(self, {type_attr!r})))
+'''.format(series_var=series_var, type_attr=type_attr)
+                else:
+                    self.steppableCodeLines += '''
+        # TODO: Replace this placeholder with the value for user-defined series {y_source!r}.
+        {series_var} = 0.0
+'''.format(series_var=series_var, y_source=y_source)
+
+                if plot_spec.get("y_scale") == "log":
+                    self.steppableCodeLines += '''
+        if {series_var} > 0:
+            self.plot_windows[{plot_key!r}].add_data_point({series_name!r}, {x_expression}, {series_var})
+'''.format(
+                        plot_key=plot_key,
+                        series_name=series_spec.get("name", ""),
+                        x_expression=x_expression,
+                        series_var=series_var
+                    )
+                else:
+                    self.steppableCodeLines += '''
+        self.plot_windows[{plot_key!r}].add_data_point({series_name!r}, {x_expression}, {series_var})
+'''.format(
+                        plot_key=plot_key,
+                        series_name=series_spec.get("name", ""),
+                        x_expression=x_expression,
+                        series_var=series_var
+                    )
+
     def generate_constraint_initializer(self):
 
         if "ConstraintInitializerSteppable" not in self.generatedSteppableNames:

@@ -18,6 +18,7 @@ from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusi
 from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
 from cc3d.twedit5.Plugins.CC3DProject.AdhesionFlexCalcsPopupForm import AdhesionFlexCalcsPopupForm
 from cc3d.twedit5.Plugins.CC3DProject.ContactPluginWidget import ContactPluginWidget
+from cc3d.twedit5.Plugins.CC3DProject.InteractivePlotPage import InteractivePlotPage
 
 MAC = "qt_mac_set_native_menubar" in dir()
 # Wizard pages:
@@ -34,6 +35,7 @@ CHEMOTAXIS_PAGE_NAME = "Chemotaxis Plugin"
 CONTACT_PAGE_NAME = "Contact and Internal contact Plugins"
 CONTACT_MULTICAD_PAGE_NAME = "ContactMultiCad Plugin"
 ADHESION_FLEX_PAGE_NAME = "AdhesionFlex Plugin"
+INTERACTIVE_PLOTS_PAGE_NAME = "Interactive Plots"
 CONFIG_COMPLETE_PAGE_NAME = "Configuration Complete!"
 
 # Diffusion solvers:
@@ -115,6 +117,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.setupUi(self)
 
+        self.interactive_plot_page = InteractivePlotPage(self)
+        self.addPage(self.interactive_plot_page)
+
         # Contact plugin Wizard page generation:
         self.contact_form = ContactPluginWidget(None, self.setUseInternalContactPlugin)
 
@@ -156,6 +161,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.cellTypeData = {}
         self.field_ic_fileDict = {}  # field_name -> ic file name
         self.diffusion_vals_dict = {}
+        self.interactive_plots_data = []
         self.field_table_dict = {}  # {field -> QTableWidget}
         self.diff_solver_info_textBrowser.clear()
         self.diff_solver_info_textBrowser.setHtml(get_diffusion_solv_description_html())
@@ -210,7 +216,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 elif self.contactMultiCadCHB.isChecked():
                     return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
                 else:
-                    return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+                    return self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME):
             if self.chemotaxisCHB.isChecked():
                 return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
@@ -221,7 +227,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             elif self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
-                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+                return self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME):
             if self.adhesionFlexCHB.isChecked():
                 return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
@@ -230,19 +236,23 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             elif self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
-                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+                return self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
             if self.contactCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_PAGE_NAME)
             elif self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
-                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+                return self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
             if self.contactMultiCadCHB.isChecked():
                 return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
             else:
-                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+                return self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME):
+            return self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME):
+            return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
         elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
             return -1  # No more pages
 
@@ -2426,6 +2436,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.secrCellTypeCB.addItem(cell_type_tuple[0])
                 self.secrOnContactCellTypeCB.addItem(cell_type_tuple[0])
 
+            self.interactive_plot_page.set_cell_types([cell_type_tuple[0] for cell_type_tuple in self.typeTable])
+
             return True
 
         if self.currentId() == self.get_page_id_by_name(CELL_PROP_BEHAVIORS_PAGE_NAME):
@@ -2614,6 +2626,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return False
             else:
                 print("Adhesion flex page get data section !!!!")
+
+        if self.currentId() == self.get_page_id_by_name(INTERACTIVE_PLOTS_PAGE_NAME):
+            self.interactive_plots_data = self.interactive_plot_page.get_plot_data()
 
         return True
 
@@ -2947,6 +2962,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             except LookupError:
                 self.chemotaxisData[chem_field_name] = [chem_dict]
 
+        self.interactive_plots_data = self.interactive_plot_page.get_plot_data()
+
         # constructing Project XMl Element
         simulation_element = ElementCC3D("Simulation", {"version": cc3d.__version__})
         xml_generator = CC3DMLGeneratorBase(self.simulationFilesDir, name)
@@ -3007,6 +3024,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         if self.deathCHB.isChecked():
             pythonGenerator.generate_death_steppable()
+
+        pythonGenerator.generate_interactive_plot_steppable(self.interactive_plots_data)
 
         pythonGenerator.generate_vis_plot_steppables()
 
