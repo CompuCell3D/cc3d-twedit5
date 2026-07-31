@@ -353,6 +353,7 @@ class {steppable_name}(SteppableBasePy):
 
         for plot_idx, plot_spec in enumerate(plot_specs):
             plot_key = "plot_{idx}".format(idx=plot_idx)
+            plot_type = plot_spec.get("plot_type", "Line")
             self.steppableCodeLines += '''
         self.plot_windows[{plot_key!r}] = self.add_new_plot_window(
             title={title!r},
@@ -375,7 +376,12 @@ class {steppable_name}(SteppableBasePy):
 
             for series_idx, series_spec in enumerate(plot_spec.get("series", [])):
                 color = ["red", "green", "blue", "magenta", "cyan", "yellow"][series_idx % 6]
-                self.steppableCodeLines += '''
+                if plot_type == "Histogram":
+                    self.steppableCodeLines += '''
+        self.plot_windows[{plot_key!r}].add_histogram_plot({series_name!r}, color={color!r}, alpha=100)
+'''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), color=color)
+                else:
+                    self.steppableCodeLines += '''
         self.plot_windows[{plot_key!r}].add_plot({series_name!r}, style='Lines', color={color!r}, size=3)
 '''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), color=color)
 
@@ -386,12 +392,35 @@ class {steppable_name}(SteppableBasePy):
 
         for plot_idx, plot_spec in enumerate(plot_specs):
             plot_key = "plot_{idx}".format(idx=plot_idx)
+            plot_type = plot_spec.get("plot_type", "Line")
             for series_idx, series_spec in enumerate(plot_spec.get("series", [])):
                 y_source = series_spec.get("y", "")
                 x_source = series_spec.get("x", "mcs")
                 x_expression = "max(mcs, 1)" if plot_spec.get("x_scale") == "log" else "mcs"
                 series_var = "y_value_{plot_idx}_{series_idx}".format(plot_idx=plot_idx, series_idx=series_idx)
                 source_type = series_spec.get("source_type", "custom")
+                if plot_type == "Histogram":
+                    values_var = "hist_values_{plot_idx}_{series_idx}".format(plot_idx=plot_idx, series_idx=series_idx)
+                    if source_type == "cell_type":
+                        type_attr = "t_{cell_type}".format(cell_type=y_source)
+                        self.steppableCodeLines += '''
+        {values_var} = [cell.volume for cell in self.cell_list_by_type(getattr(self, {type_attr!r}))]
+'''.format(values_var=values_var, type_attr=type_attr)
+                    else:
+                        self.steppableCodeLines += '''
+        # TODO: Replace this placeholder with the value array for user-defined histogram series {y_source!r}.
+        {values_var} = []
+'''.format(values_var=values_var, y_source=y_source)
+                    self.steppableCodeLines += '''
+        if {values_var}:
+            self.plot_windows[{plot_key!r}].add_histogram(
+                plot_name={series_name!r},
+                value_array={values_var},
+                number_of_bins=10
+            )
+'''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), values_var=values_var)
+                    continue
+
                 if source_type == "cell_type":
                     type_attr = "t_{cell_type}".format(cell_type=y_source)
                     self.steppableCodeLines += '''

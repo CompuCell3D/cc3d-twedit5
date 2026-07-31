@@ -14,9 +14,13 @@ except ImportError:
 
 DEFAULT_X_AXIS_TITLE = "MonteCarlo Step (MCS)"
 DEFAULT_X_VALUE = "mcs"
+DEFAULT_HISTOGRAM_X_AXIS_TITLE = "Volume"
+DEFAULT_HISTOGRAM_X_VALUE = "cell.volume"
 OTHER_SERIES_LABEL = "Other..."
-CELL_TYPE_SERIES_PREFIX = "Cell count: "
+CELL_TYPE_SERIES_PREFIX = "Cell type: "
 DEFAULT_COLORS = ["red", "green", "blue", "magenta", "cyan", "yellow", "white"]
+LINE_PLOT_TYPE = "Line"
+HISTOGRAM_PLOT_TYPE = "Histogram"
 
 
 class InteractivePlotPage(QWizardPage):
@@ -57,6 +61,8 @@ class InteractivePlotPage(QWizardPage):
         self.ui.titleLE.textChanged.connect(self.on_plot_field_changed)
         self.ui.xAxisTitleLE.textChanged.connect(self.on_plot_field_changed)
         self.ui.yAxisTitleLE.textChanged.connect(self.on_plot_field_changed)
+        self.ui.linePlotRB.toggled.connect(self.on_plot_type_changed)
+        self.ui.histogramPlotRB.toggled.connect(self.on_plot_type_changed)
         self.ui.xLogScaleCB.toggled.connect(self.on_plot_field_changed)
         self.ui.yLogScaleCB.toggled.connect(self.on_plot_field_changed)
         self.ui.showLegendCB.toggled.connect(self.on_plot_field_changed)
@@ -80,6 +86,7 @@ class InteractivePlotPage(QWizardPage):
         plot_number = len(self.plots) + 1
         plot = {
             "title": f"Plot {plot_number}",
+            "plot_type": LINE_PLOT_TYPE,
             "x_axis_title": DEFAULT_X_AXIS_TITLE,
             "y_axis_title": "",
             "x_scale": "linear",
@@ -109,6 +116,8 @@ class InteractivePlotPage(QWizardPage):
         self.ui.titleLE.setText(plot["title"])
         self.ui.xAxisTitleLE.setText(plot["x_axis_title"])
         self.ui.yAxisTitleLE.setText(plot["y_axis_title"])
+        self.ui.linePlotRB.setChecked(plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE)
+        self.ui.histogramPlotRB.setChecked(plot.get("plot_type") == HISTOGRAM_PLOT_TYPE)
         self.ui.xLogScaleCB.setChecked(plot["x_scale"] == "log")
         self.ui.yLogScaleCB.setChecked(plot["y_scale"] == "log")
         self.ui.showLegendCB.setChecked(plot["legend"])
@@ -122,6 +131,7 @@ class InteractivePlotPage(QWizardPage):
             return
         title = self.ui.titleLE.text().strip() or f"Plot {self.current_plot_index + 1}"
         plot["title"] = title
+        plot["plot_type"] = HISTOGRAM_PLOT_TYPE if self.ui.histogramPlotRB.isChecked() else LINE_PLOT_TYPE
         plot["x_axis_title"] = self.ui.xAxisTitleLE.text().strip() or DEFAULT_X_AXIS_TITLE
         plot["y_axis_title"] = self.ui.yAxisTitleLE.text().strip()
         plot["x_scale"] = "log" if self.ui.xLogScaleCB.isChecked() else "linear"
@@ -169,10 +179,19 @@ class InteractivePlotPage(QWizardPage):
         self.preview_widget.setLogMode(x=plot["x_scale"] == "log", y=plot["y_scale"] == "log")
         x_values = list(range(1, 11)) if plot["x_scale"] == "log" else list(range(0, 10))
         for index, entry in enumerate(plot["series"] or [{"name": "series"}]):
-            y_values = [max(1, i + index + 1) if plot["y_scale"] == "log" else math.sin(i / 2.0) + index
-                        for i in x_values]
-            pen = pg.mkPen(DEFAULT_COLORS[index % len(DEFAULT_COLORS)], width=2)
-            self.preview_widget.plot(x_values, y_values, pen=pen, name=entry["name"])
+            color = DEFAULT_COLORS[index % len(DEFAULT_COLORS)]
+            if plot.get("plot_type", LINE_PLOT_TYPE) == HISTOGRAM_PLOT_TYPE:
+                heights = [max(1, 10 - abs(i - 5) + index) if plot["y_scale"] == "log" else 10 - abs(i - 5) + index
+                           for i in range(10)]
+                bar_x_values = list(range(1, 11)) if plot["x_scale"] == "log" else list(range(10))
+                self.preview_widget.addItem(
+                    pg.BarGraphItem(x=bar_x_values, height=heights, width=0.8, brush=color)
+                )
+            else:
+                y_values = [max(1, i + index + 1) if plot["y_scale"] == "log" else math.sin(i / 2.0) + index
+                            for i in x_values]
+                pen = pg.mkPen(color, width=2)
+                self.preview_widget.plot(x_values, y_values, pen=pen, name=entry["name"])
 
     @pyqtSlot()
     def on_add_plot_clicked(self):
@@ -203,6 +222,21 @@ class InteractivePlotPage(QWizardPage):
         self._save_current_plot()
         self._update_preview()
 
+    @pyqtSlot(bool)
+    def on_plot_type_changed(self, checked):
+        if self._loading_plot or not checked:
+            return
+        if self.ui.histogramPlotRB.isChecked():
+            self.ui.xAxisTitleLE.setText(DEFAULT_HISTOGRAM_X_AXIS_TITLE)
+            self.ui.xValueLE.setText(DEFAULT_HISTOGRAM_X_VALUE)
+        else:
+            if self.ui.xAxisTitleLE.text().strip() == DEFAULT_HISTOGRAM_X_AXIS_TITLE:
+                self.ui.xAxisTitleLE.setText(DEFAULT_X_AXIS_TITLE)
+            if self.ui.xValueLE.text().strip() == DEFAULT_HISTOGRAM_X_VALUE:
+                self.ui.xValueLE.setText(DEFAULT_X_VALUE)
+        self._save_current_plot()
+        self._update_preview()
+
     @pyqtSlot()
     def on_add_series_clicked(self):
         plot = self._current_plot()
@@ -226,7 +260,12 @@ class InteractivePlotPage(QWizardPage):
             y_value = data["name"]
             source_type = data["type"]
         x_value = self.ui.xValueLE.text().strip() or DEFAULT_X_VALUE
-        name = y_value if source_type == "custom" else f"{y_value} count"
+        if source_type == "custom":
+            name = y_value
+        elif self.ui.histogramPlotRB.isChecked():
+            name = f"{y_value} volume histogram"
+        else:
+            name = f"{y_value} count"
         entry = {"name": name, "x": x_value, "y": y_value, "source_type": source_type}
         plot["series"].append(entry)
         self._append_series_row(entry)
@@ -246,6 +285,7 @@ class InteractivePlotPage(QWizardPage):
         return [
             {
                 "title": plot["title"],
+                "plot_type": plot.get("plot_type", LINE_PLOT_TYPE),
                 "x_axis_title": plot["x_axis_title"],
                 "y_axis_title": plot["y_axis_title"],
                 "x_scale": plot["x_scale"],
