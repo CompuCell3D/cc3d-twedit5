@@ -43,6 +43,7 @@ from cc3d.twedit5.Plugins.CC3DPythonHelper.Configuration import Configuration
 import os.path
 import shutil
 from cc3d.twedit5.Plugins.PluginUtils.SnippetMenuParser import SnippetMenuParser
+from cc3d.twedit5.Plugins.PluginUtils.SnippetPreview import SnippetPreviewController
 from cc3d.twedit5.Plugins.CC3DPythonHelper.sbmlloaddlg import SBMLLoadDlg
 import re
 from typing import Optional, Type
@@ -257,6 +258,10 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         self.cppMenuAction = None
 
+        self.snippetDictionary = {}
+
+        self.snippetPreviewController = None
+
     def addSnippetDictionaryEntry(self, _snippetName, _snippetProperties):
 
         self.snippetDictionary[_snippetName] = _snippetProperties
@@ -279,6 +284,12 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         self.snippetMapper = QSignalMapper(self.__ui)
 
+        self.snippetPreviewController = SnippetPreviewController(
+            self.__ui,
+            self.snippetDictionary,
+            fallback_lexer_cls=QsciLexerPython
+        )
+
         self.snippetMapper.mapped[str].connect(self.__insertSnippet)
 
         self.__initMenus()
@@ -295,6 +306,9 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
         """
 
         self.snippetMapper.mapped[str].disconnect(self.__insertSnippet)
+
+        if self.snippetPreviewController is not None:
+            self.snippetPreviewController.hide()
 
         for actionName, action in self.actions.items():
 
@@ -318,6 +332,8 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         # inserting CC3D Project Menu as first item of the menu bar of twedit++
         self.cc3dPythonMenuAction = self.__ui.menuBar().insertMenu(self.__ui.fileMenu.menuAction(), self.cc3dPythonMenu)
+        if self.snippetPreviewController is not None:
+            self.cc3dPythonMenu.aboutToHide.connect(self.snippetPreviewController.hide)
 
     def __initActions(self):
 
@@ -328,7 +344,7 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
         """
 
         # lists begining of action names which will be grouped
-        self.snippetDictionary = {}
+        self.snippetDictionary.clear()
 
         psmp = SnippetMenuParser()
 
@@ -346,6 +362,8 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
             print('menuName=', menuName)
 
             group_menu = self.cc3dPythonMenu.addMenu(menuName)
+            if self.snippetPreviewController is not None:
+                self.snippetPreviewController.attach_menu(group_menu)
 
             for subMenuName, snippet_tuple in iter(sorted(submenuDict.items())):
                 action = group_menu.addAction(subMenuName)
@@ -356,6 +374,7 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
                 self.snippetDictionary[action_key] = snippet_tuple
 
                 self.actions[action_key] = action
+                action.setData(action_key)
 
                 action.triggered.connect(self.snippetMapper.map)
 
@@ -461,6 +480,9 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
         self.skipCommentsFlag = _flag
 
     def __insertSnippet(self, _snippetName):
+
+        if self.snippetPreviewController is not None:
+            self.snippetPreviewController.hide()
 
         snippet_name_str = str(_snippetName)
 

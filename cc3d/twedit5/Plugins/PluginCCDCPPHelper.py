@@ -24,6 +24,7 @@ from cc3d.twedit5.Plugins.TweditPluginBase import TweditPluginBase
 from cc3d.twedit5.twedit.utils.global_imports import *
 from cc3d.twedit5.Plugins.CC3DCPPHelper.Configuration import Configuration
 from cc3d.twedit5.Plugins.PluginUtils.SnippetMenuParser import SnippetMenuParser
+from cc3d.twedit5.Plugins.PluginUtils.SnippetPreview import SnippetPreviewController
 from cc3d.twedit5.Plugins.CC3DCPPHelper.CPPModuleGeneratorDialog import CPPModuleGeneratorDialog
 from cc3d.twedit5.Plugins.CC3DCPPHelper.DevZoneDialog import DevZoneDialog
 from cc3d.twedit5.Plugins.CC3DCPPHelper.CppTemplates import CppTemplates
@@ -98,6 +99,10 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         self.cppMenuAction = None
 
+        self.snippetDictionary = {}
+
+        self.snippetPreviewController = None
+
     def addSnippetDictionaryEntry(self, _snippetName, _snippetProperties):
 
         self.snippetDictionary[_snippetName] = _snippetProperties
@@ -119,6 +124,12 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         """
 
         self.snippetMapper = QSignalMapper(self.__ui)
+
+        self.snippetPreviewController = SnippetPreviewController(
+            self.__ui,
+            self.snippetDictionary,
+            fallback_lexer_cls=QsciLexerCPP
+        )
 
         # self.__ui.connect(self.snippetMapper, SIGNAL("mapped(const QString&)"), self.__insertSnippet)
 
@@ -143,6 +154,9 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         # self.__ui.disconnect(self.snippetMapper, SIGNAL("mapped(const QString&)"), self.__insertSnippet)
 
         self.snippetMapper.mapped[str].disconnect(self.__insertSnippet)
+
+        if self.snippetPreviewController is not None:
+            self.snippetPreviewController.hide()
 
         try:
 
@@ -183,6 +197,8 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         # inserting CC3D Project Menu as first item of the menu bar of twedit++
 
         self.cc3dcppMenuAction = self.__ui.menuBar().insertMenu(self.__ui.fileMenu.menuAction(), self.cc3dcppMenu)
+        if self.snippetPreviewController is not None:
+            self.cc3dcppMenu.aboutToHide.connect(self.snippetPreviewController.hide)
 
     def __initActions(self):
 
@@ -228,7 +244,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         self.cc3dcppMenu.addSeparator()
 
-        self.snippetDictionary = {}
+        self.snippetDictionary.clear()
 
         psmp = SnippetMenuParser()
 
@@ -245,6 +261,8 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
             print('menuName=', menuName)
 
             groupMenu = self.cc3dcppMenu.addMenu(menuName)
+            if self.snippetPreviewController is not None:
+                self.snippetPreviewController.attach_menu(groupMenu)
 
             for subMenuName, snippetText in iter(sorted(submenuDict.items())):
                 action = groupMenu.addAction(subMenuName)
@@ -254,6 +272,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
                 self.snippetDictionary[actionKey] = snippetText
 
                 self.actions[actionKey] = action
+                action.setData(actionKey)
 
                 # self.__ui.connect(action, SIGNAL("triggered()"), self.snippetMapper, SLOT("map()"))
 
@@ -1280,6 +1299,9 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
     def __insertSnippet(self, _snippetName):
 
         # print "GOT REQUEST FOR SNIPPET ",_snippetName
+
+        if self.snippetPreviewController is not None:
+            self.snippetPreviewController.hide()
 
         snippetNameStr = str(_snippetName)
 
