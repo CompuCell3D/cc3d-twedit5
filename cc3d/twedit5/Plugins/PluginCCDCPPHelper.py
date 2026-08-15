@@ -29,7 +29,7 @@ from cc3d.twedit5.Plugins.CC3DCPPHelper.CPPModuleGeneratorDialog import CPPModul
 from cc3d.twedit5.Plugins.CC3DCPPHelper.DevZoneDialog import DevZoneDialog
 from cc3d.twedit5.Plugins.CC3DCPPHelper.CppTemplates import CppTemplates
 from distutils.dir_util import mkpath
-import os.path
+from pathlib import Path
 import re
 
 error = ''
@@ -248,11 +248,9 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         psmp = SnippetMenuParser()
 
-        snippet_file_path = os.path.abspath(
+        snippet_file_path = Path(__file__).resolve().parent.joinpath('CC3DCPPHelper', 'Snippets.cpp.yaml')
 
-            os.path.join(os.path.dirname(__file__), 'CC3DCPPHelper/Snippets.cpp.yaml'))
-
-        psmp.readSnippetMenu(snippet_file_path)
+        psmp.readSnippetMenu(str(snippet_file_path))
 
         snippetMenuDict = psmp.getSnippetMenuDict()
 
@@ -307,50 +305,36 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         # first check if directory exists and if it is writeable. If the module directory  already exists ask if user wants to overwrite files there with new, generated ones
 
-        dirName = str(cmgd.moduleDirLE.text()).rstrip()
+        dir_path = Path(str(cmgd.moduleDirLE.text()).rstrip()).expanduser()
 
         codeLayout = 'maincode'
 
         if cmgd.developerZoneLayoutRB.isChecked():
             codeLayout = 'developerzone'
 
-        self.configuration.setSetting("RecentModuleDirectory", dirName)
+        self.configuration.setSetting("RecentModuleDirectory", str(dir_path))
 
         moduleCoreName = str(cmgd.moduleCoreNameLE.text()).rstrip()
 
         moduleCoreName = capitalFirst(moduleCoreName)
 
-        fullModuleDir = os.path.join(dirName, moduleCoreName)
-
-        fullModuleDir = os.path.abspath(fullModuleDir)
+        fullModuleDir = dir_path.joinpath(moduleCoreName).resolve()
 
         # SWIG files
 
-        coreDir = os.path.join(dirName, '../../')
+        coreDir = dir_path.joinpath('../../').resolve()
 
-        coreDir = os.path.abspath(coreDir)
-
-        swigFileDir = os.path.join(coreDir, 'pyinterface/CompuCellPython')
-
-        swigFileDir = os.path.abspath(swigFileDir)
+        swigFileDir = coreDir.joinpath('pyinterface', 'CompuCellPython').resolve()
 
         try:
 
-            mainSwigFile = os.path.join(swigFileDir, 'CompuCell.i')
+            mainSwigFile = swigFileDir.joinpath('CompuCell.i').resolve()
 
-            mainSwigFile = os.path.abspath(mainSwigFile)
+            declarationsSwigFile = swigFileDir.joinpath('CompuCellExtraDeclarations.i').resolve()
 
-            declarationsSwigFile = os.path.join(swigFileDir, 'CompuCellExtraDeclarations.i')
+            includesSwigFile = swigFileDir.joinpath('CompuCellExtraIncludes.i').resolve()
 
-            declarationsSwigFile = os.path.abspath(declarationsSwigFile)
-
-            includesSwigFile = os.path.join(swigFileDir, 'CompuCellExtraIncludes.i')
-
-            includesSwigFile = os.path.abspath(includesSwigFile)
-
-            cmakeSwigFile = os.path.join(swigFileDir, 'CMakeLists.txt')
-
-            cmakeSwigFile = os.path.abspath(cmakeSwigFile)
+            cmakeSwigFile = swigFileDir.joinpath('CMakeLists.txt').resolve()
 
             f = open(mainSwigFile, 'r+')
 
@@ -384,13 +368,13 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             try:
 
-                coreDir = os.path.abspath(dirName)
+                coreDir = dir_path.resolve()
 
-                swigFileDir = os.path.abspath(os.path.join(coreDir, 'pyinterface/CompuCellExtraModules'))
+                swigFileDir = coreDir.joinpath('pyinterface', 'CompuCellExtraModules').resolve()
 
-                mainSwigFile = os.path.join(swigFileDir, 'CompuCellExtraModules.i')
+                mainSwigFile = swigFileDir.joinpath('CompuCellExtraModules.i')
 
-                cmakeSwigFile = os.path.join(swigFileDir, 'CMakeLists.txt')
+                cmakeSwigFile = swigFileDir.joinpath('CMakeLists.txt')
 
             except IOError as e:
 
@@ -415,7 +399,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         if cmgd.extraAttribCB.isChecked():
             features['ExtraAttribute'] = True
 
-        if os.path.exists(fullModuleDir):
+        if fullModuleDir.exists():
 
             message = "Directory %s already exists. <br>Is it OK to overwrite content in this directory with generated files?" % fullModuleDir
 
@@ -432,7 +416,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             try:
 
-                self.makeDirectory(fullModuleDir)
+                self.makeDirectory(str(fullModuleDir))
 
             except IOError as e:
 
@@ -467,9 +451,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             cmakeText = self.cppTemplates.generateCMakeFile(features)
 
-            cmakeFileName = os.path.join(fullModuleDir, "CMakeLists.txt")
-
-            cmakeFileName = os.path.abspath(cmakeFileName)
+            cmakeFileName = fullModuleDir.joinpath("CMakeLists.txt").resolve()
 
             self.writeTextToFile(cmakeFileName, cmakeText)
 
@@ -481,9 +463,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             pluginHeaderText = self.cppTemplates.generatePluginHeaderFile(features)
 
-            pluginHeaderName = os.path.join(fullModuleDir, pluginHeaderName)
-
-            pluginHeaderName = os.path.abspath(pluginHeaderName)
+            pluginHeaderName = fullModuleDir.joinpath(pluginHeaderName).resolve()
 
             self.writeTextToFile(pluginHeaderName, pluginHeaderText)
 
@@ -495,9 +475,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             pluginProxyText = self.cppTemplates.generatePluginProxyFile(features)
 
-            pluginProxyName = os.path.join(fullModuleDir, pluginProxyName)
-
-            pluginProxyName = os.path.abspath(pluginProxyName)
+            pluginProxyName = fullModuleDir.joinpath(pluginProxyName).resolve()
 
             self.writeTextToFile(pluginProxyName, pluginProxyText)
 
@@ -509,9 +487,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             pluginDLLSpecifierText = self.cppTemplates.generatePluginDLLSpecifier(features)
 
-            pluginDLLSpecifierName = os.path.join(fullModuleDir, pluginDLLSpecifierName)
-
-            pluginDLLSpecifierName = os.path.abspath(pluginDLLSpecifierName)
+            pluginDLLSpecifierName = fullModuleDir.joinpath(pluginDLLSpecifierName).resolve()
 
             self.writeTextToFile(pluginDLLSpecifierName, pluginDLLSpecifierText)
 
@@ -523,9 +499,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             pluginImplementationText = self.cppTemplates.generatePluginImplementationFile(features)
 
-            pluginImplementationName = os.path.join(fullModuleDir, pluginImplementationName)
-
-            pluginImplementationName = os.path.abspath(pluginImplementationName)
+            pluginImplementationName = fullModuleDir.joinpath(pluginImplementationName).resolve()
 
             self.writeTextToFile(pluginImplementationName, pluginImplementationText)
 
@@ -541,9 +515,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                 pluginExtraAttributeText = self.cppTemplates.generatePluginExtraAttributeFile(features)
 
-                pluginExtraAttributeFileName = os.path.join(fullModuleDir, pluginExtraAttributeFileName)
-
-                pluginExtraAttributeFileName = os.path.abspath(pluginExtraAttributeFileName)
+                pluginExtraAttributeFileName = fullModuleDir.joinpath(pluginExtraAttributeFileName).resolve()
 
                 self.writeTextToFile(pluginExtraAttributeFileName, pluginExtraAttributeText)
 
@@ -557,9 +529,9 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             # adding entry in the    plugins/CMakeLists.txt
 
-            self.addModuleToModuleDirCMakeFile(moduleCoreName, dirName)
+            self.addModuleToModuleDirCMakeFile(moduleCoreName, dir_path)
 
-            # moduleMainCMakeFile=os.path.join(dirName,'CMakeLists.txt')
+            # moduleMainCMakeFile would point to the parent CMakeLists.txt file
 
             # generatedFileList.append(moduleMainCMakeFile)
 
@@ -591,9 +563,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             cmakeText = self.cppTemplates.generateCMakeFileSteppable(features)
 
-            cmakeFileName = os.path.join(fullModuleDir, "CMakeLists.txt")
-
-            cmakeFileName = os.path.abspath(cmakeFileName)
+            cmakeFileName = fullModuleDir.joinpath("CMakeLists.txt").resolve()
 
             self.writeTextToFile(cmakeFileName, cmakeText)
 
@@ -605,9 +575,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             steppableProxyText = self.cppTemplates.generateSteppableProxyFile(features)
 
-            steppableProxyName = os.path.join(fullModuleDir, steppableProxyName)
-
-            steppableProxyName = os.path.abspath(steppableProxyName)
+            steppableProxyName = fullModuleDir.joinpath(steppableProxyName).resolve()
 
             self.writeTextToFile(steppableProxyName, steppableProxyText)
 
@@ -619,9 +587,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             steppableDLLSpecifierText = self.cppTemplates.generateSteppableDLLSpecifier(features)
 
-            steppableDLLSpecifierName = os.path.join(fullModuleDir, steppableDLLSpecifierName)
-
-            steppableDLLSpecifierName = os.path.abspath(steppableDLLSpecifierName)
+            steppableDLLSpecifierName = fullModuleDir.joinpath(steppableDLLSpecifierName).resolve()
 
             self.writeTextToFile(steppableDLLSpecifierName, steppableDLLSpecifierText)
 
@@ -633,9 +599,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             steppableHeaderText = self.cppTemplates.generateSteppableHeaderFile(features)
 
-            steppableHeaderName = os.path.join(fullModuleDir, steppableHeaderName)
-
-            steppableHeaderName = os.path.abspath(steppableHeaderName)
+            steppableHeaderName = fullModuleDir.joinpath(steppableHeaderName).resolve()
 
             self.writeTextToFile(steppableHeaderName, steppableHeaderText)
 
@@ -647,9 +611,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             steppableImplementationText = self.cppTemplates.generateSteppableImplementationFile(features)
 
-            steppableImplementationName = os.path.join(fullModuleDir, steppableImplementationName)
-
-            steppableImplementationName = os.path.abspath(steppableImplementationName)
+            steppableImplementationName = fullModuleDir.joinpath(steppableImplementationName).resolve()
 
             self.writeTextToFile(steppableImplementationName, steppableImplementationText)
 
@@ -665,9 +627,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                 steppableExtraAttributeText = self.cppTemplates.generateSteppableExtraAttributeFile(features)
 
-                steppableExtraAttributeFileName = os.path.join(fullModuleDir, steppableExtraAttributeFileName)
-
-                steppableExtraAttributeFileName = os.path.abspath(steppableExtraAttributeFileName)
+                steppableExtraAttributeFileName = fullModuleDir.joinpath(steppableExtraAttributeFileName).resolve()
 
                 self.writeTextToFile(steppableExtraAttributeFileName, steppableExtraAttributeText)
 
@@ -681,7 +641,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             # adding entry in the  steppables/CMakeLists.txt
 
-            self.addModuleToModuleDirCMakeFile(moduleCoreName, dirName)
+            self.addModuleToModuleDirCMakeFile(moduleCoreName, dir_path)
 
             print('\n\n\n\n\n\n\n\n CODELAYOUT=', features['codeLayout'])
 
@@ -709,9 +669,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
     def addModuleToModuleDirCMakeFile(self, _moduleName, _moduleDir):
 
-        cmakePath = os.path.join(_moduleDir, 'CMakeLists.txt')
-
-        cmakePath = os.path.abspath(cmakePath)
+        cmakePath = Path(_moduleDir).joinpath('CMakeLists.txt').resolve()
 
         try:
 
@@ -729,7 +687,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         fileList = []
 
-        fileList.append(cmakePath)
+        fileList.append(str(cmakePath))
 
         self.__ui.loadFiles(fileList)
 
@@ -1264,7 +1222,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         try:
 
-            file = open(_fileName, "w")
+            file = open(str(_fileName), "w")
 
             file.write("%s" % _text)
 
@@ -1284,7 +1242,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         """
 
-        # dirName=os.path.dirname(fullDirPath)
+        # Parent directory handling is delegated to mkpath
 
         try:
 
@@ -1309,9 +1267,8 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         editor = self.__ui.getCurrentEditor()
 
-        curFileName = str(self.__ui.getCurrentDocumentName())
-
-        basename, ext = os.path.splitext(curFileName)
+        curFilePath = Path(str(self.__ui.getCurrentDocumentName()))
+        ext = curFilePath.suffix
 
         if ext != ".cpp" and ext != ".h" and ext != ".cxx" and ext != ".hpp":
             QMessageBox.warning(self.__ui, "C++/C++header files only", "C++ code snippets work only for C++ files")

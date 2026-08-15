@@ -40,7 +40,7 @@ from cc3d.doc.code_ref.developer.build import build as code_ref_build_dev
 from cc3d.twedit5.Plugins.TweditPluginBase import TweditPluginBase
 from cc3d.twedit5.twedit.utils.global_imports import *
 from cc3d.twedit5.Plugins.CC3DPythonHelper.Configuration import Configuration
-import os.path
+from pathlib import Path
 import shutil
 from cc3d.twedit5.Plugins.PluginUtils.SnippetMenuParser import SnippetMenuParser
 from cc3d.twedit5.Plugins.PluginUtils.SnippetPreview import SnippetPreviewController
@@ -48,8 +48,8 @@ from cc3d.twedit5.Plugins.CC3DPythonHelper.sbmlloaddlg import SBMLLoadDlg
 import re
 from typing import Optional, Type
 
-html_man_filename_user = os.path.join(code_ref_build_user.man_build_dir, "html", "index.html")
-html_man_filename_dev = os.path.join(code_ref_build_dev.man_build_dir, "html", "index.html")
+html_man_filename_user = str(Path(code_ref_build_user.man_build_dir).joinpath("html", "index.html"))
+html_man_filename_dev = str(Path(code_ref_build_dev.man_build_dir).joinpath("html", "index.html"))
 
 error = ''
 
@@ -59,7 +59,7 @@ class CC3DAPIDocViewerWidget(QWebView):
 
     def check_build(self) -> None:
         """Checks for built documentation and builds if necessary"""
-        if not os.path.isfile(path=self.html_man_filename_root):
+        if not Path(self.html_man_filename_root).is_file():
             self.build_docs()
 
     def load_local(self):
@@ -116,7 +116,7 @@ class CC3DAPIDocDockWidget(QDockWidget):
         if not self._loaded:
             self._loaded = True
 
-            if not os.path.isfile(self.viewer_widget.html_man_filename_root):
+            if not Path(self.viewer_widget.html_man_filename_root).is_file():
                 # No docs found: build on-demand and load afterward
                 self.setWindowTitle(self.window_title + ' - Building docs...')
                 t = CC3DAPIDocBuilder(dock=self)
@@ -348,10 +348,9 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         psmp = SnippetMenuParser()
 
-        snippet_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                         'CC3DPythonHelper/Snippets.python.yaml'))
+        snippet_file_path = Path(__file__).resolve().parent.joinpath('CC3DPythonHelper', 'Snippets.python.yaml')
 
-        psmp.readSnippetMenu(snippet_file_path)
+        psmp.readSnippetMenu(str(snippet_file_path))
 
         snippet_menu_dict = psmp.getSnippetMenuDict()
 
@@ -492,9 +491,8 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         editor = self.__ui.getCurrentEditor()
 
-        cur_file_name = str(self.__ui.getCurrentDocumentName())
-
-        base_name, ext = os.path.splitext(cur_file_name)
+        cur_file_path = Path(str(self.__ui.getCurrentDocumentName()))
+        ext = cur_file_path.suffix
 
         if ext != ".py" and ext != ".pyw":
             QMessageBox.warning(self.__ui, "Python files only", "Python code snippets work only for Python files")
@@ -521,13 +519,13 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
             print('LOADING MODEL')
 
-            current_path = os.path.abspath(os.path.dirname(cur_file_name))
+            current_path = cur_file_path.resolve().parent
 
             print('currentPath=', current_path)
 
             dlg = SBMLLoadDlg(self)
 
-            dlg.setCurrentPath(current_path)
+            dlg.setCurrentPath(str(current_path))
 
             model_name = 'MODEL_NAME'
 
@@ -543,15 +541,15 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
                 model_nickname = str(dlg.modelNicknameLE.text())
 
-                model_file_name = os.path.abspath(str(dlg.fileNameLE.text()))
+                model_file_path = Path(str(dlg.fileNameLE.text())).resolve()
 
-                model_dir = os.path.abspath(os.path.dirname(model_file_name))
+                model_dir = model_file_path.parent
 
-                model_path = 'Simulation/' + os.path.basename(model_file_name)
+                model_path = str(Path('Simulation').joinpath(model_file_path.name))
 
                 if model_dir != current_path:  # copy sbml file into simulation directory
 
-                    shutil.copy(model_file_name, current_path)
+                    shutil.copy(str(model_file_path), str(current_path))
 
             text = """
 
