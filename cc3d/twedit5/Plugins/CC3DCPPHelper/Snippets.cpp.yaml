@@ -1,0 +1,456 @@
+version: 1
+menus:
+- name: Setup
+  description: Common C++ setup code for obtaining simulator, Potts, XML, and registration pointers.
+  snippets:
+  - name: Potts / Cell Field / Dim
+    description: Shows how to cache the Potts object, cell field, and lattice dimensions in C++.
+    suggested_indent: -1
+    code: |+
+      Potts3D *potts = simulator->getPotts();
+      WatchableField3D<CellG *> *cellFieldG = (WatchableField3D<CellG *> *)potts->getCellFieldG();
+      if (!cellFieldG) {
+          throw CC3DException("Cell field cannot be null");
+      }
+      Dim3D fieldDim = cellFieldG->getDim();
+
+  - name: Common Cached Pointers
+    description: Shows how to cache the most commonly reused simulator pointers in a C++ plugin or steppable.
+    suggested_indent: -1
+    code: |+
+      potts = simulator->getPotts();
+      cellFieldG = (WatchableField3D<CellG *> *)potts->getCellFieldG();
+      cellInventoryPtr = &potts->getCellInventory();
+      boundaryStrategy = BoundaryStrategy::getInstance();
+      automaton = potts->getAutomaton();
+      xmlData = _xmlData;
+
+  - name: Neighbor Order Setup
+    description: Shows how to compute and cache the maximum direct-neighbor index from a neighbor order.
+    suggested_indent: -1
+    code: |+
+      boundaryStrategy = BoundaryStrategy::getInstance();
+      unsigned int maxNeighborIndex = boundaryStrategy->getMaxNeighborIndexFromNeighborOrder(NEIGHBOR_ORDER);
+
+  - name: Store XML And Register Steerable
+    description: Shows how to keep the XML element pointer and register the object for steering updates.
+    suggested_indent: -1
+    code: |+
+      xmlData = _xmlData;
+      simulator->registerSteerableObject(this);
+
+  - name: Preload Plugin
+    description: Shows how to preload another plugin and initialize it only if it is not already registered.
+    suggested_indent: -1
+    code: |+
+      // This code is usually called from init
+      bool pluginAlreadyRegisteredFlag;
+      Plugin *plugin = Simulator::pluginManager.get("PLUGIN_NAME", &pluginAlreadyRegisteredFlag);
+      if (!pluginAlreadyRegisteredFlag)
+          plugin->init(simulator);
+
+  - name: Register Energy Function
+    description: Shows how to register a custom energy function with the Potts object.
+    suggested_indent: -1
+    code: |+
+      potts->registerEnergyFunctionWithName(this, toString());
+
+  - name: Register Cell Change Watcher
+    description: Shows how to register a cell change watcher with the Potts object.
+    suggested_indent: -1
+    code: |+
+      potts->registerCellGChangeWatcher(this);
+
+  - name: Register Fixed Steppers
+    description: Shows how to register a fixed stepper with the Potts object.
+    suggested_indent: -1
+    code: |+
+      potts->registerStepper(this);
+
+- name: Visit
+  description: Iteration patterns for walking cells, neighbors, clusters, or lattice regions in C++.
+  snippets:
+  - name: All Cells
+    description: Shows an iteration pattern for all Cells.
+    suggested_indent: -1
+    code: |+
+      CellInventory::cellInventoryIterator cInvItr;
+      CellG *cell = 0;
+
+      for (cInvItr = cellInventoryPtr->cellInventoryBegin(); cInvItr != cellInventoryPtr->cellInventoryEnd(); ++cInvItr) {
+          cell = cellInventoryPtr->getCell(cInvItr);
+          // Put your code here
+          cerr << "cell id=" << cell->id << endl;
+      }
+
+  - name: Pixel Neighbors
+    description: Shows an iteration pattern for pixel Neighbors.
+    suggested_indent: -1
+    code: |+
+      Neighbor neighbor;
+      CellG *nCell = 0;
+      Point3D pt;
+
+      for (unsigned int nIdx = 0; nIdx <= maxNeighborIndex; ++nIdx) {
+          neighbor = boundaryStrategy->getNeighborDirect(const_cast<Point3D &>(pt), nIdx);
+          if (!neighbor.distance) {
+              // if distance is 0 then the neighbor returned is invalid
+              continue;
+          }
+          nCell = cellFieldG->get(neighbor.pt);
+
+          if (nCell) {
+              cerr << "neighbor pixel cell id=" << nCell->id << endl;
+          }
+      }
+
+  - name: Cell Pixels Matching Cell
+    description: Shows an iteration pattern for cell Pixels Matching Cell.
+    suggested_indent: -1
+    code: |+
+      Neighbor neighbor;
+      CellG *nCell = 0;
+      Point3D pt;
+
+      for (unsigned int nIdx = 0; nIdx <= maxNeighborIndex; ++nIdx) {
+          neighbor = boundaryStrategy->getNeighborDirect(const_cast<Point3D &>(pt), nIdx);
+          if (!neighbor.distance) {
+              continue;
+          }
+          nCell = cellFieldG->get(neighbor.pt);
+          if (nCell != cell) {
+              continue;
+          }
+
+          // Put your code here
+      }
+
+  - name: Compartments Of A Cluster
+    description: Shows an iteration pattern for compartments Of A Cluster.
+    suggested_indent: -1
+    code: |+
+      CC3DCellList compartments = potts->getCellInventory().getClusterInventory().getClusterCells(CELL->clusterId);
+      for (int i = 0; i < compartments.size(); ++i) {
+          cerr << "compartment id=" << compartments[i]->id << endl;
+      }
+
+  - name: Entire Lattice
+    description: Shows an iteration pattern for entire Lattice.
+    suggested_indent: -1
+    code: |+
+      Point3D pt;
+      for (pt.x = 0; pt.x < fieldDim.x; ++pt.x)
+          for (pt.y = 0; pt.y < fieldDim.y; ++pt.y)
+              for (pt.z = 0; pt.z < fieldDim.z; ++pt.z) {
+                  CellG *cell = cellFieldG->get(pt);
+                  // Put your code here
+              }
+
+- name: Cell Operations
+  description: Common C++ code for reading, creating, or modifying cells and cell types.
+  snippets:
+  - name: Get Cell At Pixel
+    description: Shows how to get Cell At Pixel.
+    suggested_indent: -1
+    code: |+
+      Point3D pt(X, Y, Z);
+      CellG *cell = cellFieldG->get(pt);
+
+  - name: Get Type Id From Name
+    description: Shows how to get Type Id From Name.
+    suggested_indent: -1
+    code: |+
+      Automaton *automaton = potts->getAutomaton();
+      unsigned char typeId = automaton->getTypeId("CELL_TYPE_NAME");
+
+  - name: Set Cell Type
+    description: Shows how to set Cell Type.
+    suggested_indent: -1
+    code: |+
+      Automaton *automaton = potts->getAutomaton();
+      cell->type = automaton->getTypeId("CELL_TYPE_NAME");
+
+  - name: Create Cell At Pixel
+    description: Shows how to create Cell At Pixel.
+    suggested_indent: -1
+    code: |+
+      Point3D pt(X, Y, Z);
+      CellG *cell = potts->createCellG(pt);
+
+  - name: Create Cell With Explicit Spin
+    description: Shows how to create Cell With Explicit Spin.
+    suggested_indent: -1
+    code: |+
+      Point3D pt(X, Y, Z);
+      CellG *cell = potts->createCellGSpecifiedIds(pt, SPIN);
+
+  - name: Create Cell With Spin And Cluster
+    description: Shows how to create Cell With Spin And Cluster.
+    suggested_indent: -1
+    code: |+
+      Point3D pt(X, Y, Z);
+      CellG *cell = potts->createCellGSpecifiedIds(pt, SPIN, CLUSTER_ID);
+
+  - name: Assign Type After Creation
+    description: Shows how to assign Type After Creation.
+    suggested_indent: -1
+    code: |+
+      Point3D pt(X, Y, Z);
+      CellG *cell = potts->createCellG(pt);
+      cell->type = potts->getAutomaton()->getTypeId("CELL_TYPE_NAME");
+
+  - name: Fill Box With Cell
+    description: Shows how to fill Box With Cell.
+    suggested_indent: -1
+    code: |+
+      Point3D seedPt(X0, Y0, Z0);
+      Point3D fillPt;
+      CellG *cell = potts->createCellG(seedPt);
+
+      for (fillPt.z = Z0; fillPt.z <= Z1; ++fillPt.z)
+          for (fillPt.y = Y0; fillPt.y <= Y1; ++fillPt.y)
+              for (fillPt.x = X0; fillPt.x <= X1; ++fillPt.x) {
+                  cellFieldG->set(fillPt, cell);
+              }
+
+  - name: Create Cell And Run Steppers
+    description: Shows how to create Cell And Run Steppers.
+    suggested_indent: -1
+    code: |+
+      Point3D pt(X, Y, Z);
+      CellG *cell = potts->createCellG(pt);
+      potts->runSteppers(); // useful when manual field updates should trigger VolumeTracker and related bookkeeping
+
+  - name: Set Pixel And Run Steppers
+    description: Shows how to set Pixel And Run Steppers.
+    suggested_indent: -1
+    code: |+
+      Point3D pt(X, Y, Z);
+      cellFieldG->set(pt, cell);
+      potts->runSteppers(); // useful after direct field writes outside copy attempts
+
+- name: Cell Attributes
+  description: Common C++ code for reading or writing custom cell attributes and extra data.
+  snippets:
+  - name: Get Extra Attribute
+    description: Shows how to get Extra Attribute.
+    suggested_indent: -1
+    code: |+
+      ACCESSOR_NAME.get(CELL->extraAttribPtr)->ATTRIBUTE_COMPONENT
+
+  - name: Set Extra Attribute
+    description: Shows how to set Extra Attribute.
+    suggested_indent: -1
+    code: |+
+      ACCESSOR_NAME.get(CELL->extraAttribPtr)->ATTRIBUTE_COMPONENT = VALUE;
+
+  - name: Register Extra Attribute Class
+    description: Shows how to register Extra Attribute Class.
+    suggested_indent: -1
+    code: |+
+      potts->getCellFactoryGroupPtr()->registerClass(&ACCESSOR_NAME);
+
+- name: XML Utils
+  description: Common C++ code for reading CC3D XML elements, attributes, and child nodes.
+  snippets:
+  - name: Find Element
+    description: Shows how to find Element.
+    suggested_indent: -1
+    code: |+
+      bool flag = _xmlData->findElement("ELEMENT_NAME");
+
+  - name: Get Element
+    description: Shows how to get Element.
+    suggested_indent: -1
+    code: |+
+      CC3DXMLElement *elem = _xmlData->getFirstElement("ELEMENT_NAME");
+
+  - name: Get Element As Double
+    description: Shows how to get Element As Double.
+    suggested_indent: -1
+    code: |+
+      double val = _xmlData->getFirstElement("ELEMENT_NAME")->getDouble();
+
+  - name: Get Element As Int
+    description: Shows how to get Element As Int.
+    suggested_indent: -1
+    code: |+
+      int val = _xmlData->getFirstElement("ELEMENT_NAME")->getInt();
+
+  - name: Get Element As UInt
+    description: Shows how to get Element As UInt.
+    suggested_indent: -1
+    code: |+
+      unsigned int val = _xmlData->getFirstElement("ELEMENT_NAME")->getUInt();
+
+  - name: Get Element As Short
+    description: Shows how to get Element As Short.
+    suggested_indent: -1
+    code: |+
+      short val = _xmlData->getFirstElement("ELEMENT_NAME")->getShort();
+
+  - name: Get Element As UShort
+    description: Shows how to get Element As UShort.
+    suggested_indent: -1
+    code: |+
+      unsigned short val = _xmlData->getFirstElement("ELEMENT_NAME")->getUShort();
+
+  - name: Get Element As Bool
+    description: Shows how to get Element As Bool.
+    suggested_indent: -1
+    code: |+
+      bool val = _xmlData->getFirstElement("ELEMENT_NAME")->getBool();
+
+  - name: Get Element As Text
+    description: Shows how to get Element As Text.
+    suggested_indent: -1
+    code: |+
+      std::string val = _xmlData->getFirstElement("ELEMENT_NAME")->getText();
+
+  - name: Optional Element
+    description: Shows how to optional Element.
+    suggested_indent: -1
+    code: |+
+      if (_xmlData->findElement("ELEMENT_NAME")) {
+          VALUE = _xmlData->getFirstElement("ELEMENT_NAME")->getTYPE();
+      }
+
+  - name: Find Attribute
+    description: Shows how to find Attribute.
+    suggested_indent: -1
+    code: |+
+      bool flag = _xmlData->findAttribute("ATTR_NAME");
+
+  - name: Get Attribute As Text
+    description: Shows how to get Attribute As Text.
+    suggested_indent: -1
+    code: |+
+      std::string val = _xmlData->getAttribute("ATTR_NAME");
+
+  - name: Get Attribute As Double
+    description: Shows how to get Attribute As Double.
+    suggested_indent: -1
+    code: |+
+      double val = _xmlData->getAttributeAsDouble("ATTR_NAME");
+
+  - name: Get Attribute As Int
+    description: Shows how to get Attribute As Int.
+    suggested_indent: -1
+    code: |+
+      int val = _xmlData->getAttributeAsInt("ATTR_NAME");
+
+  - name: Get Attribute As UInt
+    description: Shows how to get Attribute As UInt.
+    suggested_indent: -1
+    code: |+
+      unsigned int val = _xmlData->getAttributeAsUInt("ATTR_NAME");
+
+  - name: Get Attribute As Short
+    description: Shows how to get Attribute As Short.
+    suggested_indent: -1
+    code: |+
+      short val = _xmlData->getAttributeAsShort("ATTR_NAME");
+
+  - name: Get Attribute As UShort
+    description: Shows how to get Attribute As UShort.
+    suggested_indent: -1
+    code: |+
+      unsigned short val = _xmlData->getAttributeAsUShort("ATTR_NAME");
+
+  - name: Get Attribute As Bool
+    description: Shows how to get Attribute As Bool.
+    suggested_indent: -1
+    code: |+
+      bool val = _xmlData->getAttributeAsBool("ATTR_NAME");
+
+  - name: Process List Of Elements
+    description: Shows how to process List Of Elements.
+    suggested_indent: -1
+    code: |+
+      CC3DXMLElementList elemVec = _xmlData->getElements("ELEMENT_NAME");
+      for (int i = 0; i < elemVec.size(); ++i) {
+          // Put your code here
+      }
+
+- name: Include
+  description: Common include directives for plugin or steppable implementations.
+  snippets:
+  - name: CC3D Header
+    description: Shows which headers are needed for cC3D Header.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/CC3D.h>
+
+  - name: Cell / Cluster Inventory
+    description: Shows which headers are needed for cell / Cluster Inventory.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Potts3D/CellInventory.h>
+
+  - name: Plugin Files
+    description: Shows which headers are needed for plugin Files.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/plugins/PLUGIN_NAME/PLUGIN_FILE.h>
+
+  - name: Point3D / Dim3D
+    description: Shows which headers are needed for point3D / Dim3D.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Field3D/Point3D.h>
+      #include <CompuCell3D/Field3D/Dim3D.h>
+
+  - name: Field3D
+    description: Shows which headers are needed for field3D.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Field3D/Field3D.h>
+      #include <CompuCell3D/Field3D/WatchableField3D.h>
+
+  - name: Boundary Type Definitions
+    description: Shows which headers are needed for boundary Type Definitions.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Boundary/BoundaryTypeDefinitions.h>
+
+  - name: Boundary Strategy
+    description: Shows which headers are needed for boundary Strategy.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Boundary/BoundaryStrategy.h>
+
+  - name: Automaton
+    description: Shows which headers are needed for automaton.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Automaton/Automaton.h>
+
+  - name: Potts3D
+    description: Shows which headers are needed for potts3D.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Potts3D/Potts3D.h>
+
+  - name: Simulator
+    description: Shows which headers are needed for simulator.
+    suggested_indent: -1
+    code: |+
+      #include <CompuCell3D/Simulator.h>
+
+  - name: Vector3
+    description: Shows which headers are needed for vector3.
+    suggested_indent: -1
+    code: |+
+      #include <PublicUtilities/Vector3.h>
+
+  - name: String Utils
+    description: Shows which headers are needed for string Utils.
+    suggested_indent: -1
+    code: |+
+      #include <PublicUtilities/StringUtils.h>
+
+  - name: Numerical Utils
+    description: Shows which headers are needed for numerical Utils.
+    suggested_indent: -1
+    code: |
+      #include <PublicUtilities/NumericalUtils.h>

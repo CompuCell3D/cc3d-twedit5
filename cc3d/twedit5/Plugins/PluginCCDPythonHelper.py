@@ -343,13 +343,13 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         """
 
-        # lists begining of action names which will be grouped
+        # lists beginning of action names which will be grouped
         self.snippetDictionary.clear()
 
         psmp = SnippetMenuParser()
 
         snippet_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                         'CC3DPythonHelper/Snippets.py.template'))
+                                                         'CC3DPythonHelper/Snippets.python.yaml'))
 
         psmp.readSnippetMenu(snippet_file_path)
 

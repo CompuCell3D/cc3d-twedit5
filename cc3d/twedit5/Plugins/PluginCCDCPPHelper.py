@@ -250,7 +250,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         snippet_file_path = os.path.abspath(
 
-            os.path.join(os.path.dirname(__file__), 'CC3DCPPHelper/Snippets.cpp.template'))
+            os.path.join(os.path.dirname(__file__), 'CC3DCPPHelper/Snippets.cpp.yaml'))
 
         psmp.readSnippetMenu(snippet_file_path)
 

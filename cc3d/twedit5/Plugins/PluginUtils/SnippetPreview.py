@@ -29,6 +29,12 @@ class SnippetPreviewPopup(QFrame):
                 color: #5e584d;
                 padding: 0px 2px 2px 2px;
             }
+            QLabel#snippetPreviewDescription {
+                background: transparent;
+                border: none;
+                color: #6c6558;
+                padding: 0px 2px 4px 2px;
+            }
         """)
 
         layout = QVBoxLayout(self)
@@ -42,6 +48,15 @@ class SnippetPreviewPopup(QFrame):
         title_font.setPointSize(max(9, title_font.pointSize() - 1))
         self.titleLabel.setFont(title_font)
         layout.addWidget(self.titleLabel)
+
+        self.descriptionLabel = QLabel(self)
+        self.descriptionLabel.setObjectName("snippetPreviewDescription")
+        self.descriptionLabel.setWordWrap(True)
+        self.descriptionLabel.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        description_font = self.descriptionLabel.font()
+        description_font.setPointSize(max(8, description_font.pointSize() - 1))
+        self.descriptionLabel.setFont(description_font)
+        layout.addWidget(self.descriptionLabel)
 
         self.previewEdit = QsciScintilla(self)
         self.previewEdit.setReadOnly(True)
@@ -116,8 +131,10 @@ class SnippetPreviewPopup(QFrame):
         truncated_lines = lines[:visible_snippet_lines]
         return "\n".join(truncated_lines) + self.TRUNCATION_MARKER
 
-    def show_snippet(self, title, snippet_text, anchor_pos, screen=None, source_editor=None):
+    def show_snippet(self, title, snippet_text, anchor_pos, screen=None, source_editor=None, description=''):
         self.titleLabel.setText(title)
+        self.descriptionLabel.setText(description)
+        self.descriptionLabel.setVisible(bool(description.strip()))
         self._configure_preview_lexer(source_editor=source_editor)
         self.previewEdit.setText(self._format_preview_text(snippet_text))
 
@@ -202,6 +219,7 @@ class SnippetPreviewController(QObject):
             return
 
         snippet_text = getattr(snippet_data, 'snippet_text', snippet_data)
+        description = getattr(snippet_data, 'description', '')
         source_editor = self.ui.getCurrentEditor()
 
         if menu is not None:
@@ -221,7 +239,8 @@ class SnippetPreviewController(QObject):
             snippet_text=snippet_text,
             anchor_pos=anchor_pos,
             screen=preview_screen,
-            source_editor=source_editor
+            source_editor=source_editor,
+            description=description
         )
 
     def hide(self):
