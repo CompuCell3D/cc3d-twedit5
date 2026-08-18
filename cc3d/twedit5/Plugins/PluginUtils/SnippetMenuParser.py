@@ -1,8 +1,9 @@
 import re
+import yaml
 
 from collections import namedtuple
 
-SnippetTuple = namedtuple('SnippetTuple', 'snippet_text suggested_indent')
+SnippetTuple = namedtuple('SnippetTuple', 'snippet_text suggested_indent description')
 
 
 class SnippetMenuParser(object):
@@ -19,15 +20,9 @@ class SnippetMenuParser(object):
 
         self.currentSuggestedIndent = None
 
-        self.menuRegex = re.compile('^[=]*[\s]*#[\s]*@Menu@([\s\S]*)$')
+        self.menuRegex = re.compile(r'^[=]*[\s]*#[\s]*@Menu@([\s\S]*)$')
 
-        # self.submenuRegex = re.compile('^[-]*[\s]*#[\s]*@Submenu@([\s\S]*)$')
-
-        # self.submenuRegex = re.compile('^[-]*([i\d]*)[\s]*#[\s]*@Submenu@([\s\S]*)$')
-
-        # self.submenuRegex = re.compile('^[-]*([\s]*|[[i\d]*\s*])#[\s]*@Submenu@([\s\S]*)$')
-
-        self.submenuRegex = re.compile('^[-]*([i\d]*)[\s]*#[\s]*@Submenu@([\s\S]*)$')
+        self.submenuRegex = re.compile(r'^[-]*([i\d]*)[\s]*#[\s]*@Submenu@([\s\S]*)$')
 
     def initialize(self):
 
@@ -38,6 +33,8 @@ class SnippetMenuParser(object):
         self.currentSubmenu = None
 
         self.currentSnippet = None
+
+        self.currentSuggestedIndent = None
 
     def getSnippetMenuDict(self):
 
@@ -50,8 +47,6 @@ class SnippetMenuParser(object):
         for m in _regex.finditer(line):
             tokenGroup = m.groups()
 
-            # print 'menu token Group=',tokenGroup
-
             return tokenGroup[group_idx]
 
         return None
@@ -60,88 +55,113 @@ class SnippetMenuParser(object):
 
         if self.currentSnippet and self.currentMenu and self.currentSubmenu:
 
-            self.currentMenu[self.currentSubmenu] = self.currentSnippet
+            self.currentMenu[self.currentSubmenu] = SnippetTuple(
+                self.currentSnippet,
+                self.currentSuggestedIndent if self.currentSuggestedIndent is not None else -1,
+                ''
+            )
 
-            if self.currentSuggestedIndent:
+    def _read_yaml_snippet_menu(self, file_name):
 
-                self.currentMenu[self.currentSubmenu] = SnippetTuple(self.currentSnippet, self.currentSuggestedIndent)
+        with open(file_name) as file_handle:
+            data = yaml.safe_load(file_handle) or {}
 
-            else:
+        self.initialize()
 
-                self.currentMenu[self.currentSubmenu] = SnippetTuple(self.currentSnippet, -1)
-
-    def readSnippetMenu(self, _fileName):
-
-        file = open(_fileName)
-
-        readyToAddSnippet = False
-
-        for line in file:
-
-            menuName = self.findToken(line, self.menuRegex)
-
-            # print 'menuName=',menuName
-
-            if menuName:
-                self.writeSnippet()
-
-                readyToAddSnippet = False
-
-                self.snippetMenu[menuName] = {}
-
-                self.currentMenu = self.snippetMenu[menuName]
-
+        menus = data.get('menus', [])
+        for menu_data in menus:
+            menu_name = str(menu_data.get('name', '')).strip()
+            if not menu_name:
                 continue
 
-            submenuName = self.findToken(line, self.submenuRegex, group_idx=1)
+            submenu_dict = {}
+            for snippet_data in menu_data.get('snippets', []):
+                snippet_name = str(snippet_data.get('name', '')).strip()
+                if not snippet_name:
+                    continue
 
-            suggested_indent = self.findToken(line, self.submenuRegex, group_idx=0)
+                snippet_text = snippet_data.get('code', '')
+                if snippet_text is None:
+                    snippet_text = ''
 
-            # print 'suggested_indent=',suggested_indent
+                submenu_dict[snippet_name] = SnippetTuple(
+                    str(snippet_text),
+                    int(snippet_data.get('suggested_indent', -1)),
+                    str(snippet_data.get('description', '') or '')
+                )
 
-            if submenuName is not None:
+            self.snippetMenu[menu_name] = submenu_dict
 
-                submenuName = submenuName.strip()
+    def _read_legacy_snippet_menu(self, file_name):
 
-                if suggested_indent:
-                    self.currentSuggestedIndent = int(suggested_indent[1:])
+        with open(file_name) as file_handle:
+            readyToAddSnippet = False
 
-            # print 'submenuName=',submenuName
+            for line in file_handle:
 
-            if submenuName:
+                menuName = self.findToken(line, self.menuRegex)
 
-                # writing previous snippet ()
+                if menuName:
+                    self.writeSnippet()
 
-                self.writeSnippet()
+                    readyToAddSnippet = False
 
-                self.currentSubmenu = submenuName
+                    self.snippetMenu[menuName] = {}
 
-                self.currentMenu[submenuName] = ''
+                    self.currentMenu = self.snippetMenu[menuName]
 
-                self.currentSnippet = ''
+                    continue
 
-                readyToAddSnippet = True
+                submenuName = self.findToken(line, self.submenuRegex, group_idx=1)
 
-                if suggested_indent:
+                suggested_indent = self.findToken(line, self.submenuRegex, group_idx=0)
 
-                    self.currentSuggestedIndent = int(suggested_indent[1:])
+                if submenuName is not None:
 
-                else:
+                    submenuName = submenuName.strip()
 
-                    self.currentSuggestedIndent = -1
+                    if suggested_indent:
+                        self.currentSuggestedIndent = int(suggested_indent[1:])
 
-                continue
+                if submenuName:
 
-            if readyToAddSnippet: self.currentSnippet += line
+                    self.writeSnippet()
+
+                    self.currentSubmenu = submenuName
+
+                    self.currentMenu[submenuName] = ''
+
+                    self.currentSnippet = ''
+
+                    readyToAddSnippet = True
+
+                    if suggested_indent:
+
+                        self.currentSuggestedIndent = int(suggested_indent[1:])
+
+                    else:
+
+                        self.currentSuggestedIndent = -1
+
+                    continue
+
+                if readyToAddSnippet:
+                    self.currentSnippet += line
 
         self.writeSnippet()
 
-        file.close()
+    def readSnippetMenu(self, _fileName):
 
-    # if __name__=='__main__':
+        with open(_fileName) as file_handle:
+            first_nonempty_line = ''
+            for line in file_handle:
+                if line.strip():
+                    first_nonempty_line = line.strip()
+                    break
 
-    # psmp = PythonSnippetMenuParser()
+        if first_nonempty_line.startswith('version:') or first_nonempty_line.startswith('menus:'):
+            self._read_yaml_snippet_menu(_fileName)
+            return
 
-    # psmp.readSnippetMenu('Snippets.py.template')
-
-    # print 'snippet menu dict = ',psmp.getSnippetMenuDict()
+        self.initialize()
+        self._read_legacy_snippet_menu(_fileName)

@@ -165,6 +165,7 @@ class ChangedTextHandler:
     def handleChangedText(self):
 
         self.editorWindow.updateTextSizeLabel()
+        self.editorWindow.scheduleAutoSave(self.editor)
 
     def handleModificationChanged(self, m):
 
@@ -454,6 +455,11 @@ class EditorWindow(QMainWindow):
         self.defaultEditor = None
 
         self.textChangedHandlers = {}
+        self.autoSavePendingEditors = set()
+        self.autoSaveTimer = QTimer(self)
+        self.autoSaveTimer.setSingleShot(True)
+        self.autoSaveTimer.setInterval(self.configuration.setting("AutoSaveInterval"))
+        self.autoSaveTimer.timeout.connect(self.performAutoSave)
 
         # class variables used in searches
 
@@ -1429,6 +1435,8 @@ class EditorWindow(QMainWindow):
         openFilesToRestore = [{}, {}]
 
         self.deactivateChangeSensing = True
+        self.autoSaveTimer.stop()
+        self.autoSavePendingEditors.clear()
 
         # determining index of the current tab
 
@@ -2026,7 +2034,7 @@ class EditorWindow(QMainWindow):
         :return:
         """
         comment_string_begin = comment_string_begin.strip()
-        pattern = f'^(({comment_string_begin})(\s*)({comment_string_begin}))'
+        pattern = rf'^(({comment_string_begin})(\s*)({comment_string_begin}))'
         return re.search(pattern, line_text.lstrip())
         # lstrip_line_text = line_text.lstrip()
         # first_comment_pos = lstrip_line_text.find(comment_string_begin.strip()):
@@ -2106,11 +2114,9 @@ class EditorWindow(QMainWindow):
 
         if comment_found is not None:
             cur_line_text = self.rreplace(comment_found, f' {nested_comment_extra} {comment_end}', cur_line_text)
-
             self.remove_line(editor=editor, line_num=cur_line_num)
             editor.insertAt(cur_line_text, cur_line_num, 0)
         else:
-
             eol_pos = len(cur_line_text)
             if cur_line_text[eol_pos - 2] == "\r" or cur_line_text[eol_pos - 2] == "\n":
                 # second option is just in case - checking if we are dealing
@@ -2119,10 +2125,9 @@ class EditorWindow(QMainWindow):
                 editor.insertAt(comment_end, cur_line_num, eol_pos - 2)
 
             else:
-
                 editor.insertAt(comment_end, cur_line_num, eol_pos - 1)
 
-    def comment_single_line(self, currentLine, commentStringBegin, commentStringEnd):
+    def comment_single_line(self, currentLine: int, commentStringBegin, commentStringEnd):
 
         """
 
@@ -2131,47 +2136,51 @@ class EditorWindow(QMainWindow):
         """
 
         editor = self.getActiveEditor()
-
         if commentStringEnd:
             # handling comments which require additions at the beginning and at the end of the line
-
             if editor.text(currentLine).strip():  # checking if the line contains non-white characters
-
                 # editor.beginUndoAction()
                 cur_line_text = editor.text(currentLine)
-                if self.is_xml_comment(comment=commentStringBegin):
-                    self.comment_xml_begin(editor=editor, cur_line_num=currentLine)
-                else:
-                    first_pos_non_whitespace = len(cur_line_text) - len(cur_line_text.lstrip())
-                    editor.insertAt(commentStringBegin, currentLine, first_pos_non_whitespace)
+                # Do not comment out lines that are already xml comments:
+                # Currently, when an XML line is a comment the editor seems to add an extra blank line
+                # after the commented out comment line. There seems to be an issue with the editor.insertAt()
+                # function. Could be a bug in QT5?
+                comment_found = self.find_comment_pos_begin(text=cur_line_text.strip(), comment=commentStringBegin)
+                if comment_found != commentStringBegin:
+                    if self.is_xml_comment(comment=commentStringBegin):
+                        self.comment_xml_begin(editor=editor, cur_line_num=currentLine)
+                        #all_begin_text = editor.text()
+                        #print(all_begin_text)
+                    else:
+                        first_pos_non_whitespace = len(cur_line_text) - len(cur_line_text.lstrip())
+                        editor.insertAt(commentStringBegin, currentLine, first_pos_non_whitespace)
 
-                # we have to account for the fact the EOL character can be CR LF or CR or LF
+                    # we have to account for the fact the EOL character can be CR LF or CR or LF
+                    eol_pos = len(editor.text(currentLine))
+                    line_text = editor.text(currentLine)
 
-                eol_pos = len(editor.text(currentLine))
+                    if self.is_xml_comment(comment=commentStringEnd):
+                        self.comment_xml_end(editor=editor, cur_line_num=currentLine)
+                        # all_after_text = editor.text()  # Bug: The updated text has an extra blank line(s)
+                        # placed after the inserted commented out comment line.
+                    else:
+                        if not self.check_if_eol_comment_already_exists(
+                                line_text=line_text, comment_string_end=commentStringEnd):
 
-                line_text = editor.text(currentLine)
+                            if line_text[eol_pos - 2] == "\r" or line_text[eol_pos - 2] == "\n":
+                                # second option is just in case - checking if we are dealing
+                                # with CR LF or simple CR or LF end of line
 
-                if self.is_xml_comment(comment=commentStringEnd):
-                    self.comment_xml_end(editor=editor, cur_line_num=currentLine)
-                else:
-                    if not self.check_if_eol_comment_already_exists(
-                            line_text=line_text, comment_string_end=commentStringEnd):
+                                editor.insertAt(commentStringEnd, currentLine, eol_pos - 2)
 
-                        if line_text[eol_pos - 2] == "\r" or line_text[eol_pos - 2] == "\n":
-                            # second option is just in case - checking if we are dealing
-                            # with CR LF or simple CR or LF end of line
+                            else:
 
-                            editor.insertAt(commentStringEnd, currentLine, eol_pos - 2)
+                                editor.insertAt(commentStringEnd, currentLine, eol_pos - 1)
 
-                        else:
-
-                            editor.insertAt(commentStringEnd, currentLine, eol_pos - 1)
-
-                            # editor.endUndoAction()
+                                # editor.endUndoAction()
 
         else:
             # handling comments which require additions only at the beginning of the line
-            # if not editor.text(currentLine).trimmed().isEmpty():  # checking if the line contains non-white characters
 
             cur_line_text = editor.text(currentLine)
             if cur_line_text.strip():  # checking if the line contains non-white characters
@@ -4320,6 +4329,40 @@ class EditorWindow(QMainWindow):
 
         pass
 
+    def configureAutoPairCharacters(self, _flag):
+
+        """
+
+            fcn handling AutoPairCharacters configuration change
+
+        """
+
+        self.configuration.setSetting("AutoPairCharacters", _flag)
+
+    def configureEnableAutoSave(self, _flag):
+
+        """
+
+            fcn handling EnableAutoSave configuration change
+
+        """
+
+        self.configuration.setSetting("EnableAutoSave", _flag)
+        if not _flag:
+            self.autoSaveTimer.stop()
+            self.autoSavePendingEditors.clear()
+
+    def configureAutoSaveInterval(self, _value):
+
+        """
+
+            fcn handling AutoSaveInterval configuration change
+
+        """
+
+        self.configuration.setSetting("AutoSaveInterval", _value)
+        self.autoSaveTimer.setInterval(_value)
+
     def configureAutocompletionThreshold(self, _value):
 
         """
@@ -5149,6 +5192,54 @@ class EditorWindow(QMainWindow):
         currentEditor.panel.setCurrentIndex(currentIndex)
 
         currentEditor.setFocus(Qt.MouseFocusReason)
+
+    def scheduleAutoSave(self, editor):
+
+        """
+
+            schedules autosave for a changed editor
+
+        """
+
+        if self.deactivateChangeSensing:
+            return
+
+        if not self.configuration.setting("EnableAutoSave"):
+            return
+
+        if editor is None or editor.isReadOnly():
+            return
+
+        file_name = self.getEditorFileName(editor)
+        if not file_name:
+            return
+
+        self.autoSavePendingEditors.add(editor)
+        self.autoSaveTimer.start(self.configuration.setting("AutoSaveInterval"))
+
+    def performAutoSave(self):
+
+        """
+
+            saves modified named documents after the configured autosave delay
+
+        """
+
+        if self.deactivateChangeSensing:
+            return
+
+        pending_editors = list(self.autoSavePendingEditors)
+        self.autoSavePendingEditors.clear()
+
+        for editor in pending_editors:
+            if editor is None or editor.isReadOnly() or not editor.isModified():
+                continue
+
+            file_name = self.getEditorFileName(editor)
+            if not file_name:
+                continue
+
+            self.saveFile(file_name, editor)
 
     def about(self):
 

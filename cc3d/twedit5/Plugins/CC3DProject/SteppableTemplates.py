@@ -8,8 +8,8 @@ class SteppableTemplates:
         self.steppableTemplatesDict = {}
         self.steppable_import_regex = OrderedDict(
             [
-                ('1', re.compile('^from[\s]*cc3d\.core\.PySteppables[\s]*import[\s]*\*')),
-                ('2', re.compile('^import[\s]*numpy[\s]*as[\s]*np')),
+                ('1', re.compile(r'^from[\s]*cc3d\.core\.PySteppables[\s]*import[\s]*\*')),
+                ('2', re.compile(r'^import[\s]*numpy[\s]*as[\s]*np')),
             ]
         )
 

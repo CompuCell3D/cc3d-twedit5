@@ -112,6 +112,23 @@ class CC3DXMLGenerator:
 
         return sim_3d_flag
 
+    def generateMetadataSimulationProperties(self):
+        """
+        generates Metadata Section
+        :return:
+        """
+
+        self.cc3d.addComment("newline")
+        self.cc3d.addComment("Basic properties simulation")
+
+        metadata = self.cc3d.ElementCC3D("Metadata")
+        gpd = self.generalPropertiesDict
+        metadata.ElementCC3D("NumberOfProcessors", {}, gpd.get("NumberOfProcessors", 1))
+        metadata.ElementCC3D("DebugOutputFrequency", {}, gpd.get("DebugOutputFrequency", 100))
+
+        if gpd.get("NonParallelModule") == "Potts":
+            metadata.ElementCC3D("NonParallelModule", {"Name": "Potts"})
+
     def generatePottsSection(self):
         """
         generates Potts Section
@@ -900,7 +917,7 @@ class CC3DXMLGenerator:
 
         for solver, field_names in solver_dict.items():
 
-            if solver == 'KernelDiffusionSolver':
+            if solver == 'KernelDiffusionSolver':  # Legacy solver
                 kdiff_solver_elem = self.cc3d.ElementCC3D("Steppable", {"Type": "KernelDiffusionSolver"})
 
                 for field_name in field_names:
@@ -935,7 +952,7 @@ class CC3DXMLGenerator:
 
                     # add commented out concentration field specification file
 
-            elif solver in ('FlexibleDiffusionSolverFE', 'FastDiffusionSolver2DFE'):
+            elif solver in ('FlexibleDiffusionSolverFE', 'FastDiffusionSolver2DFE'):  # Legacy solvers
                 diff_solver_elem = self.cc3d.ElementCC3D("Steppable", {"Type": solver})
 
                 for field_name in field_names:
@@ -977,9 +994,8 @@ class CC3DXMLGenerator:
                     diff_data.ElementCC3D("DeltaX", {}, 1.0)
                     diff_data.ElementCC3D("DeltaT", {}, 1.0)
 
-            elif solver in ('SteadyStateDiffusionSolver'):
+            elif 'SteadyStateDiffusionSolver' in solver: # Not needed anymore?
                 solver_name = 'SteadyStateDiffusionSolver2D'
-
                 sim_3d_flag = self.checkIfSim3D()
 
                 if sim_3d_flag:
@@ -1002,7 +1018,7 @@ class CC3DXMLGenerator:
 
                     conc_field_name_elem.commentOutElement()
 
-                    # Boiundary Conditions
+                    # Boundary Conditions
                     bc_data = diff_field_elem.ElementCC3D("BoundaryConditions")
 
                     plane_x_elem = bc_data.ElementCC3D("Plane", {'Axis': 'X'})
@@ -1291,4 +1307,3 @@ class CC3DXMLGenerator:
         # self.cc3d.CC3DXMLElement.saveXMLInPython(str(self.fileName+".py"))
         print("SAVING XML = ", self.fileName)
         # print "SAVING XML in Python= ",self.fileName+".py"
-

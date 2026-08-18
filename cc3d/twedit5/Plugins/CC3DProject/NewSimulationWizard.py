@@ -7,6 +7,7 @@ from PyQt5 import *
 import os
 import sys
 from . import ui_newsimulationwizard
+
 from collections import OrderedDict
 import cc3d
 from cc3d.core.XMLUtils import ElementCC3D
@@ -14,27 +15,87 @@ from cc3d.core.Validation.sanity_checkers import validate_cc3d_entity_identifier
 from cc3d.twedit5.Plugins.CC3DMLGenerator.CC3DMLGeneratorBase import CC3DMLGeneratorBase
 from .CC3DPythonGenerator import CC3DPythonGenerator
 from cc3d.twedit5.Plugins.CC3DProject.diffusion_solvers_descr import get_diffusion_solv_description_html
+from cc3d.twedit5.Plugins.CC3DProject.RxnDiffusionPropsPopupForm import RxnDiffusionPropsPopupForm
+from cc3d.twedit5.Plugins.CC3DProject.AdhesionFlexCalcsPopupForm import AdhesionFlexCalcsPopupForm
+from cc3d.twedit5.Plugins.CC3DProject.ContactPluginWidget import ContactPluginWidget
 
 MAC = "qt_mac_set_native_menubar" in dir()
+# Wizard pages:
 SIMULATION_DIR_PAGE_NAME = "CompuCell3D Simulation Wizard"
 SIMULATION_PROPERTIES_PAGE_NAME = "General Simulation Properties"
 CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME = "Chemical Fields (Diffusants)"
-DIFFUSION_FE_WIZARD_PAGE_NAME = "Chemical field diffusion coefficients and boundary conditions (PDE Solvers Specification)"
+DIFFUSION_WIZARD_PAGE_NAME = "Chemical field diffusion coefficients and boundary conditions (PDE Solvers Specification)"
 CELL_PROPS_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
 SECRETION_DIFFUSION_FE_PAGE_NAME = "Secretion in DiffusionFE plugin"  #  DO not use
 CELL_TYPE_SPEC_PAGE_NAME = "Cell Type Specification"
 CELL_PROP_BEHAVIORS_PAGE_NAME = "Cell Properties and Behaviors"
-SECRETION_PAGE_NAME = "Secretion Plugin"
+SECRETION_PAGE_NAME = "Secretion Plugin"  # deprecated for now
 CHEMOTAXIS_PAGE_NAME = "Chemotaxis Plugin"
+CONTACT_PAGE_NAME = "Contact and Internal contact Plugins"
 CONTACT_MULTICAD_PAGE_NAME = "ContactMultiCad Plugin"
 ADHESION_FLEX_PAGE_NAME = "AdhesionFlex Plugin"
 CONFIG_COMPLETE_PAGE_NAME = "Configuration Complete!"
+
+# Diffusion solvers:
+DIFFUSION_SOLVER_FE = "DiffusionSolverFE"
+REACT_DIFF_SOLVER_FE = "ReactionDiffusionSolverFE"
+REACT_DIFF_SOLVER_FVM = "ReactionDiffusionSolverFVM"
+SS_DIFF_SOLVER = "SteadyStateDiffusionSolver"
+SS_DIFF_SOLVER_2D = "SteadyStateDiffusionSolver2D"
 
 CONSTANT_BC = "Constant value (Dirichlet) "
 CONSTANT_DERIVATIVE_BC = "Constant derivative value (von Neumann)"
 PERIODIC_BC = "Periodic BC"
 GLOBAL_DIFFUSION_LABEL = "Global (default value)"
+MAX_AND_REL_UPTAKE_TOOLTIP = "Both max uptake and relative uptake must be set"
 
+DEFAULT_DIFF_COEFF = '0.01'
+DEFAULT_DECAY_COEFF = '0.001'
+GLOBAL_DECAY_COEFF = '0.0001'
+
+# AdhesionFlex plugin:
+DEFAULT_MOLECULE_DENSITY = '1.0'
+DEFAULT_MEDIUM_DENSITY = '0.0'  # molecule density in medium
+DEFAULT_BINDING_PARAMETER = '0.5'
+DEFAULT_BINDING_PARAM_MOL_SAME = '1.0'
+DEFAULT_NEIGHBOR_ORDER = 4
+NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Adhesion Flex algorithm will check each time it needs to do a " \
+                                    "energy calculation."
+NEIGHBOR_ORDER_TOOLTIP_2 = "Integer > 0, typically between 2 and 4. Higher is more computationally intensive."
+
+ADHESION_MOLECULE_TABLE_LABEL = "Adhesion Molecule"  # column label for Adhesion molecule table
+ADHESION_CALC_DESCR = "The total adhesion energy for a cell is calculated by summing all of the individual contact energies " \
+                      "between it and each neighbor. The individual contact energy is the binding parameter of the " \
+                      "two adhesion molecules times the user defined binding formula which is a " \
+                      "function of the density of the two adhesion molecules in each cell type. "
+
+ADHESION_FLEX_HTML_LINK = "See https://compucell3dreferencemanual.readthedocs.io/en/latest/adhesion_flex_plugin.html for " \
+                      "further information."
+ADHESION_TABLE_HEADER_FONT_SIZE = 10
+ADHESION_SMALL_FONT_SIZE = 8
+ADHESION_FLEX_DESCRIPTION = "This plugin defines adhesion between cells. The adhesion energy of the system is obtained " \
+                            "by calculating the adhesion energy between each cell and its neighbors. " \
+                            "In AdhesionFlex, a larger Binding Parameter corresponds with a stronger interaction."
+DEFAULT_AF_FORMULA_NAME = "Binary"
+DEFAULT_BINDING_FORMULAS = ["avg(Molecule1, Molecule2)", "max(Molecule1, Molecule2)", "min(Molecule1, Molecule2)",
+                            "-(Molecule1 * Molecule2)"]
+DEFAULT_BINDING_FORMULAS_DESCR = ["Interactions controlled by the average density of the two molecules.",
+                                  "Interactions controlled by weakest, versus weak-strong (or weak-weak).",
+                                  "Interactions controlled by strong-strong, versus weak-strong (or weak-weak).",
+                                  "Increases adhesion as the product of the two adhesion molecule's density in each cell"
+                                  " type. Example of a user defined formula. Must use 'Molecule1' and 'Molecule2' labels."
+                                  " See muParser library for allowable math functions."]
+BINDING_FORMULA_TOOL_TIP = "This is a binary function that takes two arguments -  Molecule1 and Molecule2. " \
+                           "The allowed functions are those given by muParser - see http://muparser.sourceforge.net/"
+ADHESION_BINDING_FORMULA_MOL_PAIR_GB_TITLE = "Binding formula for molecule pair (highlight cell(s) to change):"
+
+# Units for conversion of MCS and voxel Format: 'Unit DisplayName' ('unit name') is :
+TIME_UNITS = ["No conversion (-)", "microsecond (usec)", "millisecond (msec)", "second (sec)", "minute (min)", "hour (hr)"]
+DEFAULT_TIME_UNIT = "min"
+DEFAULT_TIME_FACTOR = "1.0"
+LENGTH_UNITS = ["No conversion (-)", "nanometer (nm)", "micrometer (um)", "millimeter (mm)", "centimeter (cm)", "meter (m)"]
+DEFAULT_LENGTH_UNIT = "um"
+DEFAULT_LENGTH_FACTOR = "2"
 
 class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard):
     def __init__(self, parent=None):
@@ -51,26 +112,139 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.mainProjDir = ""
         self.simulationFilesDir = ""
         self.projectPath = ""
+
         self.setupUi(self)
-        self.diff_secretion = None  # Holds DiffusionFE secretion info
+
+        # Contact plugin Wizard page generation:
+        self.contact_form = ContactPluginWidget(None, self.setUseInternalContactPlugin)
+
+        c_container = self.findChild(QWidget, "contact_container")
+        if c_container.layout() is None:
+            c_container_layout = QVBoxLayout()
+            c_container.setLayout(c_container_layout)
+        else:
+            c_container_layout = c_container.layout()
+        c_container_layout.addWidget(self.contact_form)
+        c_container.setLayout(c_container_layout)
+
+        self.diff_secretion = None  # Holds Diffusion secretion info
 
         # This dictionary holds references to certain pages e.g. plugin configuration pages are inserted on demand
         # and access to those pages is facilitated via self.pageDict
         self.pageDict = {}
 
+        self.mcs_time_unitsCB.clear() # clear out default unit values
+        for unit in TIME_UNITS:
+            self.mcs_time_unitsCB.addItem(unit)
+            if DEFAULT_TIME_UNIT in unit:
+                self.mcs_time_unitsCB.setCurrentText(unit)
+        self.mcs_time_factorLE.setText(DEFAULT_TIME_FACTOR)
+        self.voxel_length_unitsCB.clear()
+        for unit in LENGTH_UNITS:
+            self.voxel_length_unitsCB.addItem(unit)
+            if DEFAULT_LENGTH_UNIT in unit:
+                self.voxel_length_unitsCB.setCurrentText(unit)
+        self.voxel_length_factorLE.setText(DEFAULT_LENGTH_FACTOR)
+        #self.binding_formula_molecular_pairTable.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+
         self.updateUi()
 
         self.typeTable = []
         self.diffusantDict = {}
+        self.rxn_diffusionFE_add_data: dict[str, dict] = {}
         self.chemotaxisData = {}
         self.cellTypeData = {}
         self.field_ic_fileDict = {}  # field_name -> ic file name
-        self.diffusionFE_vals_dict = {}
+        self.diffusion_vals_dict = {}
         self.field_table_dict = {}  # {field -> QTableWidget}
         self.diff_solver_info_textBrowser.clear()
         self.diff_solver_info_textBrowser.setHtml(get_diffusion_solv_description_html())
+        # Adhesion flex:
+        self.binding_formula_molecule_pairGB.setTitle(ADHESION_BINDING_FORMULA_MOL_PAIR_GB_TITLE)
+        self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
+        self.neighbor_orderLB.setText("Neighbor order:")
+        self.neighbor_orderLB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_1)
+
+        self.neighbor_order_SB.setValue(DEFAULT_NEIGHBOR_ORDER)
+        self.neighbor_order_SB.setToolTip(NEIGHBOR_ORDER_TOOLTIP_2)
+
+        self.af_data: dict[int, str] = {}  # row -> molecule
+        self.af_formula = {}  # dict[ formula_name -> formula ]
+        self.af_mol_density: dict[str, dict[str, float]] = {}  # dict[celltype, dict[mol, density]]
+        self.af_mol_mol_param: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
+        self.af_mol_mol_bind_formula: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding formula]]
+
         if sys.platform.startswith('win'):
             self.setWizardStyle(QWizard.ClassicStyle)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.nameLE.setFocus()
+        self.nameLE.selectAll()
+
+    def nextId(self):  # Override nextId() to set page sequence as needed:
+        newId = self.currentId()
+        print("Page id: ", newId)
+        if self.currentId() == self.get_page_id_by_name(SIMULATION_DIR_PAGE_NAME):
+            # print(self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME))
+            return self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(SIMULATION_PROPERTIES_PAGE_NAME):
+            return self.get_page_id_by_name(CELL_TYPE_SPEC_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CELL_TYPE_SPEC_PAGE_NAME):
+            return self.get_page_id_by_name(CELL_PROPS_BEHAVIORS_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CELL_PROPS_BEHAVIORS_PAGE_NAME):
+            return self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME):
+            if len(self.diffusantDict.items()) > 0 and (DIFFUSION_SOLVER_FE in self.diffusantDict or
+                                                        SS_DIFF_SOLVER in self.diffusantDict or
+                                                        SS_DIFF_SOLVER_2D in self.diffusantDict or
+                                                        REACT_DIFF_SOLVER_FE in self.diffusantDict):
+                return self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME)
+            else:
+                if self.chemotaxisCHB.isChecked():
+                    return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
+                elif self.adhesionFlexCHB.isChecked():
+                    return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+                elif self.contactCHB.isChecked():
+                    return self.get_page_id_by_name(CONTACT_PAGE_NAME)
+                elif self.contactMultiCadCHB.isChecked():
+                    return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+                else:
+                    return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME):
+            if self.chemotaxisCHB.isChecked():
+                return self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME)
+            elif self.adhesionFlexCHB.isChecked():
+                return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
+            elif self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME):
+            if self.adhesionFlexCHB.isChecked():
+                return self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME)
+            elif self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
+            elif self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
+            if self.contactCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_PAGE_NAME)
+            elif self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
+            if self.contactMultiCadCHB.isChecked():
+                return self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME)
+            else:
+                return self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME)
+        elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
+            return -1  # No more pages
 
     def display_invalid_entity_label_message(self, error_message):
         """
@@ -105,6 +279,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 else:
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
+        elif self.currentId() == self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME):
+            if event.key() == Qt.Key_Return:
+                event.accept()  # Needed if Qlinedit text changes, otherwise NextButton event processed
 
         elif self.currentId() == self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME):
 
@@ -124,7 +301,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         elif self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
 
             molecule = str(self.afMoleculeLE.text()).strip()
-
+            # TODO: Check if molecule starts with letter (no digit)?
             if event.key() == Qt.Key_Return:
 
                 if molecule != "":
@@ -134,6 +311,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 else:
                     next_button = self.button(QWizard.NextButton)
                     next_button.clicked.emit(True)
+
+        elif self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
+            pass
 
         # last page
         elif self.currentId() == self.get_page_id_by_name(CONFIG_COMPLETE_PAGE_NAME):
@@ -152,13 +332,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     @pyqtSlot()  # signature of the signal emited by the button
     def on_piffPB_clicked(self):
 
-        file_name = QFileDialog.getOpenFileName(self, "Choose PIFF file...")
-
+        file_name, _ = QFileDialog.getOpenFileName(self, "Choose PIFF file...", "", "PIFF files (*.piff)")
         file_name = str(file_name)
 
         # normalizing path
         file_name = os.path.abspath(file_name)
-
         self.piffLE.setText(file_name)
 
     def hideConstraintFlexOption(self):
@@ -250,6 +428,27 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if _flag:
             self.lengthConstraintCHB.setChecked(not _flag)
 
+    @pyqtSlot(bool)
+    def on_adhesionFlexCHB_toggled(self, _flag):
+        if _flag:  # Include Volume and Surface flex plugins:
+            self.volumeLocalFlexCHB.setChecked(_flag)
+            self.surfaceLocalFlexCHB.setChecked(_flag)
+        if self.contactCHB.isChecked():
+            QMessageBox.warning(self, "Adhesion and Contact plugins may interfere", "Contact plugin may interfere with "
+                                                "Adhesion plugin as it is a different way to compute adhesion energy "
+                                                "between cells. You may need to set Contact plugin energies to zero to "
+                                                "confirm Adhesion plugin behavior.", QMessageBox.Ok)
+
+    @pyqtSlot(bool)
+    def on_contactCHB_toggled(self, _flag):
+        if _flag:
+            self.volumeFlexCHB.setChecked(True)  # Typically want VolumeFlex plugin used (user can always uncheck this)
+
+    @pyqtSlot(bool)
+    def on_internalContactCB_toggled(self, _flag):
+        if _flag:
+            self.contactCHB.setChecked(_flag)  # Contact plugin required for InternalContact plugin
+
     @pyqtSlot(bool)  # signature of the signal emited by the button
     def on_growthCHB_toggled(self, _flag):
 
@@ -304,16 +503,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         for rowId in range(rows):
             name = str(self.cellTypeTable.item(rowId, 0).text()).strip()
-            print("CHECKING name=", name + "1", " type=", cell_type + "1")
+            # print("CHECKING name=", name + "1", " type=", cell_type + "1")
 
-            print("name==cellType ", name == cell_type)
+            # print("name==cellType ", name == cell_type)
 
             if name == cell_type:
                 cell_type_already_exists = True
 
                 break
 
-        print("cellTypeAlreadyExists=", cell_type_already_exists)
+        # print("cellTypeAlreadyExists=", cell_type_already_exists)
 
         if cell_type_already_exists:
             print("WARNING")
@@ -413,9 +612,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         # picking solver name
         solver_name = str(self.solverCB.currentText()).strip()
-
         solver_name_item = QTableWidgetItem(solver_name)
-
         self.fieldTable.setItem(rows, 1, solver_name_item)
 
         # reset cell type entry line
@@ -455,11 +652,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_secrAddOnContactPB_clicked(self):
-
         cell_type = str(self.secrOnContactCellTypeCB.currentText())
-
         current_text = str(self.secrOnContactLE.text())
-
         current_types = current_text.split(',')
 
         if current_text != "":
@@ -561,7 +755,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.secrOnContactLE_2.setText(cell_type)
 
     @pyqtSlot()  # signature of the signal emited by the button
-    def on_secrAddRowPB_2_clicked(self):
+    def on_secrAddRowPB_2_clicked(self):  # Remove, secretion does not have its own table
         field = str(self.secrFieldCB_2.currentText()).strip()
         cell_type = str(self.secrCellTypeCB_2.currentText()).strip()
 
@@ -737,47 +931,77 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def on_afMoleculeAddPB_clicked(self):
 
         molecule = str(self.afMoleculeLE.text()).strip()
-
         rows = self.afTable.rowCount()
-
         if molecule == "":
             return
 
-        # check if molecule with this name already exist
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        columns = self.afTable.columnCount()  # Add celltype column headers
+        if columns < 2:
+            column_names = []
+            column_names.append(ADHESION_MOLECULE_TABLE_LABEL)
+            for row in range(self.cellTypeTable.rowCount()):
+                cell_type = str(self.cellTypeTable.item(row, 0).text())
+                column_names.append(cell_type)
 
+            self.afTable.setColumnCount(len(column_names))
+            self.afTable.setHorizontalHeaderLabels(column_names)
+            self.afTable.verticalHeader().setVisible(False)
+            for i in range(0, self.afTable.columnCount()):
+                self.afTable.horizontalHeaderItem(i).setFont(header_font)
+
+            # self.afTable.resizeColumnsToContents()  # remove for columns of same width
+
+        # check if molecule with this name already exist
         molecule_already_exists = False
         for rowId in range(rows):
             name = str(self.afTable.item(rowId, 0).text()).strip()
-
             if name == molecule:
                 molecule_already_exists = True
                 break
 
         if molecule_already_exists:
             QMessageBox.warning(self, "Molecule Name Already Exists",
-
                                 "Molecule name already exist. Please choose different name", QMessageBox.Ok)
-
             return
 
         self.afTable.insertRow(rows)
 
         molecule_item = QTableWidgetItem(molecule)
-
-        self.afTable.setItem(rows, 0, molecule_item)
+        molecule_item.setTextAlignment(Qt.AlignCenter)
+        for i in range(0, self.afTable.columnCount()):
+            if i == 0:
+                self.afTable.setItem(rows, 0, molecule_item)
+            else:
+                if self.afTable.horizontalHeaderItem(i).text() == "Medium":
+                    density_item = QTableWidgetItem(str(DEFAULT_MEDIUM_DENSITY))
+                else:
+                    density_item = QTableWidgetItem(str(DEFAULT_MOLECULE_DENSITY))
+                density_item.setFont(header_font)
+                density_item.setTextAlignment(Qt.AlignCenter)
+                tool_tip = "Density of " + molecule + " in " + self.afTable.horizontalHeaderItem(i).text()
+                density_item.setToolTip(tool_tip)
+                self.afTable.setItem(rows, i, density_item)
+        self.afTable.resizeRowsToContents()
+        self.afTable.resizeColumnsToContents()
+        self.afTable.horizontalHeader().setStretchLastSection(True)
+        self.updateAdhesionInteractionMatrix(molecule, rows)
+        self.update_binding_formula_mol_pair_table(molecule, rows)
 
         # reset molecule entry line
         self.afMoleculeLE.setText("")
-
         return
 
     @pyqtSlot()  # signature of the signal emited by the button
+    def on_calc_detailsPB_clicked(self):
+        self.displayAdhesionCalcDetails()
+
+    @pyqtSlot()  # signature of the signal emited by the button
     def on_clearAFTablePB_clicked(self):
-
-        rows = self.afTable.rowCount()
-
-        for i in range(rows - 1, -1, -1):
-            self.afTable.removeRow(i)
+        self.clearAFTable()
+        self.clearAdhesionInteractionMatrix()
+        self.clearBindingFormulaMolecularPairTable()
 
     @pyqtSlot()  # signature of the signal emited by the button
     def on_cmcMoleculeAddPB_clicked(self):
@@ -834,6 +1058,30 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.plugin.configuration.setSetting("RecentNewProjectDir", directory)
             self.dirLE.setText(directory)
 
+    @pyqtSlot()  # signature of the signal emitted by the button
+    def on_reactionDiff_FE_PB_clicked(self):
+        curr_idx: int = self.field_tab.currentIndex()
+        field_name: str = ""
+        solver_name: str = ""
+        for solver, fields in self.diffusantDict.items():
+            for idx, field in enumerate(fields):
+                if idx == curr_idx:
+                    field_name = field
+                    solver_name = solver
+        popup = RxnDiffusionPropsPopupForm(solver_name, field_name, self)
+        if len(self.rxn_diffusionFE_add_data) > 1:  # Load existing user data, if exists
+            popup.set_data(self.rxn_diffusionFE_add_data[field_name])
+        if popup.exec_() == QDialog.Accepted:
+            extra_settings: dict[str:str] = popup.get_data()
+
+            #for key in extra_settings:
+                # print(f"{key}: {extra_settings[key]}")
+            self.rxn_diffusionFE_add_data[field_name] = extra_settings
+        else:
+            print("Popup cancelled")
+            #self.result_label.setText("Popup canceled.")
+
+
     # setting up validators for the entry fields
     def setUpValidators(self):
 
@@ -854,6 +1102,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.setUpValidators()
 
+        # Compartments plugin deprecated, use Contact and Contact Internal plugins
+        self.compartmentCHB.setEnabled(False)
+
         # Multi cad plugin is being deprecated
         self.contactMultiCadCHB.setEnabled(False)
 
@@ -862,30 +1113,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         page_ids = self.pageIds()
 
-        # order pages explicitly ?
-   #     self.pageDict[CONFIG_COMPLETE_PAGE_NAME] = [self.page(page_ids[-1]), len(page_ids) - 1]
-   #     self.pageDict[SIMULATION_DIR_PAGE_NAME] = [self.page(0), 0]
-   #     self.pageDict[SIMULATION_PROPERTIES_PAGE_NAME] = [self.page(1), 1]
-   #     self.pageDict[CELL_TYPE_SPEC_PAGE_NAME] = [self.page(2), 2]
-   #     self.pageDict[CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME] = [self.page(3), 3]
-   #     self.pageDict[CELL_PROPS_BEHAVIORS_PAGE_NAME] = [self.page(4), 4]
-   #     self.pageDict[DIFFUSION_FE_WIZARD_PAGE_NAME] = [self.page(5), 5]
-   #     self.pageDict[SECRETION_DIFFUSION_FE_PAGE_NAME] = [self.page(6), 6]  # not in use
-   #     self.pageDict[SECRETION_PAGE_NAME] = [self.page(7), 7]  # Not in use
-   #     self.pageDict[CHEMOTAXIS_PAGE_NAME] = [self.page(8), 8]
-   #     self.pageDict[ADHESION_FLEX_PAGE_NAME] = [self.page(9), 9]
-   #     self.pageDict[CONTACT_MULTICAD_PAGE_NAME] = [self.page(10), 10]
-   #     self.pageDict[CONFIG_COMPLETE_PAGE_NAME] = [self.page(11), 11]
-
-        #  just iterate through ids in order:
+        #  just iterate through ids in order to set pages, use nextId() to set order:
         for index in range(len(page_ids)):
             self.pageDict[self.page(index).title()] = [self.page(index), index]
         # remove pages not always needed:
-        self.removePage(self.get_page_id_by_name(SECRETION_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(SECRETION_PAGE_NAME))  # deprecated
         self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(CONTACT_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME))
-        self.removePage(self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME))
+        self.removePage(self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME))
         self.removePage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME))  # Do not use.
 
         self.nameLE.selectAll()
@@ -934,7 +1171,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.satCoefLB.setHidden(True)
         self.satChemLE.setHidden(True)
 
-        # secretion page
+        # secretion page - REMOVE at some point, not used
 
         base_size = self.secretionTable.baseSize()
 
@@ -948,7 +1185,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.secrOnContactCellTypeCB.setHidden(True)
         self.secrOnContactLE.setHidden(True)
 
-        # DiffusionFE Secretion table:
+        # Diffusion Secretion table:
         base_size = self.secretion_DiffusionFE_Table.baseSize()
         self.secretion_DiffusionFE_Table.setColumnWidth(0, int(base_size.width() / 5))
         self.secretion_DiffusionFE_Table.setColumnWidth(1, int(base_size.width() / 5))
@@ -968,12 +1205,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         width = self.cellTypeTable.horizontalHeader().width()
 
-        print("column 0 width=", self.cellTypeTable.horizontalHeader().sectionSize(0))
-        print("column 1 width=", self.cellTypeTable.horizontalHeader().sectionSize(1))
-        print("size=", self.cellTypeTable.size())
-        print("baseSize=", self.cellTypeTable.baseSize())
-        print("width=", width)
-        print("column width=", self.cellTypeTable.columnWidth(0))
+        # print("column 0 width=", self.cellTypeTable.horizontalHeader().sectionSize(0))
+        # print("column 1 width=", self.cellTypeTable.horizontalHeader().sectionSize(1))
+        # print("size=", self.cellTypeTable.size())
+        # print("baseSize=", self.cellTypeTable.baseSize())
+        # print("width=", width)
+        # print("column width=", self.cellTypeTable.columnWidth(0))
 
     def insertModulePage(self, _page):
 
@@ -1008,9 +1245,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 self.removePage(page_id)
                 break
 
-    def checkIfNumber(self, value):
-        if value == ".":
-            return True
+    def checkIfNumber(self, value: str):
         if value.isdecimal():
             return True
         try:
@@ -1021,6 +1256,128 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                                     "Please specify a number for the value",
                                     QMessageBox.Ok)
             return False
+
+    def clearTableWidget(self, table_widget_to_be_cleared: QTableWidget):
+        rows = table_widget_to_be_cleared.rowCount()
+        for i in range(rows - 1, -1, -1):
+            table_widget_to_be_cleared.removeRow(i)
+
+    def clearAFTable(self):
+        try:
+            self.clearTableWidget(self.afTable)  # do not clear column headers
+        except NameError:
+            print(" -> self.afTable does not exist.")
+
+
+    def clearAdhesionInteractionMatrix(self):
+        try:
+            self.clearTableWidget(self.interaction_matrixTable)
+            self.interaction_matrixTable.clear()  # clear headers
+        except NameError:
+            print(" -> self.interaction_matrixTable does not exist.")
+
+    def clearBindingFormulaMolecularPairTable(self):
+        try:
+            self.clearTableWidget(self.binding_formula_molecular_pairTable)  # do not clear column headers
+        except NameError:
+            print(" -> self.binding_formula_molecular_pairTable does not exist.")
+
+    def setUseInternalContactPlugin(self, use: bool):
+        # ContactPluginWidget will set up internal contact energy matrix based on cell types used in contact energy matrix.
+        self.internalContactCB.setChecked(use)
+
+
+    def updateAdhesionInteractionMatrix(self, molecule, insert_row):
+        molecule_count = self.afTable.rowCount()
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+
+        column_names = []
+        for row in range(self.afTable.rowCount()):
+            molecule_name = str(self.afTable.item(row, 0).text())
+            column_names.append(molecule_name)
+
+        self.interaction_matrixTable.setColumnCount(len(column_names))
+        self.interaction_matrixTable.setHorizontalHeaderLabels(column_names)
+        for i in range(0, self.interaction_matrixTable.columnCount()):
+            self.interaction_matrixTable.horizontalHeaderItem(i).setFont(header_font)
+
+        for row in range(0, molecule_count):
+            if row == insert_row:
+                self.interaction_matrixTable.insertRow(row)
+            binding_par_item = QTableWidgetItem(str(DEFAULT_BINDING_PARAMETER))
+            binding_par_item.setFont(header_font)
+            binding_par_item.setTextAlignment(Qt.AlignCenter)
+            tool_tip = "Binding parameter between the two molecules, used to calculate the binding energy."
+            binding_par_item.setToolTip(tool_tip)
+            for column in range(0, molecule_count):
+                if row <= column:
+                    if insert_row == column:
+                        if row == column:
+                            binding_par_item.setText(str(DEFAULT_BINDING_PARAM_MOL_SAME))
+                        self.interaction_matrixTable.setItem(row, column, binding_par_item)
+                else:  # bottom of matrix assumed the same as top half:
+                    redundant_val = QTableWidgetItem("-")
+                    redundant_val.setTextAlignment(Qt.AlignCenter)
+                    redundant_val.setFlags(redundant_val.flags() & ~Qt.ItemIsEditable)  # not editable
+                    self.interaction_matrixTable.setItem(row, column, redundant_val)
+
+        self.interaction_matrixTable.setVerticalHeaderLabels(column_names)  # matrix, so col - row headers same.
+        if self.interaction_matrixTable.rowCount() > 0:
+            for i in range(0, self.interaction_matrixTable.rowCount()):
+                self.interaction_matrixTable.verticalHeaderItem(i).setFont(header_font)
+        self.interaction_matrixTable.verticalHeader().setVisible(True)
+        self.interaction_matrixTable.resizeRowsToContents()
+        self.interaction_matrixTable.resizeColumnsToContents()
+
+    def update_binding_formula_mol_pair_table(self, mol: str, new_mol_row: int):
+        molecule_count = self.afTable.rowCount()
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+
+        column_names = []
+        for row in range(self.afTable.rowCount()):
+            molecule_name = str(self.afTable.item(row, 0).text())
+            column_names.append(molecule_name)
+
+        self.binding_formula_molecular_pairTable.setColumnCount(len(column_names))
+        self.binding_formula_molecular_pairTable.setHorizontalHeaderLabels(column_names)
+        for i in range(0, self.binding_formula_molecular_pairTable.columnCount()):
+            self.binding_formula_molecular_pairTable.horizontalHeaderItem(i).setFont(header_font)
+            self.binding_formula_molecular_pairTable.horizontalHeaderItem(i).setToolTip(BINDING_FORMULA_TOOL_TIP)
+
+        for row in range(0, molecule_count):
+            if row == new_mol_row:
+                self.binding_formula_molecular_pairTable.insertRow(row)
+            binding_par_item = QTableWidgetItem(str(DEFAULT_BINDING_FORMULAS[0]))
+            binding_par_item.setFont(header_font)
+            binding_par_item.setTextAlignment(Qt.AlignCenter)
+            tool_tip = str(DEFAULT_BINDING_FORMULAS[0])
+            binding_par_item.setToolTip(tool_tip)
+            for column in range(0, molecule_count):
+                if row <= column:
+                    if new_mol_row == column:
+                        self.binding_formula_molecular_pairTable.setItem(row, column, binding_par_item)
+                else:  # bottom of matrix assumed the same as top half:
+                    redundant_val = QTableWidgetItem("-")
+                    redundant_val.setTextAlignment(Qt.AlignCenter)
+                    redundant_val.setFlags(redundant_val.flags() & ~Qt.ItemIsEditable)  # not editable
+                    self.binding_formula_molecular_pairTable.setItem(row, column, redundant_val)
+
+        self.binding_formula_molecular_pairTable.verticalHeader().setVisible(True)
+        self.binding_formula_molecular_pairTable.setVerticalHeaderLabels(column_names)  # matrix, so col - row headers same.
+        if self.binding_formula_molecular_pairTable.rowCount() > 0:
+            for i in range(0, self.binding_formula_molecular_pairTable.rowCount()):
+                self.binding_formula_molecular_pairTable.verticalHeaderItem(i).setFont(header_font)
+                self.binding_formula_molecular_pairTable.verticalHeaderItem(i).setToolTip(BINDING_FORMULA_TOOL_TIP)
+
+        self.binding_formula_molecular_pairTable.resizeRowsToContents()
+        #self.binding_formula_molecular_pairTable.resizeColumnsToContents()
+
+
+    def displayAdhesionCalcDetails(self):
+        popup = AdhesionFlexCalcsPopupForm(self)
+        popup.exec_()
 
     def x_bcTypeChanged(self, index):
         tab_idx = self.bcs_tab.currentIndex()
@@ -1045,6 +1402,86 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 xMin.setDisabled(False)
                 xMax = self.bcs_tab.findChild(QLineEdit, xmax_le)
                 xMax.setDisabled(False)
+
+    def diffusionCoeffChanged(self, cell_item: QTableWidgetItem, diff_algo: str):
+        if diff_algo.strip() == REACT_DIFF_SOLVER_FE:  # Param for this solver is yes/no only
+            return
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText(DEFAULT_DIFF_COEFF)
+
+    def decayCoeffChanged(self, cell_item: QTableWidgetItem, diff_algo: str):
+        if diff_algo.strip() == REACT_DIFF_SOLVER_FE:  # Param for this solver is yes/no only
+            return
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText(DEFAULT_DECAY_COEFF)
+
+    def secretionRateChanged(self, cell_item: QTableWidgetItem):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+
+    def constantFieldSecretionChanged(self, cell_item):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+
+    def secreteOnContactChanged(self, cell_types: QTableWidgetItem):
+        if not self.checkIfValidCellType(str(cell_types.text())):
+            valid_cell_types = ""
+            cell_types.setText("-")
+            for row in range(self.cellTypeTable.rowCount()):
+                if valid_cell_types == "":
+                    valid_cell_types = str(self.cellTypeTable.item(row, 0).text())
+                else:
+                    valid_cell_types = valid_cell_types + ", " +  str(self.cellTypeTable.item(row, 0).text())
+            QMessageBox.warning(self, "Secret on contact",
+                                f"Invalid cell type(s), please use one or more of the following: {valid_cell_types}",
+                                QMessageBox.Ok)
+
+    def relativeUptakeChanged(self, cell_item: QTableWidgetItem, cur_table:QTableWidget):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+        else:
+            rel_uptake_val = float(cell_item.text())
+            if rel_uptake_val < 0.0 or rel_uptake_val > 1.0:
+                cell_item.setText("-")
+                QMessageBox.warning(self, "Relative Uptake",
+                                    "Relative uptake must be between 0.0 and 1.0",
+                                    QMessageBox.Ok)
+
+    def maxUptakeChanged(self, cell_item: QTableWidgetItem, cur_table:QTableWidget):
+        if not self.checkIfNumber(cell_item.text()):
+            cell_item.setText("-")
+        else:
+            max_uptake_val = float(cell_item.text())
+            if max_uptake_val < 0.0:
+                cell_item.setText("-")
+                QMessageBox.warning(self, "Maximum Uptake",
+                                    "Maximum uptake cannot be less than 0.0.",
+                                    QMessageBox.Ok)
+
+    def diff_secretion_table_item_changed(self, item: QTableWidgetItem):
+        tab_idx = self.field_tab.currentIndex()
+        current_tab_name: str = self.field_tab.tabText(tab_idx)
+        field_name, diffusion_algo = current_tab_name.split(':')
+        column = item.column()
+        # process change based on column from field diffusion algo params table:
+        current_table: QTableWidget = self.field_table_dict[field_name.strip()]
+        current_table.blockSignals(True)  # May make changes to item value
+        if "Secretion rate" in current_table.horizontalHeaderItem(column).text():
+            self.secretionRateChanged(item)
+        elif "Constant conc" in current_table.horizontalHeaderItem(column).text():
+            self.constantFieldSecretionChanged(item)
+        elif "Secrete on contact" in current_table.horizontalHeaderItem(column).text():
+            self.secreteOnContactChanged(item)
+        elif "Relative uptake" in current_table.horizontalHeaderItem(column).text():
+            self.relativeUptakeChanged(item, current_table)
+        elif "Max uptake" in current_table.horizontalHeaderItem(column).text():
+            self.maxUptakeChanged(item, current_table)
+        elif "Diffusion coeff" in current_table.horizontalHeaderItem(column).text():
+            self.diffusionCoeffChanged(item, diffusion_algo)
+        elif "Decay coefficient" in current_table.horizontalHeaderItem(column).text():
+            self.decayCoeffChanged(item, diffusion_algo)
+
+        current_table.blockSignals(False)  # Send signals again
 
 
     def y_bcTypeChanged(self, index):
@@ -1093,21 +1530,26 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 zMax = self.bcs_tab.findChild(QLineEdit, zmax_le)
                 zMax.setDisabled(False)
 
-    def field_tab_changed(self, index):
+    def field_tab_changed(self, index: int):  # TODO: bug still with hiding reactionDiff_FE_PB button
         if self.bcs_tab.currentIndex() != index:
             self.bcs_tab.setCurrentIndex(index)
         if self.ics_tab.currentIndex() != index:
             self.ics_tab.setCurrentIndex(index)
         if self.field_tab.currentIndex() != index:
             self.field_tab.setCurrentIndex(index)
+        solver: str = self.getSolverByFieldTabIndex(index)
+        if solver in (DIFFUSION_SOLVER_FE, SS_DIFF_SOLVER_2D, SS_DIFF_SOLVER):
+            self.reactionDiff_FE_PB.hide()
+        elif solver == REACT_DIFF_SOLVER_FE:
+            self.reactionDiff_FE_PB.setVisible(True)
 
     def ics_file_path_changed(self):
         tab_idx = self.ics_tab.currentIndex()
         field = self.ics_tab.tabText(tab_idx)
         icfe = "ic_file_edt_" + str(tab_idx)
-        current_fe = self.ics_tab.findChild(QLineEdit, icfe)
+        current_fe: QLineEdit = self.ics_tab.findChild(QLineEdit, icfe)
         ic_file = current_fe.text()  # contains full (absolute) file path
-        print(ic_file)
+        # print(ic_file)
         #  check if valid file location:
         if self.is_path_exists_or_creatable(ic_file):
             self.field_ic_fileDict[field] = ic_file
@@ -1135,21 +1577,31 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         ic_group = QGroupBox("")
         ic_group.setObjectName("ic_group_" + str(idx))
         ic_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        ic_layout.setSpacing(0)
+        ic_layout.setContentsMargins(2,2,2,2)
         # Initial Val:
-        ic_val_group = QGroupBox("Initial value")
+        #ic_val_group = QGroupBox("Initial value")
+        ic_val_group = QGroupBox()
         ic_val_layout = QBoxLayout(QBoxLayout.TopToBottom, ic_val_group)
+        ic_val_layout.setSpacing(2)
         ic_val_label = QLabel("Diffusant initial concentration or expression:")
         ic_val_edit = QLineEdit("0.0")
+        ic_val_edit.setMaximumWidth(200)
+        ic_val_info_label = QLabel("See muParser and CC3D documentation for valid mathematical expression involving x,y,z coord.")
+        ic_val_info_label.setFont(QFont('Arial', 10))
         icv = "ic_val_" + str(idx)
         ic_val_edit.setObjectName(icv)
         ic_val_edit.textChanged.connect(self.checkIfNumber)
         ic_val_layout.addWidget(ic_val_label)
         ic_val_layout.addWidget(ic_val_edit)
+        ic_val_layout.addWidget(ic_val_info_label)
         ic_val_group.setLayout(ic_val_layout)
         ic_layout.addWidget(ic_val_group)
         # inital conc file:
-        ic_file_group = QGroupBox("Initial values file")
+        #ic_file_group = QGroupBox("Initial values file")
+        ic_file_group = QGroupBox()
         ic_file_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        ic_file_layout.setSpacing(2)
         icfr = "ic_radio_btn_" + str(idx)
         ic_file_radio_btn = QRadioButton("Use Initial Concentrations file")
         ic_file_radio_btn.setObjectName(icfr)
@@ -1165,6 +1617,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         ic_file_edit.setDisabled(True)
         ic_file_edit.editingFinished.connect(self.ics_file_path_changed)
         ic_file_info_label = QLabel("Format of file is rows of numbers corresponding to position of each pixel and concentration: x y z c")
+        ic_file_info_label.setFont(QFont('Arial', 10))
         ic_file_layout.addWidget(ic_file_radio_btn)
         ic_file_layout.addWidget(ic_file_edit)
         ic_file_layout.addWidget(ic_file_info_label)
@@ -1174,12 +1627,14 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         ic_group.setLayout(ic_layout)
         return ic_group
     def getBC_Dialog(self, idx):
+        BC_LAYOUT_SPACING = 4
         bc_group = QGroupBox("")
         bc_layout = QBoxLayout(QBoxLayout.LeftToRight)
         # X axis:
         x_group = QGroupBox("Along X axis", bc_group)
         x_group.setObjectName("x_group_" + str(idx))
         x_layout = QBoxLayout(QBoxLayout.TopToBottom, x_group)
+        x_layout.setSpacing(BC_LAYOUT_SPACING)
         x_new_combo_bx = QComboBox(x_group)
         xc = "x_combo" + str(idx)
         x_new_combo_bx.setObjectName(xc)
@@ -1201,11 +1656,13 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         xmax_line_edit.textChanged.connect(self.checkIfNumber)
         xmin_group = QGroupBox("")
         xmin_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        xmin_layout.setSpacing(BC_LAYOUT_SPACING)
         xmin_layout.addWidget(xmin_label)
         xmin_layout.addWidget(xmin_line_edit)
         xmin_group.setLayout(xmin_layout)
         xmax_group = QGroupBox("")
         xmax_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        xmax_layout.setSpacing(BC_LAYOUT_SPACING)
         xmax_layout.addWidget(xmax_label)
         xmax_layout.addWidget(xmax_line_edit)
         xmax_group.setLayout(xmax_layout)
@@ -1217,6 +1674,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         y_group = QGroupBox("Along Y axis")
         y_group.setObjectName("y_group_" + str(idx))
         y_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        y_layout.setSpacing(BC_LAYOUT_SPACING)
         y_new_combo_by = QComboBox()
         yc = "y_combo" + str(idx)
         y_new_combo_by.setObjectName(yc)
@@ -1236,7 +1694,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         ymax_line_edit.textChanged.connect(self.checkIfNumber)
         ymax_le = "y_max" + str(idx)
 
-        if self.yDimSB.value() > 1:  # Check if lattice has y dir
+        if self.yDimSB.value() > 1:  # Check if lattice has y direction
             y_new_combo_by.setDisabled(False)
             ymin_line_edit.setDisabled(False)
             ymax_line_edit.setDisabled(False)
@@ -1248,11 +1706,13 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         ymax_line_edit.setObjectName(ymax_le)
         ymin_group = QGroupBox("")
         ymin_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        ymin_layout.setSpacing(BC_LAYOUT_SPACING)
         ymin_layout.addWidget(ymin_label)
         ymin_layout.addWidget(ymin_line_edit)
         ymin_group.setLayout(ymin_layout)
         ymax_group = QGroupBox("")
         ymax_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        ymax_layout.setSpacing(BC_LAYOUT_SPACING)
         ymax_layout.addWidget(ymax_label)
         ymax_layout.addWidget(ymax_line_edit)
         ymax_group.setLayout(ymax_layout)
@@ -1264,6 +1724,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         z_group = QGroupBox("Along Z axis")
         z_group.setObjectName("z_group_" + str(idx))
         z_layout = QBoxLayout(QBoxLayout.TopToBottom)
+        z_layout.setSpacing(BC_LAYOUT_SPACING)
         z_new_combo_bz = QComboBox()
         zc = "z_combo" + str(idx)
         z_new_combo_bz.setObjectName(zc)
@@ -1281,8 +1742,8 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         zmax_label = QLabel("Value at z = z.max")
         zmax_line_edit = QLineEdit("0.0")
         zmax_line_edit.textChanged.connect(self.checkIfNumber)
-        xmax_le = "z_max" + str(idx)
-        z_val = self.zDimSB.value()  # Check if lattice has z dir
+        zmax_le = "z_max" + str(idx)
+        z_val = self.zDimSB.value()  # Check if lattice has z direction
         if z_val > 1:
             z_new_combo_bz.setDisabled(False)
             zmin_line_edit.setDisabled(False)
@@ -1292,14 +1753,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             zmin_line_edit.setDisabled(True)
             zmax_line_edit.setDisabled(True)
 
-        zmax_line_edit.setObjectName(xmax_le)
+        zmax_line_edit.setObjectName(zmax_le)
         zmin_group = QGroupBox("")
         zmin_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        zmin_layout.setSpacing(BC_LAYOUT_SPACING)
         zmin_layout.addWidget(zmin_label)
         zmin_layout.addWidget(zmin_line_edit)
         zmin_group.setLayout(zmin_layout)
         zmax_group = QGroupBox("")
         zmax_layout = QBoxLayout(QBoxLayout.LeftToRight)
+        zmax_layout.setSpacing(BC_LAYOUT_SPACING)
         zmax_layout.addWidget(zmax_label)
         zmax_layout.addWidget(zmax_line_edit)
         zmax_group.setLayout(zmax_layout)
@@ -1319,130 +1782,207 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
         self.bcs_tab.clear()
         self.ics_tab.clear()
-
+        cells_str = ""  # use in secretion tooltip
         for row in range(self.cellTypeTable.rowCount()):
             cell_type = str(self.cellTypeTable.item(row, 0).text())
-           # print(cell_type, "hello")
+            if cells_str == "":
+                cells_str += cell_type
+            else:
+                cells_str += ", " + cell_type
             freeze = False
             if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
-                print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                 freeze = True
 
             self.cellTypeData[cell_type] = [row, freeze]
-
+        toolTip_secretion_str = "Cell types allowed: " + cells_str
+        idx = -1  # Keep track of field tab index
         for solver_name, fields in self.diffusantDict.items():
-            for idx, field in enumerate(fields):
-                new_bc_dialog = self.getBC_Dialog(idx)  # Set BCs
+            for index, field in enumerate(fields): # index goes to 0 for each solver
+                idx += 1
+                steadyState_solv: bool = False
+                diff_secrete_table_cols: int = 8
+                if (solver_name == SS_DIFF_SOLVER) or (solver_name == SS_DIFF_SOLVER_2D):
+                    steadyState_solv = True
+                    diff_secrete_table_cols = 6  # No Constant conc or Secrete on contact columns
+                if solver_name == REACT_DIFF_SOLVER_FE:
+                    self.reactionDiff_FE_PB.setVisible(True)
+                else:
+                    self.reactionDiff_FE_PB.hide()
+
+                new_bc_dialog: QGroupBox = self.getBC_Dialog(idx)  # Set BCs
                 self.bcs_tab.insertTab(idx, new_bc_dialog, field)
                 self.bcs_tab.currentChanged.connect(self.field_tab_changed)
-                new_ic_dialog = self.getIC_Dialog(idx)  # Set ICs:
+                new_ic_dialog: QGroupBox = self.getIC_Dialog(idx)  # Set ICs:
                 self.ics_tab.insertTab(idx, new_ic_dialog, field)
                 self.ics_tab.currentChanged.connect(self.field_tab_changed)
-                table_widget = QTableWidget()
+                diff_secrete_table_widget = QTableWidget()
                 vh = QHeaderView(Qt.Vertical)
                 vh.hide()
-                table_widget.setVerticalHeader(vh)  # Hide row numbers
-                table_widget.setColumnCount(8)  # was 3
+                diff_secrete_table_widget.setVerticalHeader(vh)  # Hide row numbers
+                diff_secrete_table_widget.setColumnCount(diff_secrete_table_cols)  # was 3
+
                 cell_type_header = QTableWidgetItem("Cell or\n Area/Volume")
                 cell_type_header.setToolTip("Chemical field behavior in Cell type or volume.")
+                diff_secrete_table_widget.setHorizontalHeaderItem(0, cell_type_header)
                 diff_coeff_header = QTableWidgetItem("Diffusion coeff\n (pixels^2 /mcs)")
                 diff_decay_header = QTableWidgetItem("Decay coefficient\n (1/mcs)")
                 const_sec_header = QTableWidgetItem("Secretion rate\n (amt/mcs/voxel)")
-                const_sec_header.setToolTip("Constant Secretion rate or rate of secretion on contact with another cell.")
-                const_conc_sec_header = QTableWidgetItem("Constant conc\n field (amt/voxel)")
-                const_conc_sec_header.setToolTip("Chemical field kept at constant concentration.")
-                sec_on_contact_header = QTableWidgetItem("Secrete on contact\n with cell/vol")
-                sec_on_contact_header.setToolTip("Secrete on contact with another cell or volume: 'cell_type1, cell_type2' ")
-                max_up_header = QTableWidgetItem("Max uptake by cell\n (amt/mcs/voxel)")
-                max_up_header.setToolTip("Maximum uptake of the field chemical by cell or volume")
-                rel_up_header = QTableWidgetItem("Relative uptake\n by cell/vol")
-                rel_up_header.setToolTip("Typical value between 0.0 and 1.0")
-                table_widget.setHorizontalHeaderItem(0, cell_type_header)
-                table_widget.setHorizontalHeaderItem(1, diff_coeff_header)
-                table_widget.setHorizontalHeaderItem(2, diff_decay_header)
-                table_widget.setHorizontalHeaderItem(3, const_sec_header)
-                table_widget.setHorizontalHeaderItem(4, const_conc_sec_header)
-                table_widget.setHorizontalHeaderItem(5, sec_on_contact_header)
-                table_widget.setHorizontalHeaderItem(6, max_up_header)
-                table_widget.setHorizontalHeaderItem(7, rel_up_header)
+                if steadyState_solv:
+                    diff_coeff_header.setToolTip("Steady-state solver uses only one global diffusion coef.")
+                    diff_decay_header.setToolTip("Steady-state solver uses only one global decay coef.")
+                    const_sec_header.setToolTip("Constant Secretion rate .")
+                else:
+                    const_sec_header.setToolTip(
+                        "Constant Secretion rate of chemical field or rate of secretion on contact with another cell.")
+                diff_secrete_table_widget.setHorizontalHeaderItem(1, diff_coeff_header)
+                diff_secrete_table_widget.setHorizontalHeaderItem(2, diff_decay_header)
+                diff_secrete_table_widget.setHorizontalHeaderItem(3, const_sec_header)
+                if steadyState_solv:
+                    max_up_header = QTableWidgetItem("Max uptake by cell\n (amt/mcs/voxel)")
+                    max_up_header.setToolTip(
+                        "Maximum uptake of the field chemical by cell or volume. Max and Rel uptake must be specified in pairs.")
+                    diff_secrete_table_widget.setHorizontalHeaderItem(4, max_up_header)
+                    rel_up_header = QTableWidgetItem("Relative uptake\n by cell/vol")
+                    rel_up_header.setToolTip(
+                        "Value between 0.0 and 1.0. Relative to actual field chemical concentration.")
+                    diff_secrete_table_widget.setHorizontalHeaderItem(5, rel_up_header)
+                else:
+                    const_conc_sec_header = QTableWidgetItem("Constant conc\n field (amt/voxel)")
+                    const_conc_sec_header.setToolTip("Chemical field kept at constant concentration. (Secretion rate must be '-')")
+                    sec_on_contact_header = QTableWidgetItem("Secrete on contact\n with cell/vol")
+                    sec_on_contact_header.setToolTip(
+                        "Secrete on contact with another cell or volume: 'cell_type1, cell_type2' ")
+                    diff_secrete_table_widget.setHorizontalHeaderItem(4, const_conc_sec_header)
+                    diff_secrete_table_widget.setHorizontalHeaderItem(5, sec_on_contact_header)
+                    max_up_header = QTableWidgetItem("Max uptake by cell\n (amt/mcs/voxel)")
+                    max_up_header.setToolTip("Maximum uptake of the field chemical by cell or volume. Max and Rel uptake must be specified in pairs.")
+                    diff_secrete_table_widget.setHorizontalHeaderItem(6, max_up_header)
+                    rel_up_header = QTableWidgetItem("Relative uptake\n by cell/vol")
+                    rel_up_header.setToolTip(
+                        "Value between 0.0 and 1.0. Relative to actual field chemical concentration.")
+                    diff_secrete_table_widget.setHorizontalHeaderItem(7, rel_up_header)
 
               #  table_widget.horizontalHeader().setStretchLastSection(True)
-                table_widget.horizontalHeader().setSectionResizeMode(
+                diff_secrete_table_widget.horizontalHeader().setSectionResizeMode(
                     QHeaderView.Stretch)
                 # Global diffusion settings in first row:
-                table_widget.insertRow(table_widget.rowCount())
+                diff_secrete_table_widget.insertRow(diff_secrete_table_widget.rowCount())
                 global_name = GLOBAL_DIFFUSION_LABEL
-                global_val_decay_coefficient = '0.00001'
+                global_val_decay_coefficient = GLOBAL_DECAY_COEFF
                 item = QTableWidgetItem(global_name)
+                item.setFont(QFont('Arial', 10))
                 item.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 0, item)
-                default_value_diffusion_coefficient = '0.01'
+                diff_secrete_table_widget.setItem(0, 0, item)
+                default_value_diffusion_coefficient = DEFAULT_DIFF_COEFF
                 diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
                 diff_item.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 1, diff_item)
+                diff_secrete_table_widget.setItem(0, 1, diff_item)
                 decay_item = QTableWidgetItem(global_val_decay_coefficient)
                 decay_item.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 2, decay_item)
+                diff_secrete_table_widget.setItem(0, 2, decay_item)
                 const_sec_item = QTableWidgetItem("n/a")
                 const_sec_item.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 3, const_sec_item)
-                const_item = QTableWidgetItem("n/a")
-                const_item.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 4, const_item)
-                const_item2 = QTableWidgetItem("n/a")
-                const_item2.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 5, const_item2)
-                const_item3 = QTableWidgetItem("n/a")
-                const_item3.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 6, const_item3)
-                const_item4 = QTableWidgetItem("n/a")
-                const_item4.setTextAlignment(Qt.AlignCenter)
-                table_widget.setItem(0, 7, const_item4)
+                diff_secrete_table_widget.setItem(0, 3, const_sec_item)
+                if steadyState_solv:
+                    const_item3 = QTableWidgetItem("n/a")
+                    const_item3.setTextAlignment(Qt.AlignCenter)
+                    diff_secrete_table_widget.setItem(0, 4, const_item3)
+                    const_item4 = QTableWidgetItem("n/a")
+                    const_item4.setTextAlignment(Qt.AlignCenter)
+                    diff_secrete_table_widget.setItem(0, 5, const_item4)
+                else:
+                    const_item = QTableWidgetItem("n/a")
+                    const_item.setTextAlignment(Qt.AlignCenter)
+                    diff_secrete_table_widget.setItem(0, 4, const_item)
+                    const_item2 = QTableWidgetItem("n/a")
+                    const_item2.setTextAlignment(Qt.AlignCenter)
+                    diff_secrete_table_widget.setItem(0, 5, const_item2)
+                    const_item3 = QTableWidgetItem("n/a")
+                    const_item3.setTextAlignment(Qt.AlignCenter)
+                    diff_secrete_table_widget.setItem(0, 6, const_item3)
+                    const_item4 = QTableWidgetItem("n/a")
+                    const_item4.setTextAlignment(Qt.AlignCenter)
+                    diff_secrete_table_widget.setItem(0, 7, const_item4)
 
                 # now list all cell types:
                 for row, (type_name, type_data) in enumerate(self.cellTypeData.items()):
-                    table_widget.insertRow(table_widget.rowCount())
-                    #default_value_diffusion_coefficient = '0.1'
-                    default_value_decay_coefficient = '0.001'
+                    diff_secrete_table_widget.insertRow(diff_secrete_table_widget.rowCount())
+                    default_value_diffusion_coefficient = DEFAULT_DIFF_COEFF
+                    default_value_decay_coefficient = DEFAULT_DECAY_COEFF
+                    if steadyState_solv:
+                        default_value_diffusion_coefficient = 'n/a'
+                        default_value_decay_coefficient = 'n/a'
+                    elif type_name == "Medium":  # Default type in every model
+                        default_value_diffusion_coefficient = 'Uses Global'
+                        default_value_decay_coefficient = 'Uses Global'
+
                     default_value_const_secretion = '-'
                     default_value_const_conc_secretion = '-'
                     default_value_sec_on_contact = '-'
-                    default_value_max_uptake = '1.0'
-                    default_value_rel_uptake = '1.0'
-              #      if type_name == [type_name for type_name, type_data in self.cellTypeData.items()][0]:
-              #          type_name = GLOBAL_DIFFUSION_LABEL
-              #          default_value_decay_coefficient = '0.00001'
+                    default_value_max_uptake = '-'
+                    default_value_rel_uptake = '-'
+
                     item = QTableWidgetItem(type_name)
                     item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row + 1, 0, item)
-                    diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
-                    diff_item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row + 1, 1, diff_item)
-                    decay_item = QTableWidgetItem(default_value_decay_coefficient)
-                    decay_item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row +1, 2, decay_item)
+                    diff_secrete_table_widget.setItem(row + 1, 0, item)
+
+                    if solver_name == REACT_DIFF_SOLVER_FE:
+                        diff_item = QTableWidgetItem("Do not diffuse into")
+                        diff_item.setFont(QFont('Arial', 10))
+                        diff_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                                     Qt.ItemFlag.ItemIsEnabled)
+                        diff_item.setCheckState(Qt.CheckState.Unchecked)
+                        diff_secrete_table_widget.setItem(row + 1, 1, diff_item)
+                        decay_item = QTableWidgetItem("Do not decay into")
+                        decay_item.setFont(QFont('Arial', 10))
+                        decay_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable |
+                                           Qt.ItemFlag.ItemIsEnabled)
+                        decay_item.setCheckState(Qt.CheckState.Unchecked)
+                        diff_secrete_table_widget.setItem(row + 1, 2, decay_item)
+                    else:
+                        diff_item = QTableWidgetItem(default_value_diffusion_coefficient)
+                        diff_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 1, diff_item)
+                        decay_item = QTableWidgetItem(default_value_decay_coefficient)
+                        decay_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 2, decay_item)
                     const_sec_item = QTableWidgetItem(default_value_const_secretion)
                     const_sec_item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row +1, 3, const_sec_item)
+                    diff_secrete_table_widget.setItem(row + 1, 3, const_sec_item)
                     const_conc_sec_item = QTableWidgetItem(default_value_const_conc_secretion)
                     const_conc_sec_item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row + 1, 4, const_conc_sec_item)
-                    sec_on_contact_item = QTableWidgetItem(default_value_sec_on_contact)
-                    sec_on_contact_item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row + 1, 5, sec_on_contact_item)
-                    max_uptake_item = QTableWidgetItem(default_value_max_uptake)
-                    max_uptake_item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row + 1, 6, max_uptake_item)
-                    rel_uptake_item = QTableWidgetItem(default_value_rel_uptake)
-                    rel_uptake_item.setTextAlignment(Qt.AlignCenter)
-                    table_widget.setItem(row + 1, 7, rel_uptake_item)
-
-                self.field_tab.insertTab(idx, table_widget, field)
+                    if steadyState_solv:
+                        max_uptake_item = QTableWidgetItem(default_value_max_uptake)
+                        max_uptake_item.setTextAlignment(Qt.AlignCenter)
+                        max_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP)
+                        diff_secrete_table_widget.setItem(row + 1, 4, max_uptake_item)
+                        rel_uptake_item = QTableWidgetItem(default_value_rel_uptake)
+                        rel_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP )
+                        rel_uptake_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 5, rel_uptake_item)
+                    else:
+                        diff_secrete_table_widget.setItem(row + 1, 4, const_conc_sec_item)
+                        sec_on_contact_item = QTableWidgetItem(default_value_sec_on_contact)
+                        sec_on_contact_item.setToolTip(toolTip_secretion_str)
+                        sec_on_contact_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 5, sec_on_contact_item)
+                        max_uptake_item = QTableWidgetItem(default_value_max_uptake)
+                        max_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP)
+                        max_uptake_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 6, max_uptake_item)
+                        rel_uptake_item = QTableWidgetItem(default_value_rel_uptake)
+                        rel_uptake_item.setToolTip(MAX_AND_REL_UPTAKE_TOOLTIP)
+                        rel_uptake_item.setTextAlignment(Qt.AlignCenter)
+                        diff_secrete_table_widget.setItem(row + 1, 7, rel_uptake_item)
+                tab_title: str = field + ": " + solver_name
+                diff_secrete_table_widget.itemChanged.connect(self.diff_secretion_table_item_changed)
+                self.field_tab.insertTab(idx, diff_secrete_table_widget, tab_title)
                 self.field_tab.currentChanged.connect(self.field_tab_changed)
-                self.field_table_dict[field] = table_widget
+                self.field_table_dict[field] = diff_secrete_table_widget
 
-    # Expect a comma separated string of cell types to check: 'cell1, cell2, cell3'
-    def checkIfValidCellType(self, cell_types_str):
+    # Secretion on contact: Expect a comma separated string of cell types to check: 'cell1, cell2, cell3'
+    def checkIfValidCellType(self, cell_types_str) -> bool:  # TODO: Is this necessary? more description needed...
         type_list = cell_types_str.split(",")
         for new_type in type_list:
             found = False
@@ -1455,96 +1995,153 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 return False
         return True
 
-    #  Returns dictionary of chemical field secretion values, returns False if data bad
-    def getDiffusionSecretion_Values(self, field_table, field_str):
-        secretion_diffusionFE_data = {}  # format {field:[secrDict1,secrDict2,...]}
+
+    def getSolverByFieldTabIndex(self, curr_idx) -> str:
+        #curr_idx: int = self.field_tab.currentIndex()
+        if len(self.diffusantDict) > 0:
+            for solver, fields in self.diffusantDict.items():
+                for idx, field in enumerate(fields):
+                    if idx == curr_idx:
+                        return solver
+        return ""  # No solver found
+
+        #  Returns dictionary of chemical field secretion values, returns False if data bad
+    def getDiffusionSecretion_Values(self, field_table: QTableWidget, field_str, solver: str) -> dict[str, list]:
+        secretion_diffusion_data: dict[str, list] = {}  # format {field:[secrDict1,secrDict2,...]}
+        ss_solver = False
+        if (solver == SS_DIFF_SOLVER) or (solver == SS_DIFF_SOLVER_2D):
+            ss_solver = True
+
         for row in range(field_table.rowCount()):
             secretion_type = "-"
             rate = 0.0  # holds value of secretion rate for all three types of field secretion
             cell_type = str(field_table.item(row, 0).text())
             if not row == 0 and not cell_type == GLOBAL_DIFFUSION_LABEL:  # first row contains default diffusion values
-                const_conc_sec = str(field_table.item(row, 4).text())
-                on_contact_with = str(field_table.item(row, 5).text())
-                try:
-                    if not const_conc_sec == "-":
-                        rate = float(const_conc_sec)  # value stored in rate var even though it is a constant conc.
-                        secretion_type = "constant concentration"
-                except Exception:
-                    rate = 0.0
+                if not ss_solver:
+                    const_conc_sec = str(field_table.item(row, 4).text())
+                    on_contact_with = str(field_table.item(row, 5).text())
+                    try:
+                        if not const_conc_sec == "-":
+                            rate = float(
+                                const_conc_sec)  # value stored in rate var even though it is a constant conc.
+                            secretion_type = "constant concentration"
+                    except ValueError:
+                        rate = 0.0
                 try:
                     uniform_rate = str(field_table.item(row, 3).text())
                     if not uniform_rate == "-":
                         rate = float(str(field_table.item(row, 3).text()))
                         secretion_type = "uniform"
-                except Exception:
+                except ValueError:
                     rate = 0.0
                 try:
-                    max_uptake = float(str(field_table.item(row, 6).text()))
-                except Exception:
-                    max_uptake = 0.0
+                    if not ss_solver:
+                        max_uptake = float(str(field_table.item(row, 6).text()))
+                    else:
+                        max_uptake = float(str(field_table.item(row, 4).text()))
+                    if max_uptake < 0.0:
+                        max_uptake = 0.0
+                except ValueError:
+                    max_uptake = "-"
                 try:
-                    rel_uptake = float(str(field_table.item(row, 7).text()))
-                except Exception:
-                    rel_uptake = 0.0
+                    if not ss_solver:
+                        rel_uptake = float(str(field_table.item(row, 7).text()))
+                    else:
+                        rel_uptake = float(str(field_table.item(row, 5).text()))
+                    if rel_uptake < 0.0:
+                        rel_uptake = 0.0
+                    elif rel_uptake > 1.0:
+                        rel_uptake = 1.0
+                except ValueError:
+                    rel_uptake = "-"
 
                 diff_fe_secr_dict = {}
                 diff_fe_secr_dict["CellType"] = cell_type
-                diff_fe_secr_dict["MaxUptake"] = max_uptake
-                diff_fe_secr_dict["RelativeUptakeRate"] = rel_uptake
+                diff_fe_secr_dict["MaxUptake"] = str(max_uptake)
+                diff_fe_secr_dict["RelativeUptakeRate"] = str(rel_uptake)
                 diff_fe_secr_dict["Rate"] = rate
-                if not on_contact_with == "-":
-                    if self.checkIfValidCellType(on_contact_with):
-                        diff_fe_secr_dict["OnContactWith"] = on_contact_with
-                        secretion_type = "on contact"
-                    else:
-                        msg = '''
-                        For 'Secrete on contact': one of the cell types listed is invalid. 
-                        Make sure cell type list is comma separated.
-                        '''
-                        QMessageBox.warning(self, "Invalid Cell type", msg, QMessageBox.Ok)
-                        print("msg")
-                        return False
-                    if uniform_rate == "-":
-                        msg = '''
-                        For 'Secrete on contact': Please add a value to 
-                        the 'Secretion rate' column.
-                        '''
-                        QMessageBox.warning(self, "Invalid Secretion rate", msg, QMessageBox.Ok)
-                        return False
+                if not ss_solver:
+                    if not on_contact_with == "-":
+                        if self.checkIfValidCellType(on_contact_with):
+                            diff_fe_secr_dict["OnContactWith"] = on_contact_with
+                            secretion_type = "on contact"
+                        else:
+                            msg = '''
+                            For 'Secrete on contact': one of the cell types listed is invalid. 
+                            Make sure cell type list is comma separated.
+                            '''
+                            QMessageBox.warning(self, "Invalid Cell type", msg, QMessageBox.Ok)
+                            print("msg")
+                            return {"Invalid Cell type": [-1]}
+                        if uniform_rate == "-":
+                            msg = '''
+                            For 'Secrete on contact': Please add a value to 
+                            the 'Secretion rate' column.
+                            '''
+                            QMessageBox.warning(self, "Invalid Secretion rate", msg, QMessageBox.Ok)
+                            return {"Invalid Secretion rate": [-1]}
                 diff_fe_secr_dict["SecretionType"] = secretion_type
                 try:
-                    secretion_diffusionFE_data[field_str].append(diff_fe_secr_dict)
+                    secretion_diffusion_data[field_str].append(diff_fe_secr_dict)
                 except LookupError:
-                    secretion_diffusionFE_data[field_str] = [diff_fe_secr_dict]
-        return secretion_diffusionFE_data
+                    secretion_diffusion_data[field_str] = [diff_fe_secr_dict]
+        return secretion_diffusion_data
+
 
     #  Returns diffusion values dict
     def getCurrentDiffusionFE_Values(self):
         diffusion_vals_dict = {}
+        idx: int = -1  # Keep track of field tab index
         for solver_name, fields in self.diffusantDict.items():
-            for idx, field in enumerate(fields):
+            for index, field in enumerate(fields):
+                idx += 1
+                # print("Solver, idx, field: ", solver_name, ", ", idx, field)
                 diff_table = self.field_table_dict[field]
                 diffusant_data = {}
                 vol_coeffs = {}
                 for row in range(diff_table.rowCount()):
-                    vol = diff_table.item(row, 0).text()
-                    coef = diff_table.item(row, 1).text()
-                    decay = diff_table.item(row, 2).text()
+                    cell_type_vol = diff_table.item(row, 0).text()
                     if row == 0:
-                        vol_coeffs.update({vol: {"GlobalDiffusionCoefficient": coef, "GlobalDecayCoefficient": decay}})
+                        coef = diff_table.item(row, 1).text()
+                        decay = diff_table.item(row, 2).text()
+                        vol_coeffs.update({cell_type_vol: {"GlobalDiffusionCoefficient": coef, "GlobalDecayCoefficient": decay}})
+                    elif solver_name == REACT_DIFF_SOLVER_FE:
+                        do_not_defuse: str = ""
+                        do_not_decay:str = ""
+                        if diff_table.item(row, 1).checkState():
+                            do_not_defuse = "True"
+                        else:
+                            do_not_defuse = "False"
+                        if diff_table.item(row, 2).checkState():
+                            do_not_decay = "True"
+                        else:
+                            do_not_decay = "False"
+                        vol_coeffs.update({cell_type_vol: {"DoNotDefuseTo": do_not_defuse, "DoNotDecayTo": do_not_decay}})
                     else:
-                        vol_coeffs.update({vol: {"DiffusionCoefficient": coef, "DecayCoefficient": decay}})
+                        coef = diff_table.item(row, 1).text()
+                        decay = diff_table.item(row, 2).text()
+                        vol_coeffs.update({cell_type_vol: {"DiffusionCoefficient": coef, "DecayCoefficient": decay}})
                 diffusant_data["Coefficients"] = vol_coeffs
+                if solver_name == REACT_DIFF_SOLVER_FE:  # Additional settings for Rxn Diff solve
+                    if field in self.rxn_diffusionFE_add_data:
+                        curr_add_solver_settings: dict[str,str] = self.rxn_diffusionFE_add_data[field] # by default not created.
+                        for key in curr_add_solver_settings:
+                            if key == "AutoscaleDiffusion":
+                                if curr_add_solver_settings[key] == "True":  # XML: True: tag exists, False: no tag
+                                    diffusant_data["AutoscaleDiffusion"] = ""
+                            else:
+                                diffusant_data[key] = curr_add_solver_settings[key]
                 for widget in self.bcs_tab.children():  # Get BCs
                     group_boxes = widget.findChildren(QGroupBox)
                     all_bcs = {}
                     for child in group_boxes:
                         group_bx_name = ""
                         if isinstance(child, QGroupBox):
-                            combo_boxes = child.findChildren(QComboBox)
+                            combo_boxes: list[QComboBox] = child.findChildren(QComboBox)
                             group_bx_name = child.objectName()
                             if group_bx_name.endswith("_" + str(idx)):
                                 for c_box in combo_boxes:
+                                   # print("combo box name: ", c_box.objectName())
                                     bcs = {}
                                     boundary_type = ''
                                     axis_dir = ""
@@ -1599,9 +2196,89 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                     diffusant_data.update(diffusant_ic)
                 diffusion_vals_dict[field] = diffusant_data
 
-            print(diffusion_vals_dict)
+            # print(diffusion_vals_dict)
         return diffusion_vals_dict
 
+    def setUpContactPluginPage(self):
+        contact_page: QWizardPage = self.get_page_by_name(CONTACT_PAGE_NAME)
+        cell_types: list[str] = []
+        for row in range(self.cellTypeTable.rowCount()):
+            cell_type = str(self.cellTypeTable.item(row, 0).text())
+            cell_types.append(cell_type)
+        self.contact_form.initContactMatrix(cell_types)
+        if self.internalContactCB.isChecked():
+            self.contact_form.initInternalContactMatrix(cell_types)
+
+
+
+    def setUpAdhesionFlexPage(self):
+        adhesion_page: QWizardPage = self.get_page_by_name(ADHESION_FLEX_PAGE_NAME)
+
+        self.adhesion_infoLabel.setText(ADHESION_FLEX_DESCRIPTION)
+        header_font = QFont()
+        header_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        self.adhesion_calc_descr_label.setFont(header_font)
+        self.adhesion_calc_descr_label.setText(ADHESION_CALC_DESCR)
+        self.adhesion_calc_descr_label.setWordWrap(True)
+        descr_font = QFont()
+        descr_font.setPointSize(ADHESION_SMALL_FONT_SIZE)
+        self.binding_formula1RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula1RB.setText(DEFAULT_BINDING_FORMULAS[0])
+        self.binding_formula1RB.setFont(header_font)
+        self.binding_formula1RB.setChecked(True)
+        self.binding_formula1_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[0])
+        self.binding_formula1_label.setFont(descr_font)
+
+        self.binding_formula2RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula2RB.setText(DEFAULT_BINDING_FORMULAS[1])
+        self.binding_formula2RB.setFont(header_font)
+        self.binding_formula2RB.setChecked(False)
+        self.binding_formula2_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[1])
+        self.binding_formula2_label.setFont(descr_font)
+
+        self.binding_formula3RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula3RB.setText(DEFAULT_BINDING_FORMULAS[2])
+        self.binding_formula3RB.setFont(header_font)
+        self.binding_formula3RB.setChecked(False)
+        self.binding_formula3_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[2])
+        self.binding_formula3_label.setFont(descr_font)
+
+        self.binding_formula4RB.toggled.connect(self.onBindingFormulaSelected)
+        self.binding_formula4RB.setText(DEFAULT_BINDING_FORMULAS[3])
+        self.binding_formula4RB.setFont(header_font)
+        self.binding_formula4RB.setChecked(False)
+        self.binding_formula4_label.setText(DEFAULT_BINDING_FORMULAS_DESCR[3])
+        self.binding_formula4_label.setFont(descr_font)
+
+        self.binding_formula_molecular_pairTable.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+
+    def onBindingFormulaSelected(self):
+        sender_button = self.sender()
+        cell_font = QFont()
+        cell_font.setPointSize(ADHESION_TABLE_HEADER_FONT_SIZE)
+        new_formula = ""
+        if isinstance(sender_button, QRadioButton) and sender_button.isChecked():
+            if DEFAULT_BINDING_FORMULAS[0] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[0]
+            elif DEFAULT_BINDING_FORMULAS[1] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[1]
+            elif DEFAULT_BINDING_FORMULAS[2] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[2]
+            elif DEFAULT_BINDING_FORMULAS[3] in sender_button.text():
+                new_formula = DEFAULT_BINDING_FORMULAS[3]
+
+            selected_formula_cells = self.binding_formula_molecular_pairTable.selectedItems()
+            for cell in selected_formula_cells:
+                #print(f"Selected cell text: {cell.text()}")
+                #print(f"Selected cell row: {cell.row()}")
+                #print(f"Selected cell column: {cell.column()}")
+                update_item = QTableWidgetItem(new_formula)
+                update_item.setFont(cell_font)
+                update_item.setToolTip(new_formula)
+                # check if editable first:
+                if self.binding_formula_molecular_pairTable.item(cell.row(), cell.column()).flags() & Qt.ItemIsEditable:
+                    self.binding_formula_molecular_pairTable.setItem(cell.row(), cell.column(), update_item)
+            self.binding_formula_molecular_pairTable.resizeRowsToContents()
 
     def is_path_creatable(self, pathname: str) -> bool:
         '''
@@ -1627,7 +2304,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         except OSError:
             return False
 
-    def validateCurrentPage(self):
+    def validateCurrentPage(self) -> bool:
 
         print("THIS IS VALIDATE FOR PAGE ", self.currentId)
 
@@ -1657,7 +2334,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 if directory != "":
                     self.plugin.configuration.setSetting("RecentNewProjectDir", directory)
-                    print("CHECKING DIRECTORY ")
+                    # print("CHECKING DIRECTORY ")
 
                     # checking if directory is writeable
                     project_dir = os.path.abspath(directory)
@@ -1721,7 +2398,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 freeze = False
 
                 if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
-                    print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                    # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                     freeze = True
 
                 self.typeTable.append([cell_type, freeze])
@@ -1732,7 +2409,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.chemTowardsCellTypeCB.clear()
             self.chemFieldCB.clear()
 
-            print("Clearing Combo boxes")
+            # print("Clearing Combo boxes")
             for cell_type_tuple in self.typeTable:
 
                 if str(cell_type_tuple[0]) != "Medium":
@@ -1766,6 +2443,13 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 self.removePage(self.get_page_id_by_name(CHEMOTAXIS_PAGE_NAME))
 
+            if self.contactCHB.isChecked():  # internalContactCHB is checked in setUpContactPluginPage()
+                self.setPage(self.get_page_id_by_name(CONTACT_PAGE_NAME), self.get_page_by_name(CONTACT_PAGE_NAME))
+                self.setUpContactPluginPage()
+
+            else:
+                self.removePage(self.get_page_id_by_name(CONTACT_PAGE_NAME))
+
             if self.contactMultiCadCHB.isChecked():
                 self.setPage(self.get_page_id_by_name(CONTACT_MULTICAD_PAGE_NAME), self.get_page_by_name(CONTACT_MULTICAD_PAGE_NAME))
 
@@ -1774,10 +2458,12 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             if self.adhesionFlexCHB.isChecked():
                 self.setPage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME), self.get_page_by_name(ADHESION_FLEX_PAGE_NAME))
+                self.setUpAdhesionFlexPage()
+
             else:
                 self.removePage(self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME))
             return True
-    #    sec_id = self.currentId()
+
     #    chem_field_id = self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME)
         if self.currentId() == self.get_page_id_by_name(CHEMICAL_FIELDS_DIFFUSANTS_PAGE_NAME):
             # we only extract diffusants from table here - it is not a validation strictly speaking
@@ -1813,14 +2499,16 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             if len(self.diffusantDict.items()) > 0:  # VALIDATE ICs and BCs,
                 solver_found = False
-                for solver_name, fields in self.diffusantDict.items():  # Check for use of DiffusionSolverFE
-                    if solver_name == "DiffusionSolverFE" and not solver_found:
+                for solver_name, fields in self.diffusantDict.items():  # Check for use of specific Diffusion Solvers:
+                    if solver_name in (DIFFUSION_SOLVER_FE, SS_DIFF_SOLVER, SS_DIFF_SOLVER_2D,
+                                       REACT_DIFF_SOLVER_FE) and not solver_found:
+                    #if (solver_name == DIFFUSION_SOLVER_FE or REACT_DIFF_SOLVER_FE or REACT_DIFF_SOLVER_FVM) and not solver_found:
                         solver_found = True
-                        self.setPage(self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME), self.get_page_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME))
+                        self.setPage(self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME), self.get_page_by_name(DIFFUSION_WIZARD_PAGE_NAME))
                        # self.setPage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME), self.get_page_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME))
                 self.populate_pde_solver_entries()
             else:
-                self.removePage(self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME))
+                self.removePage(self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME))
               #  self.removePage(self.get_page_id_by_name(SECRETION_DIFFUSION_FE_PAGE_NAME)) # remove if do not need anymore
             return True
 
@@ -1836,36 +2524,144 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             else:
                 return True
 
-        if self.currentId() == self.get_page_id_by_name(DIFFUSION_FE_WIZARD_PAGE_NAME):
-            # we only extract data from page here - it is not a validation strictly speaking
-            self.diffusionFE_vals_dict = self.getCurrentDiffusionFE_Values()
-            # Get secretion values and uptake values
+        if self.currentId() == self.get_page_id_by_name(DIFFUSION_WIZARD_PAGE_NAME):
+            # we extract data from page here - not much validation done here.
+            self.diffusion_vals_dict = self.getCurrentDiffusionFE_Values()
+            # Get Additional properties and secretion and uptake values
             for solver_name, fields in self.diffusantDict.items():
                 for field_name in fields:
-                    results = self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name)
-                    if results == False:
-                        return False   # secretion values bad
+                    results = self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name, solver_name)
+                    for entry in results:
+                        cell_type = ""
+                        paired = True  # Max and Rel uptakes must both have values per cell type and field.
+                        for i in range(0, len(results[entry])):
+                            cell_type: str = results[entry][i]["CellType"]
+                            # MaxUptake and RelativeUptakeRate are either "-" or a number
+                            max_up_str = str(results[entry][i]["MaxUptake"]).strip()
+                            rel_up_str = str(results[entry][i]["RelativeUptakeRate"]).strip()
+                            if max_up_str == "-" and rel_up_str == "-":
+                                paired = True
+                            elif max_up_str == "-" or rel_up_str == "-":
+                                paired = False
+                                # we break immediately when we detect an error, so that we can display it
+                                # immediately to the user
+                                break
+                            else:
+                                try:
+                                    max_up = float(max_up_str)
+                                except ValueError:
+                                    # Should not reach this as diff_secretion_table_item_changed() should
+                                    # take care of communicating errors to user. This error fails silently.
+                                    max_up = 0.0
+                                try:
+                                    rel_up = float(rel_up_str)
+                                except ValueError:
+                                    # Should not reach this as diff_secretion_table_item_changed() should
+                                    # take care of communicating errors to user. This error fails silently.
+                                    rel_up = 0.0
+
+                                if max_up > 0.0 >= rel_up:
+                                    paired = False
+                                    # we break immediately when we detect an error, so that we can display it
+                                    # immediately to the user
+                                    break
+                                elif max_up <= 0.0 < rel_up:
+                                    paired = False
+                                    # we break immediately when we detect an error, so that we can display it
+                                    # immediately to the user
+                                    break
+
+                        if not paired:
+                            QMessageBox.warning(
+                                self,
+                                "Invalid Uptake Configuration",
+                                (
+                                    "The uptake settings are incomplete.\n\n"
+                                    f"Cell type:  {cell_type}\n"
+                                    f"Field name: {field_name}\n\n"
+                                    "Both *Maximum Uptake* and *Relative Uptake* must be provided.\n"
+                                    "Please enter valid values for both fields before continuing."
+                                ),
+                                QMessageBox.Ok
+                            )
+                            return False
+
+                    self.diffusion_vals_dict[field_name]["Secretion"] = results
+
+        if self.currentId() == self.get_page_id_by_name(CONTACT_PAGE_NAME):
+            issues_found = self.validateContactPage()
+            if len(issues_found) > 0:
+                issues_str = ""
+                for issue in issues_found:
+                    if issues_str == "":
+                        issues_str = issue
                     else:
-                        self.diffusionFE_vals_dict[field_name]["Secretion"] = results
-                    #self.diffusionFE_vals_dict[field_name]["Secretion"] = \
-                    #    self.getDiffusionSecretion_Values(self.field_table_dict[field_name], field_name)
-
-        if self.currentId() == self.get_page_by_name("AdhesionFlex Plugin"):
-
-            if not self.afTable.rowCount():
-
-                QMessageBox.warning(self, "Missing information",
-                                    "Please specify at least one adhesion molecule name "
-                                    "to be used in AdhesionFlex plugin",
-                                    QMessageBox.Ok)
-
+                        issues_str = issues_str + ", \n" + issue
+                QMessageBox.warning(self, "Missing information", issues_str, QMessageBox.Ok)
                 return False
 
-            else:
+        if self.currentId() == self.get_page_id_by_name(ADHESION_FLEX_PAGE_NAME):
+            issues_found = self.validateAdhesionFlexPage()
+            if len(issues_found) > 0:
+                issues_str = ""
+                for issue in issues_found:
+                    if issues_str == "":
+                        issues_str = issue
+                    else:
+                        issues_str = issues_str + ", \n" + issue
+                QMessageBox.warning(self, "Missing information", issues_str, QMessageBox.Ok)
 
-                return True
+                return False
+            else:
+                print("Adhesion flex page get data section !!!!")
 
         return True
+
+    def validateAdhesionFlexPage(self) -> list[str]:
+        issues = []
+        if not self.afTable.rowCount() or self.afTable.rowCount() < 1:
+            issues.append("Please specify at least one adhesion molecule name to be used in AdhesionFlex plugin")
+
+        # Check conc of adhesion mol in cell type is >= 0
+        for row in range(0, self.afTable.rowCount()):
+            for col in range(1, self.afTable.columnCount()):
+                val_str = str(self.afTable.item(row, col).text()).strip()
+                try:
+                    if float(val_str) < 0.0:
+                        issues.append(f"Adhesion molecule conc {val_str} is less than zero")
+                except ValueError:
+                    issues.append(f"Adhesion molecule conc {val_str} is not a valid number")
+
+        # Check that adhesion mol binding param is a number:
+        for row in range(0, self.interaction_matrixTable.rowCount()):
+            for col in range(0, self.interaction_matrixTable.columnCount()):
+                val_str = str(self.interaction_matrixTable.item(row, col).text()).strip()
+                if val_str != "-":
+                    try:
+                        if float(val_str):
+                            pass
+                    except ValueError:
+                        issues.append(f"Adhesion molecule binding param value: {val_str} is not a valid number")
+
+        # Check if formulas have either Molecule1 or Molecule2 in them. In future validate with MuParser as well.
+        valid_mol_names = ("Molecule1", "Molecule2")
+        for row in range(0, self.binding_formula_molecular_pairTable.rowCount()):
+            for col in range(0, self.binding_formula_molecular_pairTable.columnCount()):
+                formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
+                if formula != "-":
+                    found = False
+                    for name in valid_mol_names:
+                        if name in formula:
+                            found = True
+                    if not found:
+                        issues.append(f"{formula} does not contain 'Molecule1' and/or 'Molecule2'.")
+
+        return issues
+
+    def validateContactPage(self) -> list[str]:
+        issues = self.contact_form.validateContactPage()
+
+        return issues
 
     def makeProjectDirectories(self, dir, name):
 
@@ -1905,6 +2701,9 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         self.generalPropertiesDict["MCS"] = self.mcsSB.value()
         self.generalPropertiesDict["LatticeType"] = str(self.latticeTypeCB.currentText())
         self.generalPropertiesDict["SimulationName"] = name
+        self.generalPropertiesDict["NumberOfProcessors"] = self.numberOfProcessorsSB.value()
+        self.generalPropertiesDict["DebugOutputFrequency"] = self.debugOutputFrequencySB.value()
+        self.generalPropertiesDict["NonParallelModule"] = "Potts" if self.nonParallelPottsCHB.isChecked() else None
         self.generalPropertiesDict["BoundaryConditions"] = OrderedDict()
         self.generalPropertiesDict["BoundaryConditions"]['x'] = self.xbcCB.currentText()
         self.generalPropertiesDict["BoundaryConditions"]['y'] = self.ybcCB.currentText()
@@ -1916,7 +2715,6 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             self.generalPropertiesDict["Initializer"] = ["blob", None]
 
         elif self.piffRB.isChecked():
-
             piff_path = str(self.piffLE.text()).strip()
             self.generalPropertiesDict["Initializer"] = ["piff", piff_path]
 
@@ -1929,7 +2727,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
                 relative_piff_path = os.path.join(self.simulationFilesDir, base_piff_path)
                 self.generalPropertiesDict["Initializer"][1] = self.getRelativePathWRTProjectDir(relative_piff_path)
 
-                print("relativePathOF PIFF=", self.generalPropertiesDict["Initializer"][1])
+                # print("relativePathOF PIFF=", self.generalPropertiesDict["Initializer"][1])
 
             except shutil.Error:
                 QMessageBox.warning(self, "Cannot copy PIFF file",
@@ -1940,6 +2738,23 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             except IOError as e:
                 QMessageBox.warning(self, "IO Error", e.__str__(), QMessageBox.Ok)
 
+        self.generalPropertiesDict["mcsConversionUnits"] = self.mcs_time_unitsCB.currentText()
+        number_str = self.mcs_time_factorLE.text()
+        try:
+            float(number_str)
+            self.generalPropertiesDict["mcsConversionFactor"] = number_str
+        except ValueError:
+            self.generalPropertiesDict["mcsConversionFactor"] = DEFAULT_TIME_FACTOR
+
+        self.generalPropertiesDict["voxelConversionUnits"] = self.voxel_length_unitsCB.currentText()
+        number_str = self.voxel_length_factorLE.text()
+        try:
+            float(number_str)
+            self.generalPropertiesDict["voxelConversionFactor"] = number_str
+        except ValueError:
+            self.generalPropertiesDict["voxelConversionFactor"] = DEFAULT_LENGTH_FACTOR
+
+
         self.cellTypeData = {}
 
         # extract cell type information form the table
@@ -1949,25 +2764,84 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             freeze = False
 
             if self.cellTypeTable.item(row, 1).checkState() == Qt.Checked:
-                print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
+                # print("self.cellTypeTable.item(row,1).checkState()=", self.cellTypeTable.item(row, 1).checkState())
                 freeze = True
 
             self.cellTypeData[cell_type] = [row, freeze]
 
-        self.af_data = {}
+        # Adhesion flex data here:
+        if self.adhesionFlexCHB.isChecked():
+            # af_data : dict that holds row from afTable and adhesion mol name {int, str}
+            # af_formula: holds dictionary of binding formulas {formula name -> formula}
+            # af_mol_mol_param: holds list of (mol1, mol2, binding param) tuple
+            # af_mol_density: holds dict of dict of mol densities in each cell type {cell-> {mol-> density}}
+            self.af_neighbor_order = DEFAULT_NEIGHBOR_ORDER
+            try:
+                self.af_neighbor_order = self.neighbor_order_SB.value()
 
-        for row in range(self.afTable.rowCount()):
-            molecule = str(self.afTable.item(row, 0).text())
+            except AttributeError:
+                pass  # do nothing as default neighborhood value already set.
 
-            self.af_data[row] = molecule
+            for row in range(self.afTable.rowCount()):
+                molecule = str(self.afTable.item(row, 0).text())
+                self.af_data[row] = molecule  # Probably can deprecate this in the future
 
-        self.af_formula = str(self.bindingFormulaLE.text()).strip()
+            # generate mol-mol binding list here:
+            for row in range(self.interaction_matrixTable.rowCount()):
+                for col in range(self.interaction_matrixTable.columnCount()):
+                    if str(self.interaction_matrixTable.item(row, col).text()).strip() != "-":
+                        mol1 = str(self.interaction_matrixTable.verticalHeaderItem(row).text())
+                        mol2 = str(self.interaction_matrixTable.horizontalHeaderItem(col).text())
+                        bind_par = str(self.interaction_matrixTable.item(row, col).text()).strip()
+                        try:
+                            bind_par_float = float(bind_par)
+                            new_mol_mol_bind = (mol1, mol2, bind_par)
+                        except ValueError:
+                            bind_par = DEFAULT_BINDING_PARAMETER
+                            new_mol_mol_bind = (mol1, mol2, bind_par)
+                        self.af_mol_mol_param.append(new_mol_mol_bind)
 
+            # generate dictionary of molecule densities in each cell type:
+            for col in range(1, self.afTable.columnCount()):
+                cell = str(self.afTable.horizontalHeaderItem(col).text())
+                mol_density = {}
+                for row in range(self.afTable.rowCount()):
+                    mol = str(self.afTable.item(row, 0).text()).strip()
+                    density = str(self.afTable.item(row, col).text()).strip()
+                    try:
+                        density_float = float(density)
+                        if density_float < 0:  # density cannot be less than zero
+                            density = DEFAULT_MOLECULE_DENSITY
+                    except ValueError:
+                        density = DEFAULT_MOLECULE_DENSITY
+                    mol_density[mol] = density
+                self.af_mol_density[cell] = mol_density
+
+            # grab formula for each adhesion  mol-mol pair:
+            for row in range(self.binding_formula_molecular_pairTable.rowCount()):
+                for col in range(self.binding_formula_molecular_pairTable.columnCount()):
+                    if str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip() != "-":
+                        mol1 = str(self.binding_formula_molecular_pairTable.verticalHeaderItem(row).text())
+                        mol2 = str(self.binding_formula_molecular_pairTable.horizontalHeaderItem(col).text())
+                        bind_formula = str(self.binding_formula_molecular_pairTable.item(row, col).text()).strip()
+                        if bind_formula != "":
+                            new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                        else:
+                            bind_formula = DEFAULT_BINDING_FORMULAS[0]
+                            new_mol_mol_bind_formula = (mol1, mol2, bind_formula)
+                        formula_found = False
+                        for key in self.af_formula:
+                            if self.af_formula[key] == bind_formula:
+                                formula_found = True
+                        if not formula_found:
+                            new_name = DEFAULT_AF_FORMULA_NAME + "_" + str(len(self.af_formula))
+                            self.af_formula[new_name] = bind_formula
+                        self.af_mol_mol_bind_formula.append(new_mol_mol_bind_formula)
+
+        #  ContactMultiCad data:
         cmc_table = []
-
         for row in range(self.cmcTable.rowCount()):
             cadherin = str(self.cmcTable.item(row, 0).text())
-
             cmc_table.append(cadherin)
 
         self.pde_field_data = {}  # Need to add all the new settings/values to this
@@ -1976,17 +2850,19 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
             chem_field_name = str(self.fieldTable.item(row, 0).text())
 
             solver_name = str(self.fieldTable.item(row, 1).text())
-
+            if solver_name == SS_DIFF_SOLVER:
+                if not (self.xDimSB.value() > 1 and self.yDimSB.value() > 1 and self.zDimSB.value() > 1):
+                    solver_name = SS_DIFF_SOLVER_2D
             self.pde_field_data[chem_field_name] = solver_name
 
         try:
             solver_name
         except NameError:
             solver_name = None
-    #    if solver_name == "DiffusionSolverFE":  # Remove this section if do not need anymore
+    #    if solver_name == DIFFUSION_SOLVER_FE:  # Remove this section if do not need anymore
             #  DiffusionFE Secretion:
 
-     #       secretion_diffusionFE_data = {}  # format {field:[secrDict1,secrDict2,...]}
+     #       secretion_diffusion_data = {}  # format {field:[secrDict1,secrDict2,...]}
      #       for row in range(self.secretion_DiffusionFE_Table.rowCount()):
 
      #           secr_field_name = str(self.secretion_DiffusionFE_Table.item(row, 0).text())
@@ -2007,11 +2883,11 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
       #          diff_fe_secr_dict["SecretionType"] = secretion_type
 
       #          try:
-      #              secretion_diffusionFE_data[secr_field_name].append(diff_fe_secr_dict)
+      #              secretion_diffusion_data[secr_field_name].append(diff_fe_secr_dict)
       #          except LookupError:
-      #              secretion_diffusionFE_data[secr_field_name] = [diff_fe_secr_dict]
-      #      for field in secretion_diffusionFE_data:
-      #          self.diffusionFE_vals_dict[field]["Secretion"] = secretion_diffusionFE_data[field]
+      #              secretion_diffusion_data[secr_field_name] = [diff_fe_secr_dict]
+      #      for field in secretion_diffusion_data:
+      #          self.diffusion_vals_dict[field]["Secretion"] = secretion_diffusion_data[field]
 
         self.secretion_data = {}  # format {field:[secrDict1,secrDict2,...]}
 
@@ -2141,18 +3017,25 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def generateXML(self, generator):
         cell_type_dict = self.cellTypeData
         args = []
-
         kwds = {}
 
         kwds['insert_root_element'] = generator.cc3d
         kwds['data'] = cell_type_dict
         kwds['generalPropertiesData'] = self.generalPropertiesDict
         kwds['afData'] = self.af_data
-        kwds['formula'] = self.af_formula
+        kwds['afFormula'] = self.af_formula
+        kwds['afBindingParams'] = self.af_mol_mol_param
+        kwds['afMoleculeDensities'] = self.af_mol_density
+        kwds['afMolMolBindingFormulas'] = self.af_mol_mol_bind_formula
+        kwds['afNeighborOrder'] = self.af_neighbor_order
+        kwds['contact_energies'] = self.contact_form.getContactEnergyMatrix()
+        kwds['contact_neighbor_order'] = self.contact_form.getContactNeighborOrder()
+        kwds['internal_contact_energies'] = self.contact_form.getInternalContactEnergyMatrix()
+        kwds['internal_contact_neighbor_order'] = self.contact_form.getInternalContactNeighborOrder()
         kwds['chemotaxisData'] = self.chemotaxisData
         kwds['pdeFieldData'] = self.pde_field_data
         kwds['secretionData'] = self.secretion_data
-        kwds['diffusantData'] = self.diffusionFE_vals_dict
+        kwds['diffusantData'] = self.diffusion_vals_dict
 
         generator.generateMetadataSimulationProperties(*args, **kwds)
 
@@ -2252,21 +3135,15 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         list_of_solvers = list(self.diffusantDict.keys())
 
         for solver in list_of_solvers:
+            if solver == SS_DIFF_SOLVER and not (self.xDimSB.value() > 1 and self.yDimSB.value() > 1 and self.zDimSB.value() > 1):
+                solver = SS_DIFF_SOLVER_2D
             solver_generator_fcn = getattr(generator, 'generate' + solver)
-
             solver_generator_fcn(*args, **kwds)
 
             # if self.fieldTable.rowCount():
-
-            # generator.generateDiffusionSolverFE(*args,**kwds)            
-
             # generator.generateFlexibleDiffusionSolverFE(*args,**kwds)
-
-            # generator.generateFastDiffusionSolver2DFE(*args,**kwds)            
-
-            # generator.generateKernelDiffusionSolver(*args,**kwds)            
-
-            # generator.generateSteadyStateDiffusionSolver(*args,**kwds)            
+            # generator.generateFastDiffusionSolver2DFE(*args,**kwds)
+            # generator.generateKernelDiffusionSolver(*args,**kwds)
 
         if self.boxWatcherCHB.isChecked():
             generator.generateBoxWatcherSteppable(*args, **kwds)
@@ -2304,7 +3181,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
 
             return [t] + rest, pathMatch
 
-        print("(h,t,pathMatch)=", (h, t, pathMatch))
+       # print("(h,t,pathMatch)=", (h, t, pathMatch))
 
         if len(h) < 1: return [t] + rest, pathMatch
 

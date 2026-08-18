@@ -2317,7 +2317,7 @@ def compile(file, codestring = ""):
 
         lines = traceback.format_exception_only(SyntaxError, detail)
 
-        match = re.match('\s*File "(.+)", line (\d+)', 
+        match = re.match(r'\s*File "(.+)", line (\d+)',
 
             lines[0].replace('<string>', '%s' % file))
 

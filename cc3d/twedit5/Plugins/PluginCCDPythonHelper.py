@@ -40,15 +40,16 @@ from cc3d.doc.code_ref.developer.build import build as code_ref_build_dev
 from cc3d.twedit5.Plugins.TweditPluginBase import TweditPluginBase
 from cc3d.twedit5.twedit.utils.global_imports import *
 from cc3d.twedit5.Plugins.CC3DPythonHelper.Configuration import Configuration
-import os.path
+from pathlib import Path
 import shutil
 from cc3d.twedit5.Plugins.PluginUtils.SnippetMenuParser import SnippetMenuParser
+from cc3d.twedit5.Plugins.PluginUtils.SnippetPreview import SnippetPreviewController
 from cc3d.twedit5.Plugins.CC3DPythonHelper.sbmlloaddlg import SBMLLoadDlg
 import re
 from typing import Optional, Type
 
-html_man_filename_user = os.path.join(code_ref_build_user.man_build_dir, "html", "index.html")
-html_man_filename_dev = os.path.join(code_ref_build_dev.man_build_dir, "html", "index.html")
+html_man_filename_user = str(Path(code_ref_build_user.man_build_dir).joinpath("html", "index.html"))
+html_man_filename_dev = str(Path(code_ref_build_dev.man_build_dir).joinpath("html", "index.html"))
 
 error = ''
 
@@ -58,7 +59,7 @@ class CC3DAPIDocViewerWidget(QWebView):
 
     def check_build(self) -> None:
         """Checks for built documentation and builds if necessary"""
-        if not os.path.isfile(path=self.html_man_filename_root):
+        if not Path(self.html_man_filename_root).is_file():
             self.build_docs()
 
     def load_local(self):
@@ -115,7 +116,7 @@ class CC3DAPIDocDockWidget(QDockWidget):
         if not self._loaded:
             self._loaded = True
 
-            if not os.path.isfile(self.viewer_widget.html_man_filename_root):
+            if not Path(self.viewer_widget.html_man_filename_root).is_file():
                 # No docs found: build on-demand and load afterward
                 self.setWindowTitle(self.window_title + ' - Building docs...')
                 t = CC3DAPIDocBuilder(dock=self)
@@ -223,21 +224,21 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
         self.initialize()
 
         # useful regular expressions
-        self.nonwhitespaceRegex = re.compile('^[\s]*[\S]+')
+        self.nonwhitespaceRegex = re.compile(r'^[\s]*[\S]+')
 
-        self.commentRegex = re.compile('^[\s]*#')
+        self.commentRegex = re.compile(r'^[\s]*#')
 
-        self.defFunRegex = re.compile('^[\s]*def')
-
-        # block statement - : followed by whitespaces at the end of the line
-        self.blockStatementRegex = re.compile(':[\s]*$')
+        self.defFunRegex = re.compile(r'^[\s]*def')
 
         # block statement - : followed by whitespaces at the end of the line
-        self.blockStatementWithCommentRegex = re.compile(':[\s]*[#]+[\s\S]*$')
+        self.blockStatementRegex = re.compile(r':[\s]*$')
+
+        # block statement - : followed by whitespaces at the end of the line
+        self.blockStatementWithCommentRegex = re.compile(r':[\s]*[#]+[\s\S]*$')
 
         # line with comment at the end first group matches anythin except '#' the remaining
         # group catches the rest of the line
-        self.lineWithCommentAtTheEndRegex = re.compile('([^#]*)([\s\S]*)')
+        self.lineWithCommentAtTheEndRegex = re.compile(r'([^#]*)([\s\S]*)')
 
         self.skipCommentsFlag = False
 
@@ -256,6 +257,10 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
         self.actionGroupMenuDict = {}
 
         self.cppMenuAction = None
+
+        self.snippetDictionary = {}
+
+        self.snippetPreviewController = None
 
     def addSnippetDictionaryEntry(self, _snippetName, _snippetProperties):
 
@@ -279,6 +284,12 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         self.snippetMapper = QSignalMapper(self.__ui)
 
+        self.snippetPreviewController = SnippetPreviewController(
+            self.__ui,
+            self.snippetDictionary,
+            fallback_lexer_cls=QsciLexerPython
+        )
+
         self.snippetMapper.mapped[str].connect(self.__insertSnippet)
 
         self.__initMenus()
@@ -295,6 +306,9 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
         """
 
         self.snippetMapper.mapped[str].disconnect(self.__insertSnippet)
+
+        if self.snippetPreviewController is not None:
+            self.snippetPreviewController.hide()
 
         for actionName, action in self.actions.items():
 
@@ -318,6 +332,8 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         # inserting CC3D Project Menu as first item of the menu bar of twedit++
         self.cc3dPythonMenuAction = self.__ui.menuBar().insertMenu(self.__ui.fileMenu.menuAction(), self.cc3dPythonMenu)
+        if self.snippetPreviewController is not None:
+            self.cc3dPythonMenu.aboutToHide.connect(self.snippetPreviewController.hide)
 
     def __initActions(self):
 
@@ -327,15 +343,14 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         """
 
-        # lists begining of action names which will be grouped
-        self.snippetDictionary = {}
+        # lists beginning of action names which will be grouped
+        self.snippetDictionary.clear()
 
         psmp = SnippetMenuParser()
 
-        snippet_file_path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                         'CC3DPythonHelper/Snippets.py.template'))
+        snippet_file_path = Path(__file__).resolve().parent.joinpath('CC3DPythonHelper', 'Snippets.python.yaml')
 
-        psmp.readSnippetMenu(snippet_file_path)
+        psmp.readSnippetMenu(str(snippet_file_path))
 
         snippet_menu_dict = psmp.getSnippetMenuDict()
 
@@ -346,6 +361,8 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
             print('menuName=', menuName)
 
             group_menu = self.cc3dPythonMenu.addMenu(menuName)
+            if self.snippetPreviewController is not None:
+                self.snippetPreviewController.attach_menu(group_menu)
 
             for subMenuName, snippet_tuple in iter(sorted(submenuDict.items())):
                 action = group_menu.addAction(subMenuName)
@@ -356,6 +373,7 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
                 self.snippetDictionary[action_key] = snippet_tuple
 
                 self.actions[action_key] = action
+                action.setData(action_key)
 
                 action.triggered.connect(self.snippetMapper.map)
 
@@ -462,6 +480,9 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
     def __insertSnippet(self, _snippetName):
 
+        if self.snippetPreviewController is not None:
+            self.snippetPreviewController.hide()
+
         snippet_name_str = str(_snippetName)
 
         text = self.snippetDictionary[str(_snippetName)].snippet_text
@@ -470,9 +491,8 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
         editor = self.__ui.getCurrentEditor()
 
-        cur_file_name = str(self.__ui.getCurrentDocumentName())
-
-        base_name, ext = os.path.splitext(cur_file_name)
+        cur_file_path = Path(str(self.__ui.getCurrentDocumentName()))
+        ext = cur_file_path.suffix
 
         if ext != ".py" and ext != ".pyw":
             QMessageBox.warning(self.__ui, "Python files only", "Python code snippets work only for Python files")
@@ -499,13 +519,13 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
             print('LOADING MODEL')
 
-            current_path = os.path.abspath(os.path.dirname(cur_file_name))
+            current_path = cur_file_path.resolve().parent
 
             print('currentPath=', current_path)
 
             dlg = SBMLLoadDlg(self)
 
-            dlg.setCurrentPath(current_path)
+            dlg.setCurrentPath(str(current_path))
 
             model_name = 'MODEL_NAME'
 
@@ -521,15 +541,15 @@ class CC3DPythonHelper(QObject, TweditPluginBase):
 
                 model_nickname = str(dlg.modelNicknameLE.text())
 
-                model_file_name = os.path.abspath(str(dlg.fileNameLE.text()))
+                model_file_path = Path(str(dlg.fileNameLE.text())).resolve()
 
-                model_dir = os.path.abspath(os.path.dirname(model_file_name))
+                model_dir = model_file_path.parent
 
-                model_path = 'Simulation/' + os.path.basename(model_file_name)
+                model_path = str(Path('Simulation').joinpath(model_file_path.name))
 
                 if model_dir != current_path:  # copy sbml file into simulation directory
 
-                    shutil.copy(model_file_name, current_path)
+                    shutil.copy(str(model_file_path), str(current_path))
 
             text = """
 
@@ -621,9 +641,9 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
     def includeExtraFieldsImports(self, _editor):
 
-        player_from_import_regex = re.compile('^[\s]*from[\s]*cc3d.*cpp.*PlayerPython[\s]*import[\s]*\*')
+        player_from_import_regex = re.compile(r'^[\s]*from[\s]*cc3d.*cpp.*PlayerPython[\s]*import[\s]*\*')
 
-        compu_cell_setup_import_regex = re.compile('^[\s]*from[\s]*cc3d[\s]*import[\s]*CompuCellSetup')
+        compu_cell_setup_import_regex = re.compile(r'^[\s]*from[\s]*cc3d[\s]*import[\s]*CompuCellSetup')
 
         cur_line, cur_col = _editor.getCursorPosition()
 
@@ -657,7 +677,7 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
     def findEntryLineForCellAttributes(self, _editor):
 
-        getCoreSimulationObjectsRegex = re.compile('^[\s]*sim.*CompuCellSetup\.getCoreSimulationObjects')
+        getCoreSimulationObjectsRegex = re.compile(r'^[\s]*sim.*CompuCellSetup\.getCoreSimulationObjects')
 
         text = ''
 
@@ -681,7 +701,7 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
             # check for comment code  - #add extra attributes here
 
-            attrib_comment_regex = re.compile('^[\s]*#[\s]*add[\s]*extra[\s]*attrib')
+            attrib_comment_regex = re.compile(r'^[\s]*#[\s]*add[\s]*extra[\s]*attrib')
 
             for line in range(found_line, _editor.lines()):
 
@@ -715,6 +735,17 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
 
         text = ''
 
+        indent_width = _editor.indentationWidth()
+
+        if indent_width <= 0:
+            QMessageBox.warning(
+                self.__ui,
+                "Indentation warning",
+                "Indentation width is not set by QScintilla. Using default value (4)."
+            )
+            indent_width = 4
+
+
         for line in range(_line, -1, -1):
 
             text = str(_editor.text(line))
@@ -735,11 +766,11 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
                         # we insert code snippet increasing indentation after beginning of block statement
 
                         indentation_levels = (_editor.indentation(
-                            line) + _editor.indentationWidth()) // _editor.indentationWidth()
+                            line) + indent_width) // indent_width
 
                         # if this is non-zero indentations in the code are inconsistent
                         indentation_level_consistency = not (_editor.indentation(
-                            line) + _editor.indentationWidth()) % _editor.indentationWidth()
+                            line) + indent_width) % indent_width
 
                         if not indentation_level_consistency:
                             QMessageBox.warning(self.__ui, "Possible indentation problems",
@@ -753,10 +784,10 @@ bionetAPI.loadSBMLModel(modelName, modelPath,modelNickname,  integrationStep)
                     else:
                         # we use indentation of the previous line
 
-                        indentation_levels = (_editor.indentation(line)) // _editor.indentationWidth()
+                        indentation_levels = (_editor.indentation(line)) // indent_width
 
                         # if this is non-zero indentations in the code are inconsistent
-                        indentation_level_consistency = not (_editor.indentation(line)) % _editor.indentationWidth()
+                        indentation_level_consistency = not (_editor.indentation(line)) % indent_width
 
                         if not indentation_level_consistency:
                             QMessageBox.warning(self.__ui, "Possible indentation problems",
