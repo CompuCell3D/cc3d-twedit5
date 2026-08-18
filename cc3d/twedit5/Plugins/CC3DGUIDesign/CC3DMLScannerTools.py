@@ -32,11 +32,11 @@ def pretty_text(text):
 
 
 def search_beginning_line(text: str):
-    return re.search('^[\s\S]*<(.*)>[\s\S]*', pretty_text(text))
+    return re.search(r'^[\s\S]*<(.*)>[\s\S]*', pretty_text(text))
 
 
 def search_closing_line(text: str):
-    return re.search('^[\s\S]*</(.*)>[\s\S]*', pretty_text(text))
+    return re.search(r'^[\s\S]*</(.*)>[\s\S]*', pretty_text(text))
 
 
 def is_beginning_module_line(text: str) -> bool:
@@ -115,10 +115,10 @@ def get_module_name(text: str):
         return None
 
     attribute = att[0]
-    regex = re.compile('^[\s\S]*<[\s]*' + module_type + '[\s]*' + attribute +
-                       '[\s]*=[\s]*"[\s]*(.*)[\s]*"[\s]*>')
-    regex_sl = re.compile('^[\s\S]*<[\s]*' + module_type + '[\s]*' + attribute +
-                          '[\s]*=[\s]*"[\s]*(.*)[\s]*"[\s]*/[\s]*>')
+    regex = re.compile(r'^[\s\S]*<[\s]*' + module_type + r'[\s]*' + attribute +
+                       r'[\s]*=[\s]*"[\s]*(.*)[\s]*"[\s]*>')
+    regex_sl = re.compile(r'^[\s\S]*<[\s]*' + module_type + r'[\s]*' + attribute +
+                          r'[\s]*=[\s]*"[\s]*(.*)[\s]*"[\s]*/[\s]*>')
 
     search_sl = re.search(regex_sl, text)
     try:
@@ -137,7 +137,7 @@ def get_module_name(text: str):
 def get_closing_line(text: str):
     if not is_beginning_module_line(text=text):
         return None
-    elif re.search('^[\s\S]*<[\s]*(.*)[\s]*/>', text) is not None:
+    elif re.search(r'^[\s\S]*<[\s]*(.*)[\s]*/>', text) is not None:
         return None
 
     module_type = get_module_type(text=text)

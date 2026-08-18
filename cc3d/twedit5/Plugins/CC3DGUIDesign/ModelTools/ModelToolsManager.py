@@ -97,9 +97,9 @@ class ModelToolsManager:
 
                 module = self.__load_tool_source(btd.name, btd.file_name)
 
-                self.model_tools_dict[btd.name] = getattr(module, btd.class_name)
+                self.model_tools_dict[btd.name] = getattr(module, btd.class_name) if module is not None else None
 
-            if tool_name != btd.name:
+            if btd is not None and tool_name != btd.name:
 
                 keys_swap.append((tool_name, btd.name))
 
@@ -188,9 +188,8 @@ class ModelToolsManager:
 
             sys.path.insert(2, tool_dir)
 
-            import imp
-
-            module = imp.load_source(name, file_name)
+            loader = SourceFileLoader(name, file_name)
+            module = loader.load_module(name)
 
         except Exception as e:
 
