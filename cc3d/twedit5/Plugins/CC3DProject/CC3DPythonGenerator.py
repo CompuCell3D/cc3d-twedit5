@@ -381,9 +381,15 @@ class {steppable_name}(SteppableBasePy):
         self.plot_windows[{plot_key!r}].add_histogram_plot({series_name!r}, color={color!r}, alpha=100)
 '''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), color=color)
                 else:
+                    line_plot_kwargs = self._format_line_plot_kwargs(plot_spec=plot_spec, series_spec=series_spec)
                     self.steppableCodeLines += '''
-        self.plot_windows[{plot_key!r}].add_plot({series_name!r}, style='Lines', color={color!r}, size=3)
-'''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), color=color)
+        self.plot_windows[{plot_key!r}].add_plot({series_name!r}, style='Lines', color={color!r}, size=3{line_plot_kwargs})
+'''.format(
+                        plot_key=plot_key,
+                        series_name=series_spec.get("name", ""),
+                        color=color,
+                        line_plot_kwargs=line_plot_kwargs
+                    )
 
         self.steppableCodeLines += '''
 
@@ -451,6 +457,34 @@ class {steppable_name}(SteppableBasePy):
                         x_expression=x_expression,
                         series_var=series_var
                     )
+
+    @staticmethod
+    def _format_line_plot_kwargs(plot_spec, series_spec):
+        kwargs = []
+        separate_y_axis = bool(plot_spec.get("second_y_axis") and series_spec.get("axis") == "Right")
+        if separate_y_axis:
+            kwargs.append("separate_y_axis=True")
+
+        y_min = series_spec.get("y_min", "")
+        if y_min != "":
+            try:
+                kwargs.append("y_min={}".format(float(y_min)))
+            except ValueError:
+                pass
+
+        y_max = series_spec.get("y_max", "")
+        if y_max != "":
+            try:
+                kwargs.append("y_max={}".format(float(y_max)))
+            except ValueError:
+                pass
+
+        if plot_spec.get("y_scale") == "log":
+            kwargs.append("y_scale_type='log'")
+
+        if not kwargs:
+            return ""
+        return ", " + ", ".join(kwargs)
 
     def generate_constraint_initializer(self):
 

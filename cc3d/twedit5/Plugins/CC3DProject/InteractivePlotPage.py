@@ -1,7 +1,7 @@
 import math
 
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QDoubleValidator
 from PyQt5.QtWidgets import QInputDialog, QLabel, QTableWidgetItem, QWizardPage
 
 from cc3d.twedit5.Plugins.CC3DProject.ui_interactiveplotpage import Ui_interactivePlotPage
@@ -21,6 +21,8 @@ CELL_TYPE_SERIES_PREFIX = "Cell type: "
 DEFAULT_COLORS = ["red", "green", "blue", "magenta", "cyan", "yellow", "white"]
 LINE_PLOT_TYPE = "Line"
 HISTOGRAM_PLOT_TYPE = "Histogram"
+LEFT_Y_AXIS = "Left"
+RIGHT_Y_AXIS = "Right"
 
 
 class InteractivePlotPage(QWizardPage):
@@ -37,6 +39,7 @@ class InteractivePlotPage(QWizardPage):
         self._custom_series_names = []
 
         self._setup_preview()
+        self._setup_series_controls()
         self._connect_signals()
         self.ui.xValueLE.setText(DEFAULT_X_VALUE)
         self.set_cell_types(["Medium"])
@@ -57,6 +60,7 @@ class InteractivePlotPage(QWizardPage):
         self.ui.removePlotPB.clicked.connect(self.on_remove_plot_clicked)
         self.ui.addSeriesPB.clicked.connect(self.on_add_series_clicked)
         self.ui.removeSeriesPB.clicked.connect(self.on_remove_series_clicked)
+        self.ui.secondYAxisCB.toggled.connect(self.on_second_y_axis_toggled)
         self.ui.plotListWidget.currentRowChanged.connect(self.on_plot_selection_changed)
         self.ui.titleLE.textChanged.connect(self.on_plot_field_changed)
         self.ui.xAxisTitleLE.textChanged.connect(self.on_plot_field_changed)
@@ -66,6 +70,13 @@ class InteractivePlotPage(QWizardPage):
         self.ui.xLogScaleCB.toggled.connect(self.on_plot_field_changed)
         self.ui.yLogScaleCB.toggled.connect(self.on_plot_field_changed)
         self.ui.showLegendCB.toggled.connect(self.on_plot_field_changed)
+
+    def _setup_series_controls(self):
+        self.ui.yAxisCB.addItems([LEFT_Y_AXIS, RIGHT_Y_AXIS])
+        self.ui.yAxisCB.setCurrentText(LEFT_Y_AXIS)
+        self.ui.yAxisCB.setEnabled(False)
+        self.ui.yMinLE.setValidator(QDoubleValidator())
+        self.ui.yMaxLE.setValidator(QDoubleValidator())
 
     def set_cell_types(self, cell_types):
         self.cell_types = list(cell_types)
@@ -92,6 +103,7 @@ class InteractivePlotPage(QWizardPage):
             "x_scale": "linear",
             "y_scale": "linear",
             "legend": True,
+            "second_y_axis": False,
             "series": []
         }
         self.plots.append(plot)
@@ -121,8 +133,10 @@ class InteractivePlotPage(QWizardPage):
         self.ui.xLogScaleCB.setChecked(plot["x_scale"] == "log")
         self.ui.yLogScaleCB.setChecked(plot["y_scale"] == "log")
         self.ui.showLegendCB.setChecked(plot["legend"])
+        self.ui.secondYAxisCB.setChecked(plot.get("second_y_axis", False))
         self._fill_series_table(plot["series"])
         self._loading_plot = False
+        self._update_series_axis_controls()
         self._update_preview()
 
     def _save_current_plot(self):
@@ -137,6 +151,7 @@ class InteractivePlotPage(QWizardPage):
         plot["x_scale"] = "log" if self.ui.xLogScaleCB.isChecked() else "linear"
         plot["y_scale"] = "log" if self.ui.yLogScaleCB.isChecked() else "linear"
         plot["legend"] = self.ui.showLegendCB.isChecked()
+        plot["second_y_axis"] = self.ui.secondYAxisCB.isChecked()
         plot["series"] = self._series_from_table()
         item = self.ui.plotListWidget.item(self.current_plot_index)
         if item is not None:
@@ -150,7 +165,14 @@ class InteractivePlotPage(QWizardPage):
     def _append_series_row(self, entry):
         row = self.ui.seriesTable.rowCount()
         self.ui.seriesTable.insertRow(row)
-        values = [entry["name"], entry["x"], entry["y"]]
+        values = [
+            entry["name"],
+            entry["x"],
+            entry["y"],
+            entry.get("axis", LEFT_Y_AXIS),
+            entry.get("y_min", ""),
+            entry.get("y_max", "")
+        ]
         for column, value in enumerate(values):
             item = QTableWidgetItem(value)
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
@@ -162,9 +184,55 @@ class InteractivePlotPage(QWizardPage):
             name = self.ui.seriesTable.item(row, 0).text()
             x_value = self.ui.seriesTable.item(row, 1).text()
             y_value = self.ui.seriesTable.item(row, 2).text()
+            axis = self.ui.seriesTable.item(row, 3).text()
+            y_min = self.ui.seriesTable.item(row, 4).text()
+            y_max = self.ui.seriesTable.item(row, 5).text()
             source_type = "cell_type" if y_value in self.cell_types else "custom"
-            series.append({"name": name, "x": x_value, "y": y_value, "source_type": source_type})
+            series.append({
+                "name": name,
+                "x": x_value,
+                "y": y_value,
+                "source_type": source_type,
+                "axis": axis,
+                "y_min": y_min,
+                "y_max": y_max
+            })
         return series
+
+    def _line_plot_with_multiple_series(self, plot=None):
+        if plot is None:
+            plot = self._current_plot()
+        if plot is None:
+            return False
+        return plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE and len(plot.get("series", [])) > 1
+
+    def _line_plot_can_add_secondary_axis(self, plot=None):
+        if plot is None:
+            plot = self._current_plot()
+        if plot is None:
+            return False
+        return plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE and len(plot.get("series", [])) >= 1
+
+    def _update_series_axis_controls(self):
+        plot = self._current_plot()
+        enable_second_axis = self._line_plot_can_add_secondary_axis(plot)
+        self.ui.secondYAxisCB.setEnabled(enable_second_axis)
+        if not enable_second_axis:
+            self.ui.secondYAxisCB.blockSignals(True)
+            self.ui.secondYAxisCB.setChecked(False)
+            self.ui.secondYAxisCB.blockSignals(False)
+        elif not self.ui.secondYAxisCB.isChecked():
+            self.ui.secondYAxisCB.blockSignals(True)
+            self.ui.secondYAxisCB.setChecked(True)
+            self.ui.secondYAxisCB.blockSignals(False)
+        enable_axis_choice = enable_second_axis and self.ui.secondYAxisCB.isChecked()
+        self.ui.yAxisCB.setEnabled(enable_axis_choice)
+        if not enable_axis_choice:
+            self.ui.yAxisCB.setCurrentText(LEFT_Y_AXIS)
+
+        enable_ranges = plot is not None and plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE
+        self.ui.yMinLE.setEnabled(enable_ranges)
+        self.ui.yMaxLE.setEnabled(enable_ranges)
 
     def _update_preview(self):
         if pg is None:
@@ -235,7 +303,18 @@ class InteractivePlotPage(QWizardPage):
             if self.ui.xValueLE.text().strip() == DEFAULT_HISTOGRAM_X_VALUE:
                 self.ui.xValueLE.setText(DEFAULT_X_VALUE)
         self._save_current_plot()
+        self._update_series_axis_controls()
         self._update_preview()
+
+    @pyqtSlot(bool)
+    def on_second_y_axis_toggled(self, checked):
+        if self._loading_plot:
+            return
+        axis_picker_enabled = checked and self._line_plot_can_add_secondary_axis()
+        self.ui.yAxisCB.setEnabled(axis_picker_enabled)
+        if not axis_picker_enabled:
+            self.ui.yAxisCB.setCurrentText(LEFT_Y_AXIS)
+        self._save_current_plot()
 
     @pyqtSlot()
     def on_add_series_clicked(self):
@@ -266,9 +345,19 @@ class InteractivePlotPage(QWizardPage):
             name = f"{y_value} volume histogram"
         else:
             name = f"{y_value} count"
-        entry = {"name": name, "x": x_value, "y": y_value, "source_type": source_type}
+        axis = self.ui.yAxisCB.currentText() if self.ui.yAxisCB.isEnabled() else LEFT_Y_AXIS
+        entry = {
+            "name": name,
+            "x": x_value,
+            "y": y_value,
+            "source_type": source_type,
+            "axis": axis,
+            "y_min": self.ui.yMinLE.text().strip(),
+            "y_max": self.ui.yMaxLE.text().strip()
+        }
         plot["series"].append(entry)
         self._append_series_row(entry)
+        self._update_series_axis_controls()
         self._update_preview()
 
     @pyqtSlot()
@@ -278,6 +367,7 @@ class InteractivePlotPage(QWizardPage):
             return
         self.ui.seriesTable.removeRow(row)
         self._save_current_plot()
+        self._update_series_axis_controls()
         self._update_preview()
 
     def get_plot_data(self):
@@ -291,6 +381,7 @@ class InteractivePlotPage(QWizardPage):
                 "x_scale": plot["x_scale"],
                 "y_scale": plot["y_scale"],
                 "legend": plot["legend"],
+                "second_y_axis": plot.get("second_y_axis", False),
                 "series": list(plot["series"])
             }
             for plot in self.plots
