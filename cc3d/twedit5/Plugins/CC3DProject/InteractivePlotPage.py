@@ -34,16 +34,18 @@ class InteractivePlotPage(QWizardPage):
         self.ui.setupUi(self)
         self.cell_types = []
         self.plots = []
+        self.draft_plot = self._new_plot()
         self.current_plot_index = -1
         self._loading_plot = False
         self._custom_series_names = []
+        self._prompting_custom_y_value = False
 
         self._setup_preview()
         self._setup_series_controls()
         self._connect_signals()
         self.ui.xValueLE.setText(DEFAULT_X_VALUE)
         self.set_cell_types(["Medium"])
-        self.add_plot()
+        self._load_plot(-1)
 
     def _setup_preview(self):
         if pg is None:
@@ -61,6 +63,7 @@ class InteractivePlotPage(QWizardPage):
         self.ui.addSeriesPB.clicked.connect(self.on_add_series_clicked)
         self.ui.removeSeriesPB.clicked.connect(self.on_remove_series_clicked)
         self.ui.secondYAxisCB.toggled.connect(self.on_second_y_axis_toggled)
+        self.ui.yValueCB.currentIndexChanged.connect(self.on_y_value_changed)
         self.ui.plotListWidget.currentRowChanged.connect(self.on_plot_selection_changed)
         self.ui.titleLE.textChanged.connect(self.on_plot_field_changed)
         self.ui.xAxisTitleLE.textChanged.connect(self.on_plot_field_changed)
@@ -93,9 +96,40 @@ class InteractivePlotPage(QWizardPage):
             self.ui.yValueCB.setCurrentIndex(index)
         self.ui.yValueCB.blockSignals(False)
 
-    def add_plot(self):
+    def _prompt_for_custom_y_value(self):
+        if self._prompting_custom_y_value:
+            return None
+        self._prompting_custom_y_value = True
+        y_expression, accepted = QInputDialog.getText(
+            self,
+            "User Defined Data Series",
+            "Y data value or Python expression:"
+        )
+        y_expression = y_expression.strip()
+        if not accepted or not y_expression:
+            self._prompting_custom_y_value = False
+            return None
+
+        self.ui.yValueCB.blockSignals(True)
+        if y_expression not in self._custom_series_names:
+            self._custom_series_names.append(y_expression)
+            insert_index = max(0, self.ui.yValueCB.count() - 1)
+            self.ui.yValueCB.insertItem(
+                insert_index,
+                y_expression,
+                {"type": "custom", "name": y_expression}
+            )
+
+        index = self.ui.yValueCB.findText(y_expression)
+        if index >= 0:
+            self.ui.yValueCB.setCurrentIndex(index)
+        self.ui.yValueCB.blockSignals(False)
+        self._prompting_custom_y_value = False
+        return y_expression
+
+    def _new_plot(self):
         plot_number = len(self.plots) + 1
-        plot = {
+        return {
             "title": f"Plot {plot_number}",
             "plot_type": LINE_PLOT_TYPE,
             "x_axis_title": DEFAULT_X_AXIS_TITLE,
@@ -106,11 +140,35 @@ class InteractivePlotPage(QWizardPage):
             "second_y_axis": False,
             "series": []
         }
+
+    def _display_title_for_plot(self, plot, index):
+        return plot["title"] or f"Plot {index + 1}"
+
+    def add_plot(self):
+        self._save_current_plot()
+        if self.current_plot_index >= 0:
+            self.ui.plotListWidget.clearSelection()
+            self.current_plot_index = -1
+            self.draft_plot = self._new_plot()
+            self._load_plot(-1)
+            return
+
+        plot = dict(self.draft_plot)
+        plot["series"] = list(self.draft_plot["series"])
+        plot_index = len(self.plots)
+        if not plot["title"]:
+            plot["title"] = f"Plot {plot_index + 1}"
         self.plots.append(plot)
-        self.ui.plotListWidget.addItem(plot["title"])
-        self.ui.plotListWidget.setCurrentRow(len(self.plots) - 1)
+        self.ui.plotListWidget.addItem(self._display_title_for_plot(plot, plot_index))
+
+        self.draft_plot = self._new_plot()
+        self.ui.plotListWidget.clearSelection()
+        self.current_plot_index = -1
+        self._load_plot(-1)
 
     def _current_plot(self):
+        if self.current_plot_index == -1:
+            return self.draft_plot
         if 0 <= self.current_plot_index < len(self.plots):
             return self.plots[self.current_plot_index]
         return None
@@ -143,7 +201,12 @@ class InteractivePlotPage(QWizardPage):
         plot = self._current_plot()
         if plot is None:
             return
-        title = self.ui.titleLE.text().strip() or f"Plot {self.current_plot_index + 1}"
+        title = self.ui.titleLE.text().strip()
+        if not title:
+            if self.current_plot_index >= 0:
+                title = f"Plot {self.current_plot_index + 1}"
+            else:
+                title = f"Plot {len(self.plots) + 1}"
         plot["title"] = title
         plot["plot_type"] = HISTOGRAM_PLOT_TYPE if self.ui.histogramPlotRB.isChecked() else LINE_PLOT_TYPE
         plot["x_axis_title"] = self.ui.xAxisTitleLE.text().strip() or DEFAULT_X_AXIS_TITLE
@@ -153,9 +216,10 @@ class InteractivePlotPage(QWizardPage):
         plot["legend"] = self.ui.showLegendCB.isChecked()
         plot["second_y_axis"] = self.ui.secondYAxisCB.isChecked()
         plot["series"] = self._series_from_table()
-        item = self.ui.plotListWidget.item(self.current_plot_index)
-        if item is not None:
-            item.setText(title)
+        if self.current_plot_index >= 0:
+            item = self.ui.plotListWidget.item(self.current_plot_index)
+            if item is not None:
+                item.setText(self._display_title_for_plot(plot, self.current_plot_index))
 
     def _fill_series_table(self, series):
         self.ui.seriesTable.setRowCount(0)
@@ -263,17 +327,27 @@ class InteractivePlotPage(QWizardPage):
 
     @pyqtSlot()
     def on_add_plot_clicked(self):
-        self._save_current_plot()
         self.add_plot()
 
     @pyqtSlot()
     def on_remove_plot_clicked(self):
         row = self.ui.plotListWidget.currentRow()
-        if row < 0 or len(self.plots) <= 1:
+        if row < 0:
             return
         self.plots.pop(row)
         self.ui.plotListWidget.takeItem(row)
-        self.ui.plotListWidget.setCurrentRow(min(row, len(self.plots) - 1))
+        if self.plots:
+            new_row = min(row, len(self.plots) - 1)
+            self.ui.plotListWidget.blockSignals(True)
+            self.ui.plotListWidget.setCurrentRow(new_row)
+            self.ui.plotListWidget.blockSignals(False)
+            self.current_plot_index = new_row
+            self._load_plot(new_row)
+        else:
+            self.ui.plotListWidget.clearSelection()
+            self.current_plot_index = -1
+            self.draft_plot = self._new_plot()
+            self._load_plot(-1)
 
     @pyqtSlot(int)
     def on_plot_selection_changed(self, row):
@@ -316,6 +390,22 @@ class InteractivePlotPage(QWizardPage):
             self.ui.yAxisCB.setCurrentText(LEFT_Y_AXIS)
         self._save_current_plot()
 
+    @pyqtSlot(int)
+    def on_y_value_changed(self, index):
+        if self._prompting_custom_y_value:
+            return
+        if index < 0:
+            return
+        data = self.ui.yValueCB.itemData(index)
+        if not data or data.get("type") != "other":
+            return
+        previous_index = index - 1 if index > 0 else 0
+        y_expression = self._prompt_for_custom_y_value()
+        if y_expression is None:
+            self.ui.yValueCB.blockSignals(True)
+            self.ui.yValueCB.setCurrentIndex(previous_index)
+            self.ui.yValueCB.blockSignals(False)
+
     @pyqtSlot()
     def on_add_series_clicked(self):
         plot = self._current_plot()
@@ -325,15 +415,10 @@ class InteractivePlotPage(QWizardPage):
         if data is None:
             return
         if data.get("type") == "other":
-            name, accepted = QInputDialog.getText(self, "User Defined Data Series", "Y data series name:")
-            name = name.strip()
-            if not accepted or not name:
+            y_expression = self._prompt_for_custom_y_value()
+            if y_expression is None:
                 return
-            if name not in self._custom_series_names:
-                self._custom_series_names.append(name)
-                insert_index = max(0, self.ui.yValueCB.count() - 1)
-                self.ui.yValueCB.insertItem(insert_index, name, {"type": "custom", "name": name})
-            y_value = name
+            y_value = y_expression
             source_type = "custom"
         else:
             y_value = data["name"]

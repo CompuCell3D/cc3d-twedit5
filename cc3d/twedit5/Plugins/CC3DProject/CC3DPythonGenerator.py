@@ -414,8 +414,7 @@ class {steppable_name}(SteppableBasePy):
 '''.format(values_var=values_var, type_attr=type_attr)
                     else:
                         self.steppableCodeLines += '''
-        # TODO: Replace this placeholder with the value array for user-defined histogram series {y_source!r}.
-        {values_var} = []
+        {values_var} = {y_source}
 '''.format(values_var=values_var, y_source=y_source)
                     self.steppableCodeLines += '''
         if {values_var}:
@@ -434,8 +433,7 @@ class {steppable_name}(SteppableBasePy):
 '''.format(series_var=series_var, type_attr=type_attr)
                 else:
                     self.steppableCodeLines += '''
-        # TODO: Replace this placeholder with the value for user-defined series {y_source!r}.
-        {series_var} = 0.0
+        {series_var} = {y_source}
 '''.format(series_var=series_var, y_source=y_source)
 
                 if plot_spec.get("y_scale") == "log":
