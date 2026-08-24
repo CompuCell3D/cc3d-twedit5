@@ -285,10 +285,6 @@ class InteractivePlotPage(QWizardPage):
             self.ui.secondYAxisCB.blockSignals(True)
             self.ui.secondYAxisCB.setChecked(False)
             self.ui.secondYAxisCB.blockSignals(False)
-        elif not self.ui.secondYAxisCB.isChecked():
-            self.ui.secondYAxisCB.blockSignals(True)
-            self.ui.secondYAxisCB.setChecked(True)
-            self.ui.secondYAxisCB.blockSignals(False)
         enable_axis_choice = enable_second_axis and self.ui.secondYAxisCB.isChecked()
         self.ui.yAxisCB.setEnabled(enable_axis_choice)
         if not enable_axis_choice:
