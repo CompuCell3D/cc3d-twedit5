@@ -391,10 +391,20 @@ class {steppable_name}(SteppableBasePy):
                         line_plot_kwargs=line_plot_kwargs
                     )
 
+        custom_y_sources = self._custom_plot_y_sources(plot_specs)
         self.steppableCodeLines += '''
 
     def step(self, mcs):
 '''
+        if custom_y_sources:
+            if len(custom_y_sources) == 1:
+                self.steppableCodeLines += '''
+        # The plot variable {y_source} must be defined before use.
+'''.format(y_source=custom_y_sources[0])
+            else:
+                self.steppableCodeLines += '''
+        # The plot variables {y_sources} must be defined before use.
+'''.format(y_sources=", ".join(custom_y_sources))
 
         for plot_idx, plot_spec in enumerate(plot_specs):
             plot_key = "plot_{idx}".format(idx=plot_idx)
@@ -483,6 +493,18 @@ class {steppable_name}(SteppableBasePy):
         if not kwargs:
             return ""
         return ", " + ", ".join(kwargs)
+
+    @staticmethod
+    def _custom_plot_y_sources(plot_specs):
+        custom_y_sources = []
+        for plot_spec in plot_specs:
+            for series_spec in plot_spec.get("series", []):
+                if series_spec.get("source_type") != "custom":
+                    continue
+                y_source = series_spec.get("y", "")
+                if y_source and y_source not in custom_y_sources:
+                    custom_y_sources.append(y_source)
+        return custom_y_sources
 
     def generate_constraint_initializer(self):
 
