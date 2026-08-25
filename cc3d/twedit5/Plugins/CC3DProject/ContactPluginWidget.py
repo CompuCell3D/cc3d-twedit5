@@ -157,9 +157,16 @@ class ContactPluginWidget(QWidget):
         for row in range(0, self.ui.contact_matrix_table.rowCount()):
             for column in range(0, self.ui.contact_matrix_table.columnCount()):
                 if row <= column:
+                    cell_type_h = self.ui.contact_matrix_table.horizontalHeaderItem(column).text()
+                    cell_type_v = self.ui.contact_matrix_table.verticalHeaderItem(row).text()
                     cell_to_update: QTableWidgetItem = self.ui.contact_matrix_table.item(row, column)
                     if cell_to_update:
-                        cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
+                        if cell_type_h == MEDIUM_CELL_TYPE and cell_type_v == MEDIUM_CELL_TYPE:
+                            # Check if both 'MEDIUM_CELL_TYPE' type, if so then default energy is '-',
+                            # Contact between Medium cell types is nonsensical.
+                            cell_to_update.setText("-")
+                        else:
+                            cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
                     else:  # create new table cell (QTableWidgetItem):
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
@@ -215,6 +222,9 @@ class ContactPluginWidget(QWidget):
         cell_1 = self.ui.contact_matrix_table.horizontalHeaderItem(item.column()).text()
         cell_2 = self.ui.contact_matrix_table.verticalHeaderItem(item.row()).text()
         val_str = item.text()
+        # can also be "-", need to check:
+        if val_str.strip() == "-":
+            return True
         if self.checkEnergyValue(val_str):
             return True
         else:
@@ -269,8 +279,16 @@ class ContactPluginWidget(QWidget):
         for row in range(0, cell_type_count):
             self.ui.contact_matrix_table.insertRow(row)
             for column in range(0, cell_type_count):
+                cell_type_h = self.ui.contact_matrix_table.horizontalHeaderItem(column).text()
+                if cell_type_h == MEDIUM_CELL_TYPE:
+                    medium_col = column
                 if row <= column:
-                    binding_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
+                    if cell_type_h == MEDIUM_CELL_TYPE and row == medium_col:
+                        # Check if 'MEDIUM_CELL_TYPE' type, if so then default energy is '-',
+                        # Adhesion energy between Medium cell types is nonsensical.
+                        binding_par_item = QTableWidgetItem("-")
+                    else:
+                        binding_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                     binding_par_item.setFont(header_font)
                     binding_par_item.setTextAlignment(Qt.AlignCenter)
 
@@ -370,7 +388,7 @@ class ContactPluginWidget(QWidget):
                                 cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
                         else:  # Same cell type contact:
                             if cell_1 == MEDIUM_CELL_TYPE and cell_2 == MEDIUM_CELL_TYPE:
-                                cell_to_update.setText(str('0.0'))
+                                cell_to_update.setText(str('-'))
                             else:
                                 cell_to_update.setText(str(DEFAULT_SORT_ENERGY))
                     else:  # create new table cell:
@@ -393,14 +411,18 @@ class ContactPluginWidget(QWidget):
                 if row <= column:
                     cell_to_update: QTableWidgetItem = self.ui.contact_matrix_table.item(row, column)
                     if cell_to_update:
+                        cell_1: str = self.ui.contact_matrix_table.horizontalHeaderItem(row).text()
+                        cell_2: str = self.ui.contact_matrix_table.verticalHeaderItem(column).text()
                         if row < column:
-                            if self.ui.contact_matrix_table.horizontalHeaderItem(row).text() == MEDIUM_CELL_TYPE or \
-                                    self.ui.contact_matrix_table.verticalHeaderItem(column).text() == MEDIUM_CELL_TYPE:
+                            if cell_1 == MEDIUM_CELL_TYPE or cell_2 == MEDIUM_CELL_TYPE:
                                 cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))  # Do not mix with Medium cell type
                             else:
                                 cell_to_update.setText(str(DEFAULT_MIX_ENERGY))
                         else:  # Same cell type contact:
-                            cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
+                            if cell_1 == MEDIUM_CELL_TYPE and cell_2 == MEDIUM_CELL_TYPE:
+                                cell_to_update.setText(str('-'))
+                            else:
+                                cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
                     else:  # create new table cell if none there:
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
