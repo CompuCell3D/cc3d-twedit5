@@ -12,7 +12,7 @@ CONTACT_SMALL_FONT_SIZE = 8
 DEFAULT_CONTACT_ENERGY = '10.0'
 DEFAULT_MIX_ENERGY = '2.0'
 DEFAULT_SORT_ENERGY = '2.0'
-DEFAULT_CONTACT_NEIGHBOR_ORDER = 2
+DEFAULT_CONTACT_NEIGHBOR_ORDER = 4
 MEDIUM_CELL_TYPE = "Medium"
 NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Contact(Internal) plugin algorithm will check " \
                            "each time it needs to do an energy calculation."
