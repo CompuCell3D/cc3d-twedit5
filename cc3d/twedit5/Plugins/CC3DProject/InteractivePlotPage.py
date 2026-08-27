@@ -313,7 +313,14 @@ class InteractivePlotPage(QWizardPage):
                            for i in range(10)]
                 bar_x_values = list(range(1, 11)) if plot["x_scale"] == "log" else list(range(10))
                 self.preview_widget.addItem(
-                    pg.BarGraphItem(x=bar_x_values, height=heights, width=0.8, brush=color)
+                    pg.BarGraphItem(
+                        x=bar_x_values,
+                        height=heights,
+                        width=0.8,
+                        brush=color,
+                        pen=pg.mkPen(color),
+                        name=entry["name"]
+                    )
                 )
             else:
                 y_values = [max(1, i + index + 1) if plot["y_scale"] == "log" else math.sin(i / 2.0) + index

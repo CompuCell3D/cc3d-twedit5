@@ -379,6 +379,9 @@ class {steppable_name}(SteppableBasePy):
                 if plot_type == "Histogram":
                     self.steppableCodeLines += '''
         self.plot_windows[{plot_key!r}].add_histogram_plot({series_name!r}, color={color!r}, alpha=100)
+        plot_drawing_objects = getattr(self.plot_windows[{plot_key!r}], 'plotDrawingObjects', None)
+        if isinstance(plot_drawing_objects, dict) and {series_name!r} in plot_drawing_objects:
+            plot_drawing_objects[{series_name!r}]['curve'].setPen({color!r})
 '''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), color=color)
                 else:
                     line_plot_kwargs = self._format_line_plot_kwargs(plot_spec=plot_spec, series_spec=series_spec)
