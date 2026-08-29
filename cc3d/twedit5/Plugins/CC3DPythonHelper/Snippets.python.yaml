@@ -1,0 +1,2252 @@
+version: 1
+menus:
+- name: Python Utilities
+  description: General Python helper code for file paths, output folders, imports, and steppable lookup.
+  snippets:
+  - name: Open File In Simulation Output Directory
+    description: Shows how to open File In Simulation Output Directory.
+    suggested_indent: -1
+    code: |+
+      file_obj, file_path = self.open_file_in_simulation_output_folder("<FILE_NAME>", mode='w')
+      if file_obj is None:
+          raise OSError(f"Could not open file {file_path!r} in simulation output folder.")
+
+  - name: Open File In Parameter Scan Main  Output Directory
+    description: Shows how to open File In Parameter Scan Main  Output Directory.
+    suggested_indent: -1
+    code: |+
+      file_obj, file_path = self.open_file_in_parameter_scan_main_output_folder("<FILE_NAME>", mode='w')
+      if file_obj is None:
+          raise OSError(f"Could not open file {file_path!r} in parameter scan main output folder.")
+
+  - name: Open File In Simulation Output Directory (low-level)
+    description: Shows how to open File In Simulation Output Directory (low-level).
+    suggested_indent: -1
+    code: |+
+      from pathlib import Path
+
+      if self.output_dir is not None:
+          output_path = Path(self.output_dir).joinpath("<FILE_NAME>")
+          # create folder to store data
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+          try:
+              file_handle = open(output_path, 'w')
+          except IOError:
+              print ("Could not open file for writing.")
+              return
+
+  - name: Fetch Steppable By Class Name
+    description: Shows how to fetch Steppable By Class Name.
+    suggested_indent: -1
+    code: |+
+      self.getSteppableByClassName('STEPPABLE_CLASS_NAME')
+
+  - name: Get Dir Of Current File
+    description: Shows how to get Dir Of Current File.
+    suggested_indent: -1
+    code: |+
+      fileDir = os.path.dirname(os.path.abspath(__file__))
+
+  - name: Get FullPath Of Current File
+    description: Shows how to get FullPath Of Current File.
+    suggested_indent: -1
+    code: |+
+      filePath = os.path.abspath(__file__)
+
+  - name: Import os
+    description: Shows how to import os.
+    suggested_indent: -1
+    code: |+
+      import os
+
+  - name: Set Simulation Output Directory (main Python script)
+    description: Shows how to set Simulation Output Directory (main Python script).
+    suggested_indent: -1
+    code: |+
+      # It is best to call this function from __init__ of first registered steppable
+      self.set_output_dir(output_dir="<CUSTOM_OUTPUT_DIR>", abs_path=False)
+
+- name: Reaction Diffusion Solver FVM
+  description: Code for accessing and modifying the reaction-diffusion finite-volume solver state.
+  snippets:
+  - name: Get solver
+    description: Shows how to get solver.
+    suggested_indent: -1
+    code: |+
+      # Reference to the reaction diffusion finite volume solver, or None if the solver is not loaded
+      rd_fvm = self.reaction_diffusion_solver_fvm
+
+  - name: Get a diffusivity field
+    description: Shows how to get a diffusivity field.
+    suggested_indent: -1
+    code: |+
+      # Fetch the diffusivity field for a field named "MyField"
+      # Requires diffusivity field in medium or everywhere
+      my_field_diff = self.field.MyFieldDiff
+
+  - name: Set diffusive transport on a volume surface
+    description: Shows how to set diffusive transport on a volume surface.
+    suggested_indent: -1
+    code: |+
+      field_name = 'MyField'              # Name of the field
+      surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+      loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+      self.reaction_diffusion_solver_fvm.useDiffusiveSurface(field_name, surface_name, loc)  # On a surface
+      self.reaction_diffusion_solver_fvm.useDiffusiveSurfaces(field_name, loc)               # On all surfaces
+
+  - name: Set permeable membrane transport on a volume surface
+    description: Shows how to set permeable membrane transport on a volume surface.
+    suggested_indent: -1
+    code: |+
+      field_name = 'MyField'              # Name of the field
+      surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+      loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+      self.reaction_diffusion_solver_fvm.usePermeableSurface(field_name, surface_name, loc)  # On a surface
+      self.reaction_diffusion_solver_fvm.usePermeableSurfaces(field_name, loc)               # On all surfaces
+
+  - name: Set a fixed flux on a volume surface
+    description: Shows how to set a fixed flux on a volume surface.
+    suggested_indent: -1
+    code: |+
+      field_name = 'MyField'              # Name of the field
+      surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+      flux_val = 0.1                      # Outward flux value
+      loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+      self.reaction_diffusion_solver_fvm.useFixedFluxSurface(field_name, surface_name, flux_val, loc)
+
+  - name: Set a fixed concentration on a volume surface
+    description: Shows how to set a fixed concentration on a volume surface.
+    suggested_indent: -1
+    code: |+
+      field_name = 'MyField'              # Name of the field
+      surface_name = 'MaxX'               # or MinY, MaxZ, etc.
+      conc_val = 0.1                      # Surface concentration value
+      loc = CompuCell.Point3D(1, 2, 3)    # Coordinates of volume
+      self.reaction_diffusion_solver_fvm.useFixedConcentration(field_name, surface_name, conc_val, loc)
+
+  - name: Set a fixed concentration in a volume
+    description: Shows how to set a fixed concentration in a volume.
+    suggested_indent: -1
+    code: |+
+      field_name = 'MyField'  # Name of the field
+      conc_val = 1.0  # Volume concentration value
+      loc = CompuCell.Point3D(1, 2, 3)  # Coordinates of volume
+      self.reaction_diffusion_solver_fvm.useFixedFVConcentration(field_name, conc_val, loc)
+
+  - name: Get/set cell diffusivity
+    description: Shows how to get/set cell diffusivity.
+    suggested_indent: -1
+    code: |+
+      # Requires diffusivity by type
+      field_name = 'MyField'  # Name of the field
+      cell_diff = self.reaction_diffusion_solver_fvm.getCellDiffusivityCoefficient(cell, field_name)
+      self.reaction_diffusion_solver_fvm.setCellDiffusivityCoefficient(cell, field_name, 2 * cell_diff)
+
+  - name: Get/set cell permeation coefficients
+    description: Shows how to get/set cell permeation coefficients.
+    suggested_indent: -1
+    code: |+
+      rd_fvm = self.reaction_diffusion_solver_fvm
+      field_name = 'MyField'  # Name of the field
+      # Get/set for a pair of cell and cell type
+      perm_cf, cell_bias = rd_fvm.getPermeableCoefficients(cell, ncell.type, field_name)
+      rd_fvm.setCellPermeationCoefficient(cell, ncell.type, field_name, 2 * perm_cf)
+      rd_fvm.setCellPermeableBiasCoefficient(cell, ncell.type, field_name, 3 * cell_bias)
+      # Get/set for a pair of cell and cell
+      perm_cf, cell_bias, ncell_bias = rd_fvm.getPermeableCoefficients(cell, ncell, field_name)
+      rd_fvm.setCellPermeationCoefficient(cell, ncell.type, field_name, 2 * perm_cf)
+      rd_fvm.setCellPermeableBiasCoefficient(cell, ncell.type, field_name, 3 * cell_bias)
+      rd_fvm.setCellPermeableBiasCoefficient(ncell, cell.type, field_name, 4 * ncell_bias)
+
+
+- name: SBML Solver
+  description: Code for loading, attaching, stepping, and querying SBML, Antimony, or CellML models.
+  snippets:
+  - name: 1. Model Initial Data
+    description: Shows how to model Initial Data.
+    suggested_indent: -1
+    code: |+
+      # this can be e.g. partial path 'Simulation/osci.sbml'
+      model_file = 'PATH_TO_SBML_MODEL'
+
+      initial_conditions = {}
+      initial_conditions['SPECIES_NAME1'] = species_val1
+      initial_conditions['SPECIES_NAME2'] = species_val2
+
+      step_size = 0.5
+
+  - name: 2. Add SBML model to cell ids
+    description: Shows how to add SBML model to cell ids.
+    suggested_indent: -1
+    code: |+
+      # Input SBML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      self.add_sbml_to_cell_ids(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell_ids=[1, 3, 7], step_size=step_size,
+                                initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add Antimony model to cell ids
+    description: Shows how to add Antimony model to cell ids.
+    suggested_indent: -1
+    code: |+
+      # Input Antimony model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      # Model is translated to SBML and stored in memory; use SBML functions in subsequent operations
+      self.add_antimony_to_cell_ids(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell_ids=[1, 3, 7], step_size=step_size,
+                                initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add CellML model to cell ids
+    description: Shows how to add CellML model to cell ids.
+    suggested_indent: -1
+    code: |+
+      # Input CellML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      # Model is translated to SBML and stored in memory; use SBML functions in subsequent operations
+      self.add_cellml_to_cell_ids(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell_ids=[1, 3, 7], step_size=step_size,
+                                initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add SBML model to cell types
+    description: Shows how to add SBML model to cell types.
+    suggested_indent: -1
+    code: |+
+      # Input SBML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      self.add_sbml_to_cell_types(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell_types=[self.CELLTYPENAME1, self.CELLTYPENAME1],
+                              step_size=step_size, initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add Antimony model to cell types
+    description: Shows how to add Antimony model to cell types.
+    suggested_indent: -1
+    code: |+
+      # Input Antimony model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      # Model is translated to SBML and stored in memory; use SBML functions in subsequent operations
+      self.add_antimony_to_cell_types(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell_types=[self.CELLTYPENAME1, self.CELLTYPENAME1],
+                              step_size=step_size, initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add CellML model to cell types
+    description: Shows how to add CellML model to cell types.
+    suggested_indent: -1
+    code: |+
+      # Input CellML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      # Model is translated to SBML and stored in memory; use SBML functions in subsequent operations
+      self.add_cellml_to_cell_types(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell_types=[self.CELLTYPENAME1, self.CELLTYPENAME1],
+                              step_size=step_size, initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add SBML model to individual cell
+    description: Shows how to add SBML model to individual cell.
+    suggested_indent: -1
+    code: |+
+      # Input SBML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      cell_20 = self.fetch_cell_by_id(20)
+
+      if cell_20:
+          self.add_sbml_to_cell(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell=cell_20,step_size=step_size,
+                                initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add Antimony model to individual cell
+    description: Shows how to add Antimony model to individual cell.
+    suggested_indent: -1
+    code: |+
+      # Input Antimony model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      # Model is translated to SBML and stored in memory; use SBML functions in subsequent operations
+      cell_20 = self.fetch_cell_by_id(20)
+
+      if cell_20:
+          self.add_antimony_to_cell(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell=cell_20,step_size=step_size,
+                                initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add CellML model to individual cell
+    description: Shows how to add CellML model to individual cell.
+    suggested_indent: -1
+    code: |+
+      # Input CellML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      # Model is translated to SBML and stored in memory; use SBML functions in subsequent operations
+      cell_20 = self.fetch_cell_by_id(20)
+
+      if cell_20:
+          self.add_cellml_to_cell(model_file=model_file, model_string=model_string, model_name='MODEL_NAME', cell=cell_20,step_size=step_size,
+                                initial_conditions=initial_conditions, integrator=integrator)
+
+
+  - name: 2. Add free floating SBML model e.g. PBPK
+    description: Shows how to add free floating SBML model e.g. PBPK.
+    suggested_indent: -1
+    code: |+
+      # Input SBML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      self.add_free_floating_sbml(model_file=model_file, model_string=model_string, model_name='UNIQUE_MODEL_NAME', step_size=step_size,
+                                  initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add free floating Antimony model
+    description: Shows how to add free floating Antimony model.
+    suggested_indent: -1
+    code: |+
+      # Input Antimony model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # Initial conditions can be declared in model or with initial_conditions; the latter takes precedence
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      # Model is translated to SBML and stored in memory; use SBML functions in subsequent operations
+      self.add_free_floating_antimony(model_file=model_file, model_string=model_string, model_name='UNIQUE_MODEL_NAME', step_size=step_size,
+                                  initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 2. Add free floating CellML model
+    description: Shows how to add free floating CellML model.
+    suggested_indent: -1
+    code: |+
+      # Input CellML model in file 'model_file' or string 'model_string'
+      # If using model_string, enclose entire model in a set of triple quotations
+      # An integrator can be selected from CVODE: (default, pass nothing), Gillespie: (integrator='gillespie'),
+      #   Euler: (integrator='euler'), Runge-Kutta: (integrator='rk4'), and Gillespie Direct Method: (integrator='rk45')
+      self.add_free_floating_cellml(model_file=model_file, model_string=model_string, model_name='UNIQUE_MODEL_NAME', step_size=step_size,
+                                  initial_conditions=initial_conditions, integrator=integrator)
+
+  - name: 3. Timestep SBML models
+    description: Shows how to timestep SBML models.
+    suggested_indent: -1
+    code: |+
+      self.timestep_sbml()
+
+  - name: 5. Copy select SBMLs
+    description: Shows how to copy select SBMLs.
+    suggested_indent: -1
+    code: |+
+      self.copy_sbml_simulators(from_cell=source_cell, to_cell=target_cell, sbml_names=['MODEL_NAME1', 'MODEL_NAME2'])
+
+  - name: 5. Copy All SBMLs
+    description: Shows how to copy All SBMLs.
+    suggested_indent: -1
+    code: |+
+      self.copy_sbml_simulators(from_cell=source_cell, to_cell=target_cell)
+
+  - name: Get SBML State for individual cell
+    description: Shows how to get SBML State for individual cell.
+    suggested_indent: -1
+    code: |+
+      # returns dictionary of values
+      state = cell.sbml.MODELNAME
+
+
+  - name: Get SBML State for Free Floating model
+    description: Shows how to get SBML State for Free Floating model.
+    suggested_indent: -1
+    code: |+
+      state = self.sbml.UNIQUE_MODEL_NAME
+
+  - name: Get SBML Value for SBML in a specific cell
+    description: Shows how to get SBML Value for SBML in a specific cell.
+    suggested_indent: -1
+    code: |+
+      # value name can be e.g. species name
+      # example cell.DN.Delta
+      cell.sbml.MODEL_NAME['VALUE_NAME']
+
+  - name: Get SBML Value for Free Floating model
+    description: Shows how to get SBML Value for Free Floating model.
+    suggested_indent: -1
+    code: |+
+      # value name can be e.g. species name
+      self.sbml.MODEL_NAME['VALUE_NAME']
+
+  - name: Get SBML Simulator for individual cell (advanced)
+    description: Shows how to get SBML Simulator for individual cell (advanced).
+    suggested_indent: -1
+    code: |+
+      # example cell.sbml._rr_DN
+      cell.sbml._rr_MODEL_NAME
+
+  - name: Get SBML Simulator for Free Floating Model (advanced)
+    description: Shows how to get SBML Simulator for Free Floating Model (advanced).
+    suggested_indent: -1
+    code: |+
+      # example self.sbml._rr_DN
+      self.sbml._rr_MODEL_NAME
+
+  - name: Set SBML State for individual cell
+    description: Shows how to set SBML State for individual cell.
+    suggested_indent: -1
+    code: |+
+      state = {}
+      state['REACTANT_NAME'] = 0.9
+
+      self.set_sbml_state(model_name='MODELNAME', cell=cell, state=state)
+
+  - name: Set SBML State for Free Floating model
+    description: Shows how to set SBML State for Free Floating model.
+    suggested_indent: -1
+    code: |+
+      state = {}
+      state['REACTANT_NAME'] = 0.9
+      self.set_sbml_state(model_name='MODELNAME',  state=state)
+
+  - name: Set SBML Value for SBML in a specific cell
+    description: Shows how to set SBML Value for SBML in a specific cell.
+    suggested_indent: -1
+    code: |+
+      # value name can be e.g. species name
+      cell.sbml.UNIQUE_MODEL_NAME['VALUE_NAME'] = 0.1
+
+  - name: Set SBML Value for Free Floating model
+    description: Shows how to set SBML Value for Free Floating model.
+    suggested_indent: -1
+    code: |+
+      # value name can be e.g. species name
+      self.sbml.UNIQUE_MODEL_NAME['VALUE_NAME'] = 0.1
+
+  - name: Delete SBML from cell ids
+    description: Shows how to delete SBML from cell ids.
+    suggested_indent: -1
+    code: |+
+      self.delete_sbml_from_cell_ids(model_name='MODEL_NAME', cell_ids=[1, 4, 7])
+
+  - name: Delete SBML from cell types
+    description: Shows how to delete SBML from cell types.
+    suggested_indent: -1
+    code: |+
+      self.delete_sbml_from_cell_types(model_name='MODEL_NAME', cell_types=[self.CELLTYPE1, self.CELLTYPE2])
+
+  - name: Delete SBML from individual cell
+    description: Shows how to delete SBML from individual cell.
+    suggested_indent: -1
+    code: |+
+      self.delete_sbml_from_cell(model_name='MODEL_NAME', cell=cell)
+
+  - name: Delete Free Floating SBML
+    description: Shows how to delete Free Floating SBML.
+    suggested_indent: -1
+    code: |+
+      self.delete_free_floating_sbml(model_name='UNIQUE_MODEL_NAME')
+
+  - name: Set SBML Integrator Global Options
+    description: Shows how to set SBML Integrator Global Options.
+    suggested_indent: -1
+    code: |+
+      # adding options that setup SBML solver integrator - these are optional but useful when encountering
+      # integration instabilities
+      # relative is relative tolerance, absolute is absolute tolerance,
+      # steps is the initial number of integration steps for each integration interval
+      # (higher number does not result in slower simulation, quite to the contrary),
+      # stiff set to true will use stiff ODE solver
+      options = {'relative': 1e-10, 'absolute': 1e-12, 'steps': 10, 'stiff': False}
+      self.set_sbml_global_options(options)
+
+  - name: Get SBML Integrator  Global Options
+    description: Shows how to get SBML Integrator  Global Options.
+    suggested_indent: -1
+    code: |+
+      # returns current options - can be None if no global options were set
+      options = self.get_sbml_global_options()
+
+- name: Steering Panel
+  description: Code for creating steering panel widgets and responding to steering parameter changes.
+  snippets:
+  - name: 1.Set Up Steering Panel
+    description: Shows how to set Up Steering Panel.
+    suggested_indent: 1
+    code: |2+
+
+
+      def add_steering_panel(self):
+          self.add_steering_param(name='MY_PARAM_SLIDER', val=20, min_val=0, max_val=100,
+                                  decimal_precision=2, widget_name='slider')
+          self.add_steering_param(name='MY_PARAM_COMBO', val=20, enum=[10,20,30,40,50,60,70,80,90,100],
+                                      widget_name='combobox')
+
+      def process_steering_panel_data(self):
+          print ('processing steering panel updates')
+          print ('all dirty flag=', self.steering_param_dirty())
+          param_slider = self.get_steering_param('MY_PARAM_SLIDER')
+          param_combo = self.get_steering_param('MY_PARAM_COMBO')
+          print ('updated MY_PARAM_SLIDER=',param_slider)
+          print ('updated MY_PARAM_COMBO=', param_combo)
+
+          # IMPORTANT: you may add code here tht updates cell properties based on the
+          # values of the parameters from the steering panel. For example:
+
+          # for cell in self.cellList:
+          #     cell.targetVolume = param_slider
+          #     cell.lambdaVolume = param_combo
+
+  - name: Get Updated Value of Steering Parameter
+    description: Shows how to get Updated Value of Steering Parameter.
+    suggested_indent: -1
+    code: |+
+      my_param = self.get_steering_param('MY_PARAM')
+
+  - name: Check if Steering Panel Was Updated
+    description: Shows how to check if Steering Panel Was Updated.
+    suggested_indent: -1
+    code: |+
+      updated_flag = self.steering_param_dirty()
+
+- name: Cell Constraints
+  description: Code for reading or changing target volume, target surface, lambda values, and related constraints.
+  snippets:
+  - name: Change Target Volume
+    description: Shows how to change Target Volume.
+    suggested_indent: -1
+    code: |+
+      cell.targetVolume = 25
+
+  - name: Change Lambda Volume
+    description: Shows how to change Lambda Volume.
+    suggested_indent: -1
+    code: |+
+      cell.lambdaVolume = 2.0
+
+  - name: Change Target Surface
+    description: Shows how to change Target Surface.
+    suggested_indent: -1
+    code: |+
+      cell.targetSurface = 20.0
+
+  - name: Change Lambda Surface
+    description: Shows how to change Lambda Surface.
+    suggested_indent: -1
+    code: |+
+      cell.lambdaSurface = 2.0
+
+  - name: Change Lambda Motility
+    description: Shows how to change Lambda Motility.
+    suggested_indent: -1
+    code: |+
+      cell.lambdaMotility = 15.0
+
+  - name: Apply Force To Cell
+    description: Shows how to apply Force To Cell.
+    suggested_indent: -1
+    code: |+
+      # Make sure ExternalPotential plugin is loaded
+      cell.lambdaVecX = -0.5  # force component pointing along X axis - towards positive X's
+      cell.lambdaVecY = 0.5  # force component pointing along Y axis - towards negative Y's
+      cell.lambdaVecZ = 0.0  # force component pointing along Z axis
+
+  - name: Length Constraint By Cell Id
+    description: Shows how to length Constraint By Cell Id.
+    suggested_indent: -1
+    code: |+
+      # Make sure LengthConstraint plugin is loaded
+      # Argument Order: cell , lambdaLength, targetLength
+      self.lengthConstraint.setLengthConstraintData(cell, 20, 20)
+
+  - name: Connectivity Constraint By Cell Id
+    description: Shows how to connectivity Constraint By Cell Id.
+    suggested_indent: -1
+    code: |+
+      # Make sure ConnectivityLocalFlex plugin is loaded
+      # Argument Order: cell, strength
+      self.connectivityLocalFlexPlugin.setConnectivityStrength(cell, 10000000)
+
+- name: Cell Manipulation
+  description: Code for creating, deleting, moving, or cloning cells and for common cell edits.
+  snippets:
+  - name: Fetch Cell By Id
+    description: Shows how to fetch Cell By Id.
+    suggested_indent: -1
+    code: |+
+      cell = self.fetch_cell_by_id(CELL_ID)
+
+  - name: Delete Cell
+    description: Shows how to delete Cell.
+    suggested_indent: -1
+    code: |+
+      self.delete_cell(cell)
+
+  - name: Create Cell
+    description: Shows how to create Cell.
+    suggested_indent: -1
+    code: |+
+      # size of cell will be 3x3x1
+      self.cell_field[10:12, 10:12, 0] = self.new_cell(self.TYPENAME)
+
+  - name: Create Cell (detailed)
+    description: Shows how to create Cell (detailed).
+    suggested_indent: -1
+    code: |+
+      x = X_POSITION
+      y = Y_POSITION
+      size = SIZE
+      cell = self.new_cell(self.TYPENAME)
+      # size of cell will be SIZExSIZEx1
+      self.cell_field[x:x + size - 1, y:y + size - 1, 0] = cell
+
+  - name: Get Cell At a Pixel
+    description: Shows how to get Cell At a Pixel.
+    suggested_indent: -1
+    code: |+
+      cell = self.cell_field[10, 11, 0]
+
+  - name: Move Cell
+    description: Shows how to move Cell.
+    suggested_indent: -1
+    code: "# Shifting entire cell by a 'shiftVector'\n# Requires PixelTracker Plugin         \nshift_vector = [20, 20, 0]\nself.move_cell(cell, shift_vector)\n\n"
+  - name: Merge Cell
+    description: Shows how to merge Cell.
+    suggested_indent: -1
+    code: |+
+      # Turns all voxels of SOURCE_CELL into voxels of DESTINATION_CELL
+      # This function will merge the cells regardless of the distance between them.
+      # It won't update the DESTINATION_CELL target volume.
+      # Use with care.
+      self.merge_cells(SOURCE_CELL, DESTINATION_CELL)
+
+- name: Distances, Vectors, Transformations
+  description: Code for geometry calculations, vector math, distance helpers, and coordinate transforms.
+  snippets:
+  - name: Distance Vector Between Cells
+    description: Shows how to distance Vector Between Cells.
+    suggested_indent: -1
+    code: |+
+      vec = self.distance_between_cells(CELL1, CELL2)
+
+  - name: Distance Vector Between Cells (Invariant)
+    description: Shows how to distance Vector Between Cells (Invariant).
+    suggested_indent: -1
+    code: |+
+      vec = self.invariant_distance_vector_between_cells(CELL1, CELL2)
+
+  - name: Distance  Between Cells
+    description: Shows how to distance  Between Cells.
+    suggested_indent: -1
+    code: |+
+      vec = self.distance_between_cells(CELL1, CELL2)
+
+  - name: Distance  Between Cells (Invariant)
+    description: Shows how to distance  Between Cells (Invariant).
+    suggested_indent: -1
+    code: |+
+      vec = self.invariant_distance_between_cells(CELL1, CELL2)
+
+  - name: Distance Vector Between Points
+    description: Shows how to distance Vector Between Points.
+    suggested_indent: -1
+    code: |+
+      vec = self.distance(p1=[10, 10, 0], p2=[11, 11, 0])
+
+  - name: Distance Vector Between Points (Invariant)
+    description: Shows how to distance Vector Between Points (Invariant).
+    suggested_indent: -1
+    code: |+
+      vec = self.unconditional_invariant_distance_vector(p1=[10, 10, 0], p2=[11, 11, 0])
+
+  - name: Distance Vector Between Points (Invariant, Integer)
+    description: Shows how to distance Vector Between Points (Invariant, Integer).
+    suggested_indent: -1
+    code: |+
+      vec = self.invariant_distance_vector_integer(p1=[10, 10, 0], p2=[11, 11, 0])
+
+  - name: Vector Norm
+    description: Shows how to vector Norm.
+    suggested_indent: -1
+    code: |+
+      norm = self.vector_norm(VECTOR)
+
+  - name: 'Hex: Hex 2 Cartesian'
+    description: 'Shows how to hex: Hex 2 Cartesian.'
+    suggested_indent: -1
+    code: |+
+      # returns Point3D
+      pt = self.hex_2_cartesian(coords=COORDS)
+
+  - name: 'Hex: Cartesian 2 Hex'
+    description: 'Shows how to hex: Cartesian 2 Hex.'
+    suggested_indent: -1
+    code: |+
+      # retutns Coordinates<double>
+      coords = self.cartesian_2_hex(coords=POINT3D)
+
+  - name: 'Numpy: Point3D To Numpy Array'
+    description: 'Shows how to numpy: Point3D To Numpy Array.'
+    suggested_indent: -1
+    code: |+
+      ptArray = self.point_3d_to_numpy(PT)
+
+  - name: 'Numpy: Numpy Array To Point3D'
+    description: 'Shows how to numpy: Numpy Array To Point3D.'
+    suggested_indent: -1
+    code: |+
+      pt = self.numpy_to_point_3d(PT_ARRAY)
+
+  - name: 'Hex: Cartesian 2 Hex'
+    description: 'Shows how to hex: Cartesian 2 Hex.'
+    suggested_indent: -1
+    code: |+
+      coords = self.cartesian_2_hex(coords=POINT3D)  # retutns Coordinates<double>
+
+- name: Visit
+  description: Iteration patterns for walking cells, pixels, clusters, or lattice regions from Python.
+  snippets:
+  - name: All Cells
+    description: Shows an iteration pattern for all Cells.
+    suggested_indent: -1
+    code: "# iterating over all cells in simulation        \nfor cell in self.cell_list:\n    # you can access/manipulate cell properties here\n    print(\"id=\", cell.id, \" type=\", cell.type, \" volume=\", cell.volume)\n\n"
+  - name: All Cells Of Given Type
+    description: Shows an iteration pattern for all Cells Of Given Type.
+    suggested_indent: -1
+    code: |+
+      # iterating over cells of type 1
+      # list of  cell types (capitalized)
+      for cell in self.cell_list_by_type(self.TYPENAME_1, self.TYPENAME_2, ...):
+          # you can access/manipulate cell properties here
+          print ("id=", cell.id, " type=", cell.type)
+
+  - name: Cell Neighbors
+    description: Shows an iteration pattern for cell Neighbors.
+    suggested_indent: -1
+    code: |+
+      for neighbor, common_surface_area in self.get_cell_neighbor_data_list(cell):
+          if neighbor:
+              print("neighbor.id", neighbor.id, " commonSurfaceArea=", common_surface_area)
+          else:
+              print("Medium commonSurfaceArea=", common_surface_area)
+
+  - name: Cells In Cluster (compartments)
+    description: Shows an iteration pattern for cells In Cluster (compartments).
+    suggested_indent: -1
+    code: |+
+      fo cell in self.cell_list:
+          cluster_cell_list = self.get_cluster_cells(cell.clusterId)
+          for cell_cmpt in cluster_cell_list:
+              print('compartmental cell id=', cell_cmpt)
+
+  - name: Cell Boundary Pixels
+    description: Shows an iteration pattern for cell Boundary Pixels.
+    suggested_indent: -1
+    code: |+
+      # Make sure BoundaryPixelTracker plugin is loaded
+      pixel_list = self.get_cell_boundary_pixel_list(cell)
+      for boundary_pixel_tracker_data in pixel_list:
+          print("pixel of cell id=", cell.id, " type:", cell.type, " = ",
+                boundary_pixel_tracker_data.pixel, " number of pixels=", pixel_list.numberOfPixels())
+
+  - name: Cell Pixels
+    description: Shows an iteration pattern for cell Pixels.
+    suggested_indent: -1
+    code: |+
+      # Make sure PixelTracker plugin is loaded
+      pixel_list = self.get_cell_pixel_list(cell)
+      for pixel_tracker_data in pixel_list:
+          print("pixel of cell id=", cell.id, " type:", cell.type, " = ", pixel_tracker_data.pixel,
+                " number of pixels=", pixel_list.numberOfPixels())
+
+  - name: All Lattice Pixels
+    description: Shows an iteration pattern for all Lattice Pixels.
+    suggested_indent: -1
+    code: |+
+      for x, y, z in self.every_pixel():
+          print("x,y,z=", (x, y, z))
+
+  - name: All Clusters
+    description: Shows an iteration pattern for all Clusters.
+    suggested_indent: -1
+    code: |+
+      for compartments in self.clusters:
+          print('compartments=', compartments)
+
+  - name: All Clusters and Cells Withing Clusters
+    description: Shows an iteration pattern for all Clusters and Cells Withing Clusters.
+    suggested_indent: -1
+    code: |+
+      for compartments in self.clusters:
+          for cell in compartments:
+              print(cell.id)
+
+- name: Chemical Field Manipulation
+  description: Code for reading or writing chemical field values and related solver data.
+  snippets:
+  - name: Get Field Reference
+    description: Shows how to get Field Reference.
+    suggested_indent: -1
+    code: |+
+      field = self.field.FIELD_NAME
+
+  - name: Get Field Min Value
+    description: Shows how to get Field Min Value.
+    suggested_indent: -1
+    code: |+
+      minValue = field.min()
+
+  - name: Get Field Max Value
+    description: Shows how to get Field Max Value.
+    suggested_indent: -1
+    code: |+
+      maxValue = field.max()
+
+  - name: Get Field Value
+    description: Shows how to get Field Value.
+    suggested_indent: -1
+    code: |+
+      value = field[10, 10, 0]
+
+  - name: Set Field Value
+    description: Shows how to set Field Value.
+    suggested_indent: -1
+    code: |+
+      field[10, 10, 0] = 1.02
+
+  - name: Write To Disk
+    description: Shows how to write To Disk.
+    suggested_indent: -1
+    code: |2+
+
+      field = self.field.FIELD_NAME
+      output_dir = self.output_dir
+
+
+      if output_dir is not None:
+          output_path = Path(output_dir).joinpath(FILE_NAME)
+          # create folder to store data
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+
+          with open(output_path, 'w') as file_handle:
+              for i, j, k in self.every_pixel():
+                  file_handle.write("%d\t%d\t%d\t%f\n" % (i, j, k, field[i, j, k]))
+
+  - name: Modification (aka secretion)
+    description: Shows how to modification (aka secretion).
+    suggested_indent: -1
+    code: |+
+      field = self.field.FIELD_NAME
+      if field:
+          for i, j, k in self.every_pixel():
+              field[i, j, k] = i * j
+
+- name: Cell Attributes
+  description: Code for Python-side custom attributes, dictionaries, lists, and per-cell data access.
+  snippets:
+  - name: Check If Two Cells Are Different
+    description: Shows how to check If Two Cells Are Different.
+    suggested_indent: -1
+    code: |+
+      self.are_cells_different(cell1, cell2)
+
+  - name: Access/Modify Dictionary Attribute
+    description: Shows how to access/Modify Dictionary Attribute.
+    suggested_indent: -1
+    code: |+
+      # access/modification of a dictionary attached to cell - make sure to declare in main script that
+      # you will use such attribute
+      cell.dict['ATTR_NAME'] = VALUE_OR_OBJECT
+
+  - name: Center Of Mass
+    description: Shows how to center Of Mass.
+    suggested_indent: -1
+    code: |+
+      # Make sure CenterOfMass plugin is loaded
+      # READ ONLY ACCESS
+      xCOM = cell.xCOM
+      yCOM = cell.yCOM
+      zCOM = cell.zCOM
+
+  - name: Volume
+    description: Shows how to volume.
+    suggested_indent: -1
+    code: "# READ ONLY ACCESS        \nvolume = cell.volume\n\n"
+  - name: Target Volume
+    description: Shows how to target Volume.
+    suggested_indent: -1
+    code: "# READ/WRITE  ACCESS                \ntarget_volume = cell.targetVolume\n\n"
+  - name: Lambda Volume
+    description: Shows how to lambda Volume.
+    suggested_indent: -1
+    code: "# READ/WRITE  ACCESS        \nlambda_volume = cell.lambdaVolume\n\n"
+  - name: Surface
+    description: Shows how to surface.
+    suggested_indent: -1
+    code: "# READ ONLY ACCESS        \nsurface = cell.surface\n\n"
+  - name: Target Surface
+    description: Shows how to target Surface.
+    suggested_indent: -1
+    code: "# READ/WRITE  ACCESS                \ntarget_surface = cell.targetSurface\n\n"
+  - name: Lambda Surface
+    description: Shows how to lambda Surface.
+    suggested_indent: -1
+    code: "# READ/WRITE  ACCESS        \nlambda_surface = cell.lambdaSurface\n\n"
+  - name: Id
+    description: Shows how to id.
+    suggested_indent: -1
+    code: "# READ ONLY ACCESS        \nid = cell.id\n\n"
+  - name: Cluster Id
+    description: Shows how to cluster Id.
+    suggested_indent: -1
+    code: "# READ ONLY ACCESS - can be modified using reassignClusterId function        \ncluster_id = cell.clusterId\n\n"
+  - name: Cluster Id Reassignment
+    description: Shows how to cluster Id Reassignment.
+    suggested_indent: -1
+    code: |+
+      # You cannot simply set cluster Id on a cell to make t belong to other cluster you
+      # have to use the following function call
+      # changing cluster id to 1536 for cell 'cell'
+      self.reassign_cluster_id(cell, 1536)
+
+  - name: Cell Type
+    description: Shows how to cell Type.
+    suggested_indent: -1
+    code: "# READ/WRITE  ACCESS                \ncell_type = cell.type\n\n"
+  - name: Fluctuation Ampl
+    description: Shows how to fluctuation Ampl.
+    suggested_indent: -1
+    code: "# READ/WRITE  ACCESS                        \nfluct_ampl = cell.fluctAmpl\n\n"
+  - name: Fluctuation Ampl Reassignment
+    description: Shows how to fluctuation Ampl Reassignment.
+    suggested_indent: -1
+    code: |+
+      cell.fluctAmpl = 50
+      # uncomment line below to use globally defined FluctuationAmplitude
+      # cell.fluctAmpl=-1
+
+  - name: Inertia Tensor
+    description: Shows how to inertia Tensor.
+    suggested_indent: -1
+    code: |+
+      # READ ONLY ACCESS
+      iXX = cell.iXX
+      iYY = cell.iYY
+      iZZ = cell.iZZ
+      iXY = cell.iXY
+      iXZ = cell.iXZ
+      iYZ = cell.iYZ
+
+  - name: Eccentricity
+    description: Shows how to eccentricity.
+    suggested_indent: -1
+    code: |+
+      # READ ONLY ACCESS
+      eccentricity = cell.ecc
+
+  - name: Minor Axes
+    description: Shows how to minor Axes.
+    suggested_indent: -1
+    code: |+
+      # READ ONLY ACCESS
+      minor_x = cell.lX
+      minor_y = cell.lY
+      minor_z = cell.lZ
+
+  - name: Pressure
+    description: Shows how to pressure.
+    suggested_indent: -1
+    code: |+
+      # READ ONLY ACCESS
+      pressure = cell.pressure
+
+  - name: Surface Tension
+    description: Shows how to surface Tension.
+    suggested_indent: -1
+    code: |+
+      # READ ONLY ACCESS
+      surface_tension = cell.surfaceTension
+
+  - name: Cluster Surface Tension
+    description: Shows how to cluster Surface Tension.
+    suggested_indent: -1
+    code: |+
+      # READ ONLY ACCESS
+      cluster_surface_tension = cell.clusterSurfaceTension
+
+- name: FPP - Focal Point Plasticity
+  description: Code for inspecting or modifying focal point plasticity links and parameters.
+  snippets:
+  - name: 'Link property: lambda'
+    description: 'Shows how to link property: lambda.'
+    suggested_indent: -1
+    code: |+
+      # ld = link.getLambdaDistance()
+      # link.setLambdaDistance(1.0)
+
+  - name: 'Link property: target distance'
+    description: 'Shows how to link property: target distance.'
+    suggested_indent: -1
+    code: |+
+      # td = link.getTargetDistance()
+      # link.setTargetDistance(1.0)
+
+  - name: 'Link property: maximum distance'
+    description: 'Shows how to link property: maximum distance.'
+    suggested_indent: -1
+    code: |+
+      # md = link.getMaxDistance()
+      # link.setMaxDistance(1.0)
+
+  - name: 'Link property: maximum number of junctions'
+    description: 'Shows how to link property: maximum number of junctions.'
+    suggested_indent: -1
+    code: |+
+      # mnj = link.getMaxNumberOfJunctions()
+      # link.setMaxNumberOfJunctions(1)
+
+  - name: 'Link property: activation energy'
+    description: 'Shows how to link property: activation energy.'
+    suggested_indent: -1
+    code: |+
+      # ae = link.getActivationEnergy()
+      # link.setActivationEnergy(1.0)
+
+  - name: 'Link property: neighbor order'
+    description: 'Shows how to link property: neighbor order.'
+    suggested_indent: -1
+    code: |+
+      # no = link.getNeighborOrder()
+      # link.setNeighborOrder(1)
+
+  - name: 'Link property: initialization step'
+    description: 'Shows how to link property: initialization step.'
+    suggested_indent: -1
+    code: |+
+      # im = link.getInitMCS()
+
+  - name: 'Link property: linked cell(s)'
+    description: 'Shows how to link property: linked cell(s).'
+    suggested_indent: -1
+    code: |+
+      # For regular and internal links, two cells are linked:
+      # initiator_cell, initiated_cell = link.cellPair
+      # For anchors, only one cell is linked:
+      # linked_cell = link.cell
+
+  - name: 'Link property: anchor point (anchor only)'
+    description: 'Shows how to link property: anchor point (anchor only).'
+    suggested_indent: -1
+    code: |+
+      ap = link.getAnchorPoint()
+      link.setAnchorPoint([0.0, 1.0, 2.0])
+
+  - name: 'Link property: anchor id (anchor only)'
+    description: 'Shows how to link property: anchor id (anchor only).'
+    suggested_indent: -1
+    code: |+
+      aid = link.getAnchorId()
+
+  - name: 'Link management: Create FPP Link'
+    description: 'Shows how to link management: Create FPP Link.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Arguments are:
+      # initiator: CellG, initiated: CellG, lambda_distance: float, target_distance: float, max_distance: float
+      link = self.new_fpp_link(initiator, initiated, lambda_distance, target_distance, max_distance)
+
+  - name: 'Link management: Create FPP Internal Link (Within Cluster)'
+    description: 'Shows how to link management: Create FPP Internal Link (Within Cluster).'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Arguments are:
+      # initiator: CellG, initiated: CellG, lambda_distance: float, target_distance: float, max_distance: float
+      link = self.new_fpp_internal_link(initiator, initiated, lambda_distance, target_distance, max_distance)
+
+  - name: 'Link management: Create Anchor'
+    description: 'Shows how to link management: Create Anchor.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Arguments are cell: CellG lambda_distance: float, target_distance: float, max_distance: float
+      # You can specify an anchor point with (float) keyword arguments "x", "y", "z" or with a (Point3D) keyword argument "pt"
+      # link = self.new_fpp_anchor(cell, lambda_distance, target_distance, max_distance, x=0.0, y=1.0, z=2.0)
+      # link = self.new_fpp_anchor(cell, lambda_distance, target_distance, max_distance, pt=Point3D(0, 1, 2))
+
+  - name: 'Link management: Delete FPP Link (any type)'
+    description: 'Shows how to link management: Delete FPP Link (any type).'
+    suggested_indent: -1
+    code: |+
+      self.delete_fpp_link(link)
+
+  - name: 'Link management: Delete FPP Links Attached to a Cell (any type)'
+    description: 'Shows how to link management: Delete FPP Links Attached to a Cell (any type).'
+    suggested_indent: -1
+    code: |+
+      # To select which types of links to remove, set any of the following keyword arguments to True
+      #   Remove all links          : links
+      #   Remove all internal links : internal_links
+      #   Remove all anchors        : anchors
+      # If none of these are specified, then all links of any type are removed
+      self.remove_all_cell_fpp_links(cell)
+
+  - name: 'Link inventory: Get number of links'
+    description: 'Shows how to link inventory: Get number of links.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      nl = self.get_number_of_fpp_links()
+
+  - name: 'Link inventory: Get number of internal links'
+    description: 'Shows how to link inventory: Get number of internal links.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      nil = self.get_number_of_fpp_internal_links()
+
+  - name: 'Link inventory: Get number of anchors'
+    description: 'Shows how to link inventory: Get number of anchors.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      na = self.get_number_of_fpp_anchors()
+
+  - name: 'Link inventory: Get link associated with two cells'
+    description: 'Shows how to link inventory: Get link associated with two cells.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      link = self.get_fpp_link_by_cells(cell1, cell2)
+
+  - name: 'Link inventory: Get internal link associated with two cells'
+    description: 'Shows how to link inventory: Get internal link associated with two cells.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      link = self.get_fpp_internal_link_by_cells(cell1, cell2)
+
+  - name: 'Link inventory: Get anchor assicated with a cell and anchor id'
+    description: 'Shows how to link inventory: Get anchor assicated with a cell and anchor id.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      link = self.get_fpp_anchor_by_cell_and_id(cell, anchor_id)
+
+  - name: 'Link inventory: Get number of link junctions by type for a cell'
+    description: 'Shows how to link inventory: Get number of link junctions by type for a cell.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      njt = self.get_number_of_fpp_junctions_by_type(cell, attached_cell_type)
+
+  - name: 'Link inventory: Get number of internal link junctions by type for a cell'
+    description: 'Shows how to link inventory: Get number of internal link junctions by type for a cell.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      nijt = self.get_number_of_fpp_internal_junctions_by_type(cell, attached_cell_type)
+
+  - name: 'Visit: All links attached to a cell'
+    description: 'Shows how to visit: All links attached to a cell.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Visit all links attached to a cell
+      for link in self.get_fpp_links_by_cell(cell):
+          # operations here
+
+  - name: 'Visit: All internal links attached to a cell'
+    description: 'Shows how to visit: All internal links attached to a cell.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Visit all internal links attached to a cell in a cluster
+      for link in self.get_fpp_internal_links_by_cell(cell):
+          # operations here
+
+  - name: 'Visit: All anchors attached to a cell'
+    description: 'Shows how to visit: All anchors attached to a cell.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Visit all anchors attached to a cell
+      for link in self.get_fpp_anchors_by_cell(cell):
+          # operations here
+
+  - name: 'Visit: All cells attached to a cell by a link'
+    description: 'Shows how to visit: All cells attached to a cell by a link.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Visit all cells attached to a cell by a link
+      for linked_cell in self.get_fpp_linked_cells(cell):
+          # operations here
+
+  - name: 'Visit: All cells attached to a cell by an internal link'
+    description: 'Shows how to visit: All cells attached to a cell by an internal link.'
+    suggested_indent: -1
+    code: |+
+      # Make sure FocalPointPlasticity plugin is loaded
+      # Visit all cells attached to a cell by an internal link
+      for linked_cell in self.get_fpp_internal_linked_cells(cell):
+          # operations here
+
+- name: Adhesion Flex
+  description: Code for working with Adhesion Flex molecules, densities, and energies.
+  snippets:
+  - name: Get Molecule Dens. By Name
+    description: Shows how to get Molecule Dens. By Name.
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # accessing adhesion molecule density using its name
+      self.adhesionFlexPlugin.getAdhesionMoleculeDensity(cell, "NCad")
+
+  - name: Get Molecule Dens. By Index
+    description: Shows how to get Molecule Dens. By Index.
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # accessing adhesion molecule density using its index
+      # molecules are indexed in the same order they are listed in the xml file
+      self.adhesionFlexPlugin.getAdhesionMoleculeDensity(cell,0)
+
+  - name: Set Molecule Dens. By Name
+    description: Shows how to set Molecule Dens. By Name.
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # setting adhesion molecule density using its name
+      self.adhesionFlexPlugin.setAdhesionMoleculeDensity(cell, "NCad", 11.2)
+
+  - name: Set Molecule Dens. By Index
+    description: Shows how to set Molecule Dens. By Index.
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # setting adhesion molecule density using its index
+      # molecules are indexed in the same order they are listed in the xml file
+      self.adhesionFlexPlugin.setAdhesionMoleculeDensity(cell, 0, 11.2)
+
+  - name: Get Molecule Dens. By Name (Medium)
+    description: Shows how to get Molecule Dens. By Name (Medium).
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # accessing adhesion molecule density for Medium using its name
+      self.adhesionFlexPlugin.getMediumAdhesionMoleculeDensity("NCad")
+
+  - name: Get Molecule Dens. By Index (Medium)
+    description: Shows how to get Molecule Dens. By Index (Medium).
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # accessing adhesion molecule density for Medium using its index
+      # molecules are indexed in the same order they are listed in the xml file
+      self.getMediumAdhesionMoleculeDensityByIndex(0)
+
+  - name: Set Molecule Dens. By Name (Medium)
+    description: Shows how to set Molecule Dens. By Name (Medium).
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # setting adhesion molecule density for Medium using its name
+      self.adhesionFlexPlugin.setMediumAdhesionMoleculeDensity("NCad", 11.2)
+
+  - name: Set Molecule Dens. By Index (Medium)
+    description: Shows how to set Molecule Dens. By Index (Medium).
+    suggested_indent: -1
+    code: |+
+      # Make sure AdhesionFlex plugin is loaded
+      # setting adhesion molecule density for Medium using its index
+      # molecules are indexed in the same order they are listed in the xml file
+      self.adhesionFlexPlugin.setMediumAdhesionMoleculeDensityByIndex(0, 11.2)
+
+- name: Chemotaxis
+  description: Code for reading or changing chemotaxis data, lambda values, and saturation parameters.
+  snippets:
+  - name: By Cell Id (Define)
+    description: Shows how to by Cell Id (Define).
+    suggested_indent: -1
+    code: |+
+      # Make sure Chemotaxis Plugin is loaded
+      # defining chemotaxis properties of individual cell 'cell'
+      cd = self.chemotaxisPlugin.addChemotaxisData(cell, "FIELDNAME")
+      cd.setLambda(20.0)
+      # If assigning chemotaxis only towards one or more specific cell types, then use the following,
+      # where the list references the cell types (shown here for type names 'type_name_1' and 'type_name_2')
+      # cd.assignChemotactTowardsVectorTypes([self.cell_type.type_name_1, self.cell_type.type_name_2])
+
+  - name: By Cell Id (Modify)
+    description: Shows how to by Cell Id (Modify).
+    suggested_indent: -1
+    code: |+
+      # Make sure Chemotaxis Plugin is loaded
+      # modifying chemotaxis properties of individual cell 'cell'
+      cd = self.chemotaxisPlugin.getChemotaxisData(cell, "FIELDNAME")
+      if cd:
+          l = cd.getLambda() - 3
+          cd.setLambda(l)
+
+- name: Inertia Tensor
+  description: Code for accessing inertia tensor components and derived shape information.
+  snippets:
+  - name: Information
+    description: Shows how to information.
+    suggested_indent: -1
+    code: |+
+      # Make sure MomentOfInertia plugin is loaded
+      print("cell.iXX=", cell.iXX, " cell.iYY=", cell.iYY, " cell.iXY=", cell.iXY)
+      # simiilarly we can get other components of intertia tensor
+
+  - name: Semiaxes
+    description: Shows how to semiaxes.
+    suggested_indent: -1
+    code: |+
+      # Make sure MomentOfInertia plugin is loaded
+      axes = self.momentOfInertiaPlugin.getSemiaxes(cell)
+      print("minorAxis=", axes[0], " majorAxis=", axes[2], " medianAxis=", axes[1])
+
+- name: Elasticity
+  description: Code for reading or updating elasticity links and elasticity plugin parameters.
+  snippets:
+  - name: Modify Existing Links
+    description: Shows how to modify Existing Links.
+    suggested_indent: -1
+    code: |+
+      # Make sure Elasticity plugin is loaded and Local option is on
+      elasticity_data_list = self.get_elasticity_data_list(cell)
+      for elasticity_data in elasticity_data_list:  # visiting all elastic links of 'cell'
+
+          target_length = elasticity_data.targetLength
+          elasticity_data.targetLength = 6.0
+          elasticity_data.lambdaLength = 200.0
+          elasticity_neighbor = elasticity_data.neighborAddress
+
+          # now we set up elastic link data stored in neighboring cell
+          neighbor_elasticity_data = None
+          neighbor_elasticity_data_list = self.get_elasticity_data_list(elasticity_neighbor)
+          for neighbor_elasticity_data_tmp in neighbor_elasticity_data_list:
+              if not self.are_cells_different(neighbor_elasticity_data_tmp.neighborAddress, cell):
+                  neighbor_elasticity_data = neighbor_elasticity_data_tmp
+                  break
+
+          if neighbor_elasticity_data is None:
+              print ("None Type returned."
+                     " Problems with ElasticityDataNeighbors initialization or sets of elasticityNeighborData are corrupted")
+              sys.exit()
+          neighbor_elasticity_data.targetLength = 6.0
+          neighbor_elasticity_data.lambdaLength = 200.0
+
+  - name: Add New Elastic Link
+    description: Shows how to add New Elastic Link.
+    suggested_indent: -1
+    code: |+
+      # Make sure Elasticity plugin is loaded and Local option is on
+      # arguments are cell1, cell2, lambdaElasticLink,targetLinkLength
+      self.elasticityTrackerPlugin.addNewElasticLink(cell1, cell2, 200.0, 6.0)
+
+  - name: Remove Elastic Link
+    description: Shows how to remove Elastic Link.
+    suggested_indent: -1
+    code: |+
+      # Make sure Elasticity plugin is loaded and Local option is on
+      # arguments are cell1, cell2,
+      self.elasticityTrackerPlugin.removeElasticityPair(cell1, cell2, 200.0, 6.0)
+
+- name: Secretion / Uptake / Field Integrals
+  description: Code for secretion APIs, uptake logic, and field integral utilities.
+  snippets:
+  - name: Secrete Inside Cell
+    description: Shows how to secrete Inside Cell.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+      secretor.secreteInsideCell(cell, 300)
+      # tot_amount = secretor.secreteInsideCellTotalCount(cell, 300).tot_amount
+
+  - name: Secrete Inside Cell At Boundary
+    description: Shows how to secrete Inside Cell At Boundary.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+      secretor.secreteInsideCellAtBoundary(cell, 300)
+      # tot_amount = secretor.secreteInsideCellAtBoundaryTotalCount(cell, 300).tot_amount
+
+  - name: Secrete Outside Cell At Boundary
+    description: Shows how to secrete Outside Cell At Boundary.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+      secretor.secreteOutsideCellAtBoundary(cell, 300)
+      # tot_amount = secretor.secreteOutsideCellAtBoundaryTotalCount(cell, 300).tot_amount
+
+  - name: Secrete Inside Cell At COM
+    description: Shows how to secrete Inside Cell At COM.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+      secretor.secreteInsideCellAtCOM(cell, 300)
+      # tot_amount = secretor.secreteInsideCellAtCOMTotalCount(cell, 300).tot_amount
+
+  - name: Secrete Inside Cell Constant Concentration
+    description: Shows how to secrete Inside Cell Constant Concentration.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+      secretor.secreteInsideCellConstantConcentration(cell, 300)
+      # tot_amount = secretor.secreteInsideCellConstantConcentrationTotalCount(cell, 300).tot_amount
+
+  - name: Secrete Inside Cell At Boundary On Contact With
+    description: Shows how to secrete Inside Cell At Boundary On Contact With.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, secretion rate, a list of cell types
+      secretor.secreteInsideCellAtBoundaryOnContactWith(cell, 300, [self.TYPE1, self.TYPE2])
+      # tot_amount = secretor.secreteInsideCellAtBoundaryOnContactWithTotalCount(cell, 300, [self.TYPE1, self.TYPE2]).tot_amount
+
+  - name: Secrete Outside Cell At Boundary On Contact With
+    description: Shows how to secrete Outside Cell At Boundary On Contact With.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, secretion rate, a list of cell types
+      secretor.secreteOutsideCellAtBoundaryOnContactWith(cell, 300, [self.TYPE1, self.TYPE2])
+      # tot_amount = secretor.secreteOutsideCellAtBoundaryOnContactWithTotalCount(cell, 300, [self.TYPE1, self.TYPE2]).tot_amount
+
+  - name: Uptake Inside Cell
+    description: Shows how to uptake Inside Cell.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, max uptake, relative uptake
+      secretor.uptakeInsideCell(cell, 2.0, 0.2)
+      # tot_amount = secretor.uptakeInsideCellTotalCount(cell, 2.0, 0.2).tot_amount
+
+  - name: Uptake Inside Cell At Boundary
+    description: Shows how to uptake Inside Cell At Boundary.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, max uptake, relative uptake
+      secretor.uptakeInsideCellAtBoundary(cell, 2.0, 0.2)
+      # tot_amount = secretor.uptakeInsideCellAtBoundaryTotalCount(cell, 2.0, 0.2).tot_amount
+
+  - name: Uptake Outside Cell At Boundary
+    description: Shows how to uptake Outside Cell At Boundary.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, max uptake, relative uptake
+      secretor.uptakeOutsideCellAtBoundary(cell, 2.0, 0.2)
+      # tot_amount = secretor.uptakeOutsideCellAtBoundaryTotalCount(cell, 2.0, 0.2).tot_amount
+
+  - name: Uptake Inside Cell At COM
+    description: Shows how to uptake Inside Cell At COM.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, max uptake, relative uptake
+      secretor.uptakeInsideCellAtCOM(cell, 2.0, 0.2)
+      # tot_amount = secretor.uptakeInsideCellAtCOMTotalCount(cell, 2.0, 0.2).tot_amount
+
+  - name: Uptake Inside Cell At Boundary and On Contact With
+    description: Shows how to uptake Inside Cell At Boundary and On Contact With.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, max uptake, relative uptake, a list of cell types
+      secretor.uptakeInsideCellAtBoundaryOnContactWith(cell, 2.0, 0.2, [self.TYPE1, TYPE2])
+      # tot_amount = secretor.uptakeInsideCellAtBoundaryOnContactWithTotalCount(cell, 2.0, 0.2, [self.TYPE1, TYPE2]).tot_amount
+
+  - name: Uptake Outside Cell At Boundary and On Contact With
+    description: Shows how to uptake Outside Cell At Boundary and On Contact With.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      # you may reuse secretor for many cells. Simply define it outside the loop
+      secretor = self.get_field_secretor("FIELDNAME")
+
+      # arguments are: cell, max uptake, relative uptake, a list of cell types
+      secretor.uptakeOutsideCellAtBoundaryOnContactWith(cell, 2.0, 0.2, [self.TYPE1, TYPE2])
+      # tot_amount = secretor.uptakeOutsideCellAtBoundaryOnContactWithTotalCount(cell, 2.0, 0.2, [self.TYPE1, TYPE2]).tot_amount
+
+  - name: Amount Seen by Cell
+    description: Shows how to amount Seen by Cell.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      secretor = self.get_field_secretor("FIELDNAME")
+      amount_seen = secretor.amountSeenByCell(cell)
+
+  - name: Total Amount
+    description: Shows how to total Amount.
+    suggested_indent: -1
+    code: |+
+      # Make sure Secretion plugin is loaded
+      # make sure this field is defined in one of the PDE solvers
+      secretor = self.get_field_secretor("FIELDNAME")
+      total_amount = secretor.totalFieldIntegral()
+
+- name: Extra Fields Automatic Tracking
+  description: Code for tracked extra fields that stay synchronized with visualization output.
+  snippets:
+  - name: Track Scalar Cell Attribute (__init__)
+    description: Shows how to track Scalar Cell Attribute (__init__).
+    suggested_indent: -1
+    code: |+
+      self.track_cell_level_scalar_attribute(field_name='FIELD_NAME', attribute_name='ATTR_NAME')
+
+  - name: Track Scalar Cell Attribute Custom Function (__init__)
+    description: Shows how to track Scalar Cell Attribute Custom Function (__init__).
+    suggested_indent: -1
+    code: |+
+      self.track_cell_level_scalar_attribute(field_name='FIELD_NAME', attribute_name='ATTR_NAME',
+                                             function=lambda attr_val: attr_val ** 3)
+
+  - name: Track Vector Cell Attribute (__init__)
+    description: Shows how to track Vector Cell Attribute (__init__).
+    suggested_indent: -1
+    code: |+
+      self.track_cell_level_vector_attribute(field_name='mcs_vec', attribute_name='mcs_vec')
+
+  - name: Track Vector Cell Attribute Custom Function (__init__)
+    description: Shows how to track Vector Cell Attribute Custom Function (__init__).
+    suggested_indent: -1
+    code: |+
+      self.track_cell_level_vector_attribute(field_name='FIELD_NAME', attribute_name='VEC_NAME',
+                                             function=lambda vec: [vec[0] * random(), vec[1] * random(), vec[2] * random()])
+
+- name: Extra Fields
+  description: Code for creating and using scalar or vector extra fields from Python.
+  snippets:
+  - name: Scalar Field Cell Level - Example
+    description: Shows how to scalar Field Cell Level - Example.
+    suggested_indent: -1
+    code: |+
+      from random import random
+      field = self.field.SCALAR_CL_FIELD
+
+      # clear field
+      field.clear()
+
+      for cell in self.cell_list:
+          field[cell] = cell, cell.id * random()
+
+  - name: Scalar Field Cell Level - Create (__init__ fcn.)
+    description: Shows how to scalar Field Cell Level - Create (__init__ fcn.).
+    suggested_indent: -1
+    code: |+
+      self.create_scalar_field_cell_level_py("FIELD_NAME_SCL")
+
+  - name: Scalar Field Cell Level - Clear (step fcn.)
+    description: Shows how to scalar Field Cell Level - Clear (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.SCALAR_CL_FIELD.clear()
+
+  - name: Scalar Field Cell Level - Write (step fcn.)
+    description: Shows how to scalar Field Cell Level - Write (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.SCALAR_CL_FIELD
+      field[cell] = FLOAT_VALUE
+
+  - name: Scalar Field Pixel Level - Example
+    description: Shows how to scalar Field Pixel Level - Example.
+    suggested_indent: -1
+    code: |+
+      import math
+      field = self.field.SCALAR_FIELD
+
+      # clear field
+      field[:, :, :] = 0.0
+
+      for x, y, z in self.every_pixel():
+          if not mcs % 20:
+              field[x, y, z] = x * y
+
+          else:
+              field[x, y, z] = math.sin(x * y)
+
+  - name: Scalar Field Pixel Level - Create (__init__ fcn.)
+    description: Shows how to scalar Field Pixel Level - Create (__init__ fcn.).
+    suggested_indent: -1
+    code: |+
+      self.create_scalar_field_py("FIELD_NAME_S")
+
+  - name: Scalar Field Pixel Level - Clear (step fcn.)
+    description: Shows how to scalar Field Pixel Level - Clear (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.SCALAR_FIELD
+      field[:, :, :] = 0.0
+
+  - name: Scalar Field Pixel Level - Write (step fcn.)
+    description: Shows how to scalar Field Pixel Level - Write (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.SCALAR_FIELD
+      field[10, 11, 0] = FLOAT_VALUE
+
+  - name: Vector Field Cell Level - Example
+    description: Shows how to vector Field Cell Level - Example.
+    suggested_indent: -1
+    code: |+
+      from random import random
+      field = self.field.VECTOR_CL_FIELD
+
+      field.clear()
+      for cell in self.cell_list:
+          if cell.type == 1:
+              field[cell] = [cell.id * random(), cell.id * random(), 0]
+              vec = field[cell]
+              vec *= 2.0
+              field[cell] = vec
+
+  - name: Vector Field Cell Level - Create (__init__ fcn.)
+    description: Shows how to vector Field Cell Level - Create (__init__ fcn.).
+    suggested_indent: -1
+    code: |+
+      self.create_vector_field_cell_level_py("FIELD_NAME_VCL")
+
+  - name: Vector Field Cell Level - Clear (step fcn.)
+    description: Shows how to vector Field Cell Level - Clear (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.VECTOR_CL_FIELD.clear()
+
+  - name: Vector Field Cell Level - Write (step fcn.)
+    description: Shows how to vector Field Cell Level - Write (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.VECTOR_CL_FIELD
+      field[cell] = [VEC_X, VEC_Y, VEC_Z]
+
+  - name: Vector Field Pixel Level - Example
+    description: Shows how to vector Field Pixel Level - Example.
+    suggested_indent: -1
+    code: |+
+      field = self.field.VECTOR_FIELD
+      # clear vector field
+      field[:, :, :, :] = 0.0
+
+      for x in range(0, self.dim.x, 5):
+          for y in range(0, self.dim.y, 5):
+              for z in range(self.dim.z):
+                  field[x, y, z] = [x * random(), y * random(), z * random()]
+
+  - name: Vector Field Pixel Level - Create (__init__ fcn.)
+    description: Shows how to vector Field Pixel Level - Create (__init__ fcn.).
+    suggested_indent: -1
+    code: |+
+      self.create_vector_field_py("FIELD_NAME_V")
+
+  - name: Vector Field Pixel Level - Clear (step fcn.)
+    description: Shows how to vector Field Pixel Level - Clear (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.VECTOR_FIELD
+      # clear vector field
+      field[:, :, :, :] = 0.0
+
+  - name: Vector Field Pixel Level - Write (step fcn.)
+    description: Shows how to vector Field Pixel Level - Write (step fcn.).
+    suggested_indent: -1
+    code: |+
+      field = self.field.VECTOR_FIELD
+      field[x, y, z] = [VEC_X, VEC_Y, VEC_Z]
+
+- name: Scientific Plots
+  description: Code for creating plot windows and updating line or scatter plots during simulation.
+  snippets:
+  - name: 1. Setup (start fcn)
+    description: Shows how to setup (start fcn).
+    suggested_indent: -1
+    code: |2+
+
+      self.plot_win = self.add_new_plot_window(title='Average Volume And Surface',
+                                               x_axis_title='MonteCarlo Step (MCS)',
+                                               y_axis_title='Variables', x_scale_type='linear', y_scale_type='linear',
+                                               grid=False)
+
+      self.plot_win.add_plot("MVol", style='Lines', color='red', size=5)
+      self.plot_win.add_plot("MSur", style='Dots', color='green', size=1)
+
+
+  - name: 2. Add Data Points (step fcn)
+    description: Shows how to add Data Points (step fcn).
+    suggested_indent: -1
+    code: |+
+      # arguments are (name of the data series, x, y)
+      self.plot_win.add_data_point("MVol", mcs, cell.volume)
+      self.plot_win.add_data_point("MSur", mcs, cell.surface)
+
+
+  - name: Erase Plot (step fcn)
+    description: Shows how to erase Plot (step fcn).
+    suggested_indent: -1
+    code: |+
+      self.plot_win.erase_all_data()
+
+  - name: 3. Refresh Plots (unnecessary, deprecated - step fcn )
+    description: Shows how to refresh Plots (unnecessary, deprecated - step fcn ).
+    suggested_indent: -1
+    code: |+
+      self.plot_win.show_all_plots()
+
+  - name: Save Plot As A PNG File
+    description: Shows how to save Plot As A PNG File.
+    suggested_indent: -1
+    code: |+
+      # here we specify size of the image saved (1000x1000) - default is 400 x 400
+      # resizing of the image is not guaranteed to be implemented
+      self.plot_win.save_plot_as_png(file_name, 1000, 1000)
+
+  - name: Save Plot As Data (text file)
+    description: Shows how to save Plot As Data (text file).
+    suggested_indent: -1
+    code: |+
+      self.plot_win.save_plot_as_data(file_name)
+
+- name: Scientific Plots Histograms
+  description: Code for building and updating histogram plots from simulation data.
+  snippets:
+  - name: 1. Add Histogram Plot (start fcn)
+    description: Shows how to add Histogram Plot (start fcn).
+    suggested_indent: -1
+    code: |+
+      # initialize setting for Histogram
+      self.plot_win = self.add_new_plot_window(title='Histogram of Cell Volumes', x_axis_title='Number of Cells',
+                                               y_axis_title='Volume Size in Pixels')
+      # _alpha is transparency 0 is transparent, 255 is opaque
+      self.plot_win.add_histogram_plot(plot_name='Hist 1', color='green', alpha=100)
+      self.plot_win.add_histogram_plot(plot_name='Hist 2', color='red', alpha=100)
+      self.plot_win.add_histogram_plot(plot_name='Hist 3', color='blue')
+
+  - name: 2. Add Histogram  (step fcn)
+    description: Shows how to add Histogram  (step fcn).
+    suggested_indent: -1
+    code: |+
+      self.plot_win.add_histogram(plot_name='Hist 1', value_array=gauss, number_of_bins=10)
+      self.plot_win.add_histogram(plot_name='Hist 2', value_array=vol_list, number_of_bins=10)
+      self.plot_win.add_histogram(plot_name='Hist 3', value_array=vol_list, number_of_bins=50)
+
+
+  - name: Save  Plot As A PNG File
+    description: Shows how to save  Plot As A PNG File.
+    suggested_indent: -1
+    code: |+
+      # here we specify size of the image saved (1000x1000) - default is 400 x 400
+      # resizing of the image is not guaranteed to be implemented
+      self.plot_win.save_plot_as_png(file_name, 1000, 1000)
+
+  - name: Save Plot As Data (text file)
+    description: Shows how to save Plot As Data (text file).
+    suggested_indent: -1
+    code: |+
+      self.plot_win.save_plot_as_data(file_name)
+
+- name: Simulation
+  description: Code for simulation-level helpers, simulator access, and general runtime control.
+  snippets:
+  - name: Stop Simulation
+    description: Shows how to stop Simulation.
+    suggested_indent: -1
+    code: |+
+      self.stop_simulation()
+
+  - name: Set Max MCS
+    description: Shows how to set Max MCS.
+    suggested_indent: -1
+    code: |+
+      self.set_max_mcs(MAX_MCS)
+
+  - name: Get Model Units
+    description: Shows how to get Model Units.
+    suggested_indent: -1
+    code: |+
+      conversion_factors = self.get_unit_conversion_factors()
+      print("conversion_factors.length_unit=", conversion_factors.length_unit, "conversion_factors.length_scaling_factor=", conversion_factors.length_scaling_factor)
+      print("conversion_factors.time_unit=", conversion_factors.time_unit, "conversion_factors.time_scaling_factor=", conversion_factors.time_scaling_factor)
+
+
+  - name: Change Steppable Frequency
+    description: Shows how to change Steppable Frequency.
+    suggested_indent: -1
+    code: |+
+      self.frequency = NEW_FREQUENCY
+
+  - name: Build Wall
+    description: Shows how to build Wall.
+    suggested_indent: -1
+    code: |+
+      self.build_wall(self.YOUR_WALL_CELL_TYPE)
+
+  - name: Destroy Wall
+    description: Shows how to destroy Wall.
+    suggested_indent: -1
+    code: |+
+      self.destroy_wall()
+
+  - name: Get Lattice Dimensions
+    description: Shows how to get Lattice Dimensions.
+    suggested_indent: -1
+    code: |+
+      dim_x = self.dim.x  # Lattice dimension along x (first dimension)
+      dim_y = self.dim.y  # Lattice dimension along y (second dimension)
+      dim_z = self.dim.z  # Lattice dimension along z (third dimension)
+
+  - name: Resize And Shift Lattice
+    description: Shows how to resize And Shift Lattice.
+    suggested_indent: -1
+    code: |+
+      self.resize_and_shift_lattice(new_size=(X, Y, Z), shift_vec=(VX, VY, VZ))
+
+  - name: Change Number of CPU's (worknodes)
+    description: Shows how to change Number of CPU's (worknodes).
+    suggested_indent: -1
+    code: |+
+      self.change_number_of_work_nodes(8)
+
+  - name: Shared steppable dictionary
+    description: Shows how to shared steppable dictionary.
+    suggested_indent: -1
+    code: |+
+      # This dictionary is shared by all registered steppables
+      self.shared_steppable_vars['key']
+
+- name: MaBoSS
+  description: Code for integrating MaBoSS models with CC3D cells and simulations.
+  snippets:
+  - name: Add a MaBoSS simulation to a cell
+    description: Shows how to add a MaBoSS simulation to a cell.
+    suggested_indent: -1
+    code: |+
+      # Input MaBoSS network description in file 'bnd_file' or string 'bnd_str'
+      # Input MaBoSS configuration in file 'cfg_file' or string 'cfg_str'
+      # If using strings, enclose entire network/configuration in a multiline string
+      # Input
+      self.add_maboss_to_cell(cell=cell,
+                              model_name=model_name,
+                              bnd_file=bnd_file,
+                              bnd_str=bnd_str,
+                              cfg_file=cfg_file,
+                              cfg_str=cfg_str,
+                              time_step=1.0,
+                              time_tick=1.0,
+                              discrete_time=False,
+                              seed=0)
+
+  - name: Create a MaBoSS simulation
+    description: Shows how to create a MaBoSS simulation.
+    suggested_indent: -1
+    code: |+
+      # Input MaBoSS network description in file 'bnd_file' or string 'bnd_str'
+      # Input MaBoSS configuration in file 'cfg_file' or string 'cfg_str'
+      # If using strings, enclose entire network/configuration in a multiline string
+      # Input
+      from cc3d.core import MaBoSSCC3D
+      mm = MaBoSSCC3D.maboss_model(model_name=model_name,
+                                   bnd_file=bnd_file,
+                                   bnd_str=bnd_str,
+                                   cfg_file=cfg_file,
+                                   cfg_str=cfg_str,
+                                   time_step=1.0,
+                                   time_tick=1.0,
+                                   discrete_time=False,
+                                   seed=0)
+
+  - name: Get a MaBoSS simulation attached to a cell
+    description: Shows how to get a MaBoSS simulation attached to a cell.
+    suggested_indent: -1
+    code: |+
+      # 'MyModel' is the alias of the particular model to get e.g., self.add_maboss_to_cell(model_name='MyModel', ...)
+      mm = cell.maboss.MyModel
+
+  - name: Delete a MaBoSS model attached to a cell
+    description: Shows how to delete a MaBoSS model attached to a cell.
+    suggested_indent: -1
+    code: |+
+      # 'model_name' contains the alias of the particular model to get e.g., self.add_maboss_to_cell(model_name=model_name, ...)
+      self.delete_maboss_from_cell(cell=cell, model_name=model_name)
+
+  - name: Step all attached MaBoSS models
+    description: Shows how to step all attached MaBoSS models.
+    suggested_indent: -1
+    code: |+
+      self.timestep_maboss()
+
+  - name: Get a MaBoSS network node
+    description: Shows how to get a MaBoSS network node.
+    suggested_indent: -1
+    code: |+
+      # 'MyModel' is the alias of the particular model to get e.g., self.add_maboss_to_cell(model_name='MyModel', ...)
+      # 'MyNode' is the name of the node in the MaBoSS network
+      node = cell.maboss.MyModel['MyNode']
+
+  - name: Get/set a MaBoSS network node property
+    description: Shows how to get/set a MaBoSS network node property.
+    suggested_indent: -1
+    code: |+
+      # node is a MaBoSS node
+      node_description: str = node.description  # Description; read-only
+      node_is_input: bool = node.is_input  # Input node flag; read-only
+      node_is_internal: bool = node.is_internal  # Internal node flag
+      node_is_reference: bool = node.is_reference  # Reference node flag
+      node_istate: bool = node.istate  # Initial state
+      node_rate_down: float = node.rate_down  # Current rate down; read-only
+      node_rate_up: float = node.rate_up  # Current rate up; read-only
+      node_ref_state: bool = node.ref_state  # Reference state
+      node_state: bool = node.state  # Current state
+
+  - name: Get/set a MaBoSS simulation property
+    description: Shows how to get/set a MaBoSS simulation property.
+    suggested_indent: -1
+    code: |+
+      # mm is a MaBoSS simulation
+      mm_time: float = mm.time  # Current simulation time; read-only
+      mm_step_size: float = mm.step_size  # Step size
+      mm_time_tick: float = mm.run_config.time_tick  # Time tick
+      mm_discrete_time: bool = mm.run_config.discrete_time  # Continuous/discrete flag
+      mm_seed: int = mm.run_config.seed  # Random generator seed
+
+  - name: Get/set a MaBoSS external variable
+    description: Shows how to get/set a MaBoSS external variable.
+    suggested_indent: -1
+    code: |+
+      # mm is a MaBoSS simulation
+      # myVar is declared as '$myVar' in the MaBoSS specification
+      mm_myVar = mm.network.symbol_table['myVar']
+
+  - name: Copy a MaBoSS network state
+    description: Shows how to copy a MaBoSS network state.
+    suggested_indent: -1
+    code: |+
+      # mm_from and mm_to is are MaBoSS simulations
+      mm_to.loadNetworkState(mm_from.getNetworkState())
+
+
+- name: Mitosis
+  description: Code for mitosis helpers, division orientation, and post-division cell handling.
+  snippets:
+  - name: 1. Clone Attributes Parent -> Child
+    description: Shows how to clone Attributes Parent -> Child.
+    suggested_indent: -1
+    code: |+
+      self.clone_parent_2_child()
+
+  - name: 1. Clone Cluster Attributes Parent -> Child
+    description: Shows how to clone Cluster Attributes Parent -> Child.
+    suggested_indent: -1
+    code: |+
+      self.clone_parent_cluster_2_child_cluster()
+
+  - name: 2. Compact updateAttributes
+    description: Shows how to compact updateAttributes.
+    suggested_indent: -1
+    code: |+
+      self.parent_cell.targetVolume /= 2.0  # reducing parent target volume
+      self.clone_parent_2_child()
+
+  - name: 2. Compact updateAttributes for clusters
+    description: Shows how to compact updateAttributes for clusters.
+    suggested_indent: -1
+    code: |+
+      # we first redice target volum of the cluster of parent cell
+      compartment_list_parent = self.get_cluster_cells(self.parent_cell.clusterId)
+      for i in range(compartment_list_parent.size()):
+          compartment_list_parent[i].targetVolume /= 2.0
+
+      # later we clone attributes from parent cluster to child cluster
+      self.clone_parent_cluster_2_child_cluster()
+
+  - name: Clone Attributes (Flexible)
+    description: Shows how to clone Attributes (Flexible).
+    suggested_indent: -1
+    code: |+
+      self.clone_attributes(source_cell=self.parent_cell, target_cell=self.child_cell, no_clone_key_dict_list=[ATTRIB_1, ATTRIB_2])
+
+  - name: Child/Parent Random Relative Position
+    description: Shows how to child/Parent Random Relative Position.
+    suggested_indent: -1
+    code: |+
+      self.set_parent_child_position_flag(0)
+
+  - name: Child on the Left of the Parent
+    description: Shows how to child on the Left of the Parent.
+    suggested_indent: -1
+    code: |+
+      self.set_parent_child_position_flag(1)
+
+  - name: Child on the Right of the Parent
+    description: Shows how to child on the Right of the Parent.
+    suggested_indent: -1
+    code: |+
+      self.set_parent_child_position_flag(-1)
+
+  - name: Divide Cells Along Random Axis (Example)
+    description: Shows how to divide Cells Along Random Axis (Example).
+    suggested_indent: -1
+    code: |+
+      cells_to_divide = []
+      for cell in self.cell_list:
+          if cell.volume > 50:
+              cells_to_divide.append(cell)
+
+      for cell in cells_to_divide:
+          self.divide_cell_random_orientation(cell)
+
+  - name: Divide Cells Along Major Axis (Example)
+    description: Shows how to divide Cells Along Major Axis (Example).
+    suggested_indent: -1
+    code: |+
+      cells_to_divide = []
+      for cell in self.cell_list:
+          if cell.volume > 50:
+              cells_to_divide.append(cell)
+
+      for cell in cells_to_divide:
+          self.divide_cell_along_major_axis(cell)
+
+  - name: Divide Cells Along Minor Axis (Example)
+    description: Shows how to divide Cells Along Minor Axis (Example).
+    suggested_indent: -1
+    code: |+
+      cells_to_divide = []
+      for cell in self.cell_list:
+          if cell.volume > 50:
+              cells_to_divide.append(cell)
+
+      for cell in cells_to_divide:
+          self.divide_cell_along_minor_axis(cell)
+
+  - name: Divide Cells Along Normal To Vector (Example)
+    description: Shows how to divide Cells Along Normal To Vector (Example).
+    suggested_indent: -1
+    code: |+
+      cells_to_divide = []
+      for cell in self.cell_list:
+          if cell.volume > 50:
+              cells_to_divide.append(cell)
+
+      for cell in cells_to_divide:
+          # dividing along Y axis - normal to (1,0,0)
+          self.divide_cell_orientation_vector_based(cell, 1, 0, 0)
+
+  - name: Divide Cluster Along Random Axis (Example)
+    description: Shows how to divide Cluster Along Random Axis (Example).
+    suggested_indent: -1
+    code: |+
+      mitosis_cluster_id_list = []
+      for compartment_list in self.cluster_list:
+
+          cluster_id = 0
+          cluster_volume = 0
+          for cell in CompartmentList(compartment_list):
+              cluster_volume += cell.volume
+              cluster_id = cell.clusterId
+
+          # condition under which cluster mitosis takes place
+          if cluster_volume > 250:
+              # instead of doing mitosis right away we store ids for clusters which should be divide.
+              # This avoids modifying cluster list while we iterate through it
+              mitosis_cluster_id_list.append(cluster_id)
+
+      for cluster_id in mitosis_cluster_id_list:
+          self.divide_cluster_random_orientation(cluster_id)
+
+  - name: Divide Cluster Along Major Axis (Example)
+    description: Shows how to divide Cluster Along Major Axis (Example).
+    suggested_indent: -1
+    code: |+
+      mitosis_cluster_id_list = []
+      for compartment_list in self.cluster_list:
+
+          cluster_id = 0
+          cluster_volume = 0
+          for cell in CompartmentList(compartment_list):
+              cluster_volume += cell.volume
+              cluster_id = cell.clusterId
+
+          # condition under which cluster mitosis takes place
+          if cluster_volume > 250:
+              # instead of doing mitosis right away we store ids for clusters which should be divide.
+              # This avoids modifying cluster list while we iterate through it
+              mitosis_cluster_id_list.append(cluster_id)
+
+      for cluster_id in mitosis_cluster_id_list:
+          self.divide_cluster_along_major_axis(cluster_id)
+
+  - name: Divide Cluster Along Minor Axis (Example)
+    description: Shows how to divide Cluster Along Minor Axis (Example).
+    suggested_indent: -1
+    code: |+
+      mitosis_cluster_id_list = []
+      for compartment_list in self.clusterList:
+
+          cluster_id = 0
+          cluster_volume = 0
+          for cell in CompartmentList(compartment_list):
+              cluster_volume += cell.volume
+              cluster_id = cell.clusterId
+
+          # condition under which cluster mitosis takes place
+          if cluster_volume > 250:
+              # instead of doing mitosis right away we store ids for clusters which should be divide.
+              # This avoids modifying cluster list while we iterate through it
+              mitosis_cluster_id_list.append(cluster_id)
+
+      for cluster_id in mitosis_cluster_id_list:
+          self.divide_cluster_along_major_axis(cluster_id)
+
+  - name: Divide Cluster Along Normal To Vector (Example)
+    description: Shows how to divide Cluster Along Normal To Vector (Example).
+    suggested_indent: -1
+    code: |+
+      mitosis_cluster_id_list = []
+      for compartment_list in self.clusterList:
+
+          cluster_id = 0
+          cluster_volume = 0
+          for cell in CompartmentList(compartment_list):
+              cluster_volume += cell.volume
+              cluster_id = cell.clusterId
+
+          # condition under which cluster mitosis takes place
+          if cluster_volume > 250:
+              # instead of doing mitosis right away we store ids for clusters which should be divide.
+              # This avoids modifying cluster list while we iterate through it
+              mitosis_cluster_id_list.append(cluster_id)
+
+      for cluster_id in mitosis_cluster_id_list:
+          self.divideClusterOrientationVectorBased(cluster_id, 1, 0, 0)
+
+- name: Parameter Scan Command Line
+  description: Code for reading or reacting to parameter scan command-line settings.
+  snippets:
+  - name: 1. Run Parameter Scan Using Player (Windows)
+    description: Shows how to run Parameter Scan Using Player (Windows).
+    suggested_indent: -1
+    code: |+
+      # NOTE: THIS COMMAND IS SUPPOSED TO BE EXECUTED IN COMMAND LINE SHELL, NOT IN PYTHON!
+      paramScan.bat - i < cc3dproject - file > --guiScan --maxNumberOfRuns=20[remaining command
+      line
+      options
+      used in compucell3d.bat or runScript.bat]
+
+  - name: 1. Run Parameter Scan With No GUI (Windows)
+    description: Shows how to run Parameter Scan With No GUI (Windows).
+    suggested_indent: -1
+    code: |+
+      # NOTE: THIS COMMAND IS SUPPOSED TO BE EXECUTED IN COMMAND LINE SHELL, NOT IN PYTHON!
+      paramScan.bat - i < cc3d
+      project - file > --maxNumberOfRuns = 20[remaining
+      command
+      line
+      options
+      used in compucell3d.bat or runScript.bat]
+
+  - name: 2. Run Parameter Scan Using Player (Linux)
+    description: Shows how to run Parameter Scan Using Player (Linux).
+    suggested_indent: -1
+    code: |+
+      # NOTE: THIS COMMAND IS SUPPOSED TO BE EXECUTED IN COMMAND LINE SHELL, NOT IN PYTHON!
+      paramScan.sh - i < cc3d
+      project - file > --guiScan - -maxNumberOfRuns = 20[remaining
+      command
+      line
+      options
+      used in compucell3d.sh or runScript.sh]
+
+  - name: 2. Run Parameter Scan With No GUI (Linux)
+    description: Shows how to run Parameter Scan With No GUI (Linux).
+    suggested_indent: -1
+    code: |+
+      # NOTE: THIS COMMAND IS SUPPOSED TO BE EXECUTED IN COMMAND LINE SHELL, NOT IN PYTHON!
+      paramScan.sh - i < cc3d
+      project - file > --maxNumberOfRuns = 20[remaining
+      command
+      line
+      options
+      used in compucell3d.sh or runScript.sh]
+
+  - name: 3. Run Parameter Scan Using Player (OSX)
+    description: Shows how to run Parameter Scan Using Player (OSX).
+    suggested_indent: -1
+    code: |+
+      # NOTE: THIS COMMAND IS SUPPOSED TO BE EXECUTED IN COMMAND LINE SHELL, NOT IN PYTHON!
+      paramScan.command - i < cc3d
+      project - file > --guiScan - -maxNumberOfRuns = 20[remaining
+      command
+      line
+      options
+      used in compucell3d.command or runScript.command]
+
+  - name: 3. Run Parameter Scan With No GUI (OSX)
+    description: Shows how to run Parameter Scan With No GUI (OSX).
+    suggested_indent: -1
+    code: |+
+      # NOTE: THIS COMMAND IS SUPPOSED TO BE EXECUTED IN COMMAND LINE SHELL, NOT IN PYTHON!
+      paramScan.command - i < cc3d
+      project - file > --maxNumberOfRuns = 20[remaining
+      command
+      line
+      options
+      used in compucell3d.command or runScript.command]
+
+  - name: Current Parameter Scan Iteration
+    description: Shows how to current Parameter Scan Iteration.
+    suggested_indent: -1
+    code: |
+      # accessing current parameter scan iteration from steppable
+      iteration = self.param_scan_iteration
