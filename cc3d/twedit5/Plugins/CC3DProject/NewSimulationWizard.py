@@ -2202,6 +2202,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
     def setUpContactPluginPage(self):
         contact_page: QWizardPage = self.get_page_by_name(CONTACT_PAGE_NAME)
         cell_types: list[str] = []
+        self.contact_form.focal_plasticity_plugin_used = self.fppCHB.isChecked()
         for row in range(self.cellTypeTable.rowCount()):
             cell_type = str(self.cellTypeTable.item(row, 0).text())
             cell_types.append(cell_type)
