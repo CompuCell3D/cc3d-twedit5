@@ -56,7 +56,7 @@ class ContactPluginWidget(QWidget):
         self.contact_cell_cell_energy: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
         self.internal_contact_cell_cell_energy: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
         self.contact_internal_callBack = contact_internal_call_back
-        self.focal_plasticity_plugin_used = False
+        #self.focal_plasticity_plugin_used = False
 
         descr_font = QFont()
         descr_font.setPointSize(CONTACT_DESCR_FONT_SIZE)
@@ -159,16 +159,9 @@ class ContactPluginWidget(QWidget):
         for row in range(0, self.ui.contact_matrix_table.rowCount()):
             for column in range(0, self.ui.contact_matrix_table.columnCount()):
                 if row <= column:
-                    cell_type_h = self.ui.contact_matrix_table.horizontalHeaderItem(column).text()
-                    cell_type_v = self.ui.contact_matrix_table.verticalHeaderItem(row).text()
                     cell_to_update: QTableWidgetItem = self.ui.contact_matrix_table.item(row, column)
                     if cell_to_update:
-                        if (cell_type_h == MEDIUM_CELL_TYPE or cell_type_v == MEDIUM_CELL_TYPE) and self.focal_plasticity_plugin_used:
-                            # Check if both 'MEDIUM_CELL_TYPE' type, if so then default energy is '-'
-                            # when FocalPoint Plasticity Plugin is used.
-                            cell_to_update.setText("-")
-                        else:
-                            cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
+                        cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
                     else:  # create new table cell (QTableWidgetItem):
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
@@ -258,8 +251,7 @@ class ContactPluginWidget(QWidget):
         return issues
 
     def initContactMatrix(self, cell_types: list[str]):
-        """ Sets up the initial Contact matrix then fills with default values. If FocalPoint Plasticity
-            Plugin is used then all Medium entries are '-'. """
+        """ Sets up the initial Contact matrix then fills with default values. """
 
         header_font = QFont()
         header_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
@@ -286,12 +278,7 @@ class ContactPluginWidget(QWidget):
                 if cell_type_h == MEDIUM_CELL_TYPE:
                     medium_col = row
                 if row <= column:
-                    if (cell_type_h == MEDIUM_CELL_TYPE or medium_col == column) and \
-                            self.focal_plasticity_plugin_used:
-                        # Check if 'MEDIUM_CELL_TYPE' type and FPP used, if so then default energy is '-'.
-                        binding_par_item = QTableWidgetItem("-")
-                    else:
-                        binding_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
+                    binding_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                     binding_par_item.setFont(header_font)
                     binding_par_item.setTextAlignment(Qt.AlignCenter)
 
@@ -373,8 +360,7 @@ class ContactPluginWidget(QWidget):
 
     def setUpSortedCellsContactEnergiesMatrix(self):
         """ Generates default contact energies for contact matrix that should lead to cell type sorting.
-            Updates the contact_matrix_table (QTableWidget) with new energy values. If FocalPoint Plasticity
-            Plugin is used then all 'Medium' entries are '-'. """
+            Updates the contact_matrix_table (QTableWidget) with new energy values. """
 
         table_cell_font = QFont()
         table_cell_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
@@ -387,18 +373,11 @@ class ContactPluginWidget(QWidget):
                         cell_2: str = self.ui.contact_matrix_table.verticalHeaderItem(column).text()
                         if row < column:
                             if cell_1 == MEDIUM_CELL_TYPE or cell_2 == MEDIUM_CELL_TYPE:
-                                if self.focal_plasticity_plugin_used:
-                                    cell_to_update.setText(str('-'))
-                                else:
-                                    cell_to_update.setText(str('16.0'))
+                                cell_to_update.setText(str('16.0'))
                             else:
                                 cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
                         else:  # Same cell type contact:
-                            if (cell_1 == MEDIUM_CELL_TYPE and cell_2 == MEDIUM_CELL_TYPE) and \
-                                    self.focal_plasticity_plugin_used:
-                                cell_to_update.setText(str('-'))
-                            else:
-                                cell_to_update.setText(str(DEFAULT_SORT_ENERGY))
+                            cell_to_update.setText(str(DEFAULT_SORT_ENERGY))
                     else:  # create new table cell:
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
@@ -410,8 +389,7 @@ class ContactPluginWidget(QWidget):
 
     def setUpCellMixingContactEnergiesMatrix(self):
         """ Generates default contact energies for contact matrix that should lead to cell type mixing.
-                    Updates the contact_matrix_table (QTableWidget) with new values. If FocalPoint Plasticity
-            Plugin is used then all Medium entries are '-'. """
+                    Updates the contact_matrix_table (QTableWidget) with new values. """
 
         table_cell_font = QFont()
         table_cell_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
@@ -424,17 +402,11 @@ class ContactPluginWidget(QWidget):
                         cell_2: str = self.ui.contact_matrix_table.verticalHeaderItem(column).text()
                         if row < column:
                             if cell_1 == MEDIUM_CELL_TYPE or cell_2 == MEDIUM_CELL_TYPE:
-                                if self.focal_plasticity_plugin_used:
-                                    cell_to_update.setText(str('-'))
-                                else:
-                                    cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))  # Do not mix with Medium cell type
+                                cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))  # Do not mix with Medium cell type
                             else:
                                 cell_to_update.setText(str(DEFAULT_MIX_ENERGY))
                         else:  # Same cell type contact:
-                            if (cell_1 == MEDIUM_CELL_TYPE and cell_2 == MEDIUM_CELL_TYPE) and self.focal_plasticity_plugin_used:
-                                cell_to_update.setText(str('-'))
-                            else:
-                                cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
+                            cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
                     else:  # create new table cell if none there:
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
