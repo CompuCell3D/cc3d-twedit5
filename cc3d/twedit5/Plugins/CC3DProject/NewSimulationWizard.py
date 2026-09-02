@@ -1072,7 +1072,7 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         if len(self.rxn_diffusionFE_add_data) > 1:  # Load existing user data, if exists
             popup.set_data(self.rxn_diffusionFE_add_data[field_name])
         if popup.exec_() == QDialog.Accepted:
-            extra_settings: dict[str:str] = popup.get_data()
+            extra_settings: dict[str, str] = popup.get_data()
 
             #for key in extra_settings:
                 # print(f"{key}: {extra_settings[key]}")
@@ -2205,9 +2205,24 @@ class NewSimulationWizard(QWizard, ui_newsimulationwizard.Ui_NewSimulationWizard
         for row in range(self.cellTypeTable.rowCount()):
             cell_type = str(self.cellTypeTable.item(row, 0).text())
             cell_types.append(cell_type)
-        self.contact_form.initContactMatrix(cell_types)
-        if self.internalContactCB.isChecked():
-            self.contact_form.initInternalContactMatrix(cell_types)
+
+        # check if existing contact plugin info already there (and same cell types):
+        if len(self.contact_form.cell_types) == len(cell_types):
+            cell_found = False
+            for cell in cell_types:
+                if cell in self.contact_form.cell_types:
+                    cell_found = True
+                else:
+                    cell_found = False
+                    break
+            if not cell_found:
+                self.contact_form.initContactMatrix(cell_types)
+                if self.internalContactCB.isChecked():
+                    self.contact_form.initInternalContactMatrix(cell_types)
+        else:
+            self.contact_form.initContactMatrix(cell_types)
+            if self.internalContactCB.isChecked():
+                self.contact_form.initInternalContactMatrix(cell_types)
 
 
 
