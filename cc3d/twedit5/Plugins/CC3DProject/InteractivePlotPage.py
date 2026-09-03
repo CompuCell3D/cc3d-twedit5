@@ -1,7 +1,7 @@
 import math
 
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtGui import QColor, QDoubleValidator
+from PyQt5.QtGui import QColor, QDoubleValidator, QFont
 from PyQt5.QtWidgets import QInputDialog, QLabel, QTableWidgetItem, QWizardPage
 
 from cc3d.twedit5.Plugins.CC3DProject.ui_interactiveplotpage import Ui_interactivePlotPage
@@ -23,7 +23,8 @@ LINE_PLOT_TYPE = "Line"
 HISTOGRAM_PLOT_TYPE = "Histogram"
 LEFT_Y_AXIS = "Left"
 RIGHT_Y_AXIS = "Right"
-
+CC3D_PLOTS_URL = "https://compucell3dreferencemanual.readthedocs.io/en/latest/example_plots_histograms.html#"
+PLOT_INFO_FONT_SIZE = 10
 
 class InteractivePlotPage(QWizardPage):
     """Wizard page that collects PyQtGraph plot window configuration."""
@@ -32,6 +33,15 @@ class InteractivePlotPage(QWizardPage):
         super().__init__(parent)
         self.ui = Ui_interactivePlotPage()
         self.ui.setupUi(self)
+        plot_info_font = QFont()
+        plot_info_font.setPointSize(PLOT_INFO_FONT_SIZE)
+        self.ui.descriptionTextBrowser.setFont(plot_info_font)
+        plots_info = self.ui.descriptionTextBrowser.toHtml()
+        url_plots = f'''<p><a href="{CC3D_PLOTS_URL}"> Adding plots to CC3D python steppable (CC3D reference manual)</a></p> '''
+        plots_info = plots_info + url_plots
+        self.ui.descriptionTextBrowser.setOpenExternalLinks(True)
+        self.ui.descriptionTextBrowser.clear()
+        self.ui.descriptionTextBrowser.setHtml(plots_info)
         self.cell_types = []
         self.plots = []
         self.draft_plot = self._new_plot()

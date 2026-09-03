@@ -164,9 +164,24 @@ class Ui_interactivePlotPage(object):
         self.seriesTable.horizontalHeader().setDefaultSectionSize(80)
         self.seriesTable.verticalHeader().setDefaultSectionSize(20)
         self.seriesTable.verticalHeader().setMinimumSectionSize(18)
+        seriesTableWidth = (
+            self.seriesTable.horizontalHeader().defaultSectionSize() * self.seriesTable.columnCount()
+            + self.seriesTable.verticalHeader().sizeHint().width()
+            + self.seriesTable.style().pixelMetric(QtWidgets.QStyle.PM_ScrollBarExtent)
+            + self.seriesTable.frameWidth() * 2
+            + 4
+        )
+        self.seriesTable.setMinimumWidth(seriesTableWidth)
         self.seriesTable.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.seriesTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        self.seriesLayout.addWidget(self.seriesTable)
+        self.seriesTableLayout = QtWidgets.QHBoxLayout()
+        self.seriesTableLayout.setObjectName("seriesTableLayout")
+        self.seriesTableLayout.addWidget(self.seriesTable)
+        self.seriesTableSpacer = QtWidgets.QSpacerItem(
+            0, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
+        self.seriesTableLayout.addItem(self.seriesTableSpacer)
+        self.seriesLayout.addLayout(self.seriesTableLayout)
         self.detailsLayout.addWidget(self.seriesGB)
 
         self.previewGB = QtWidgets.QGroupBox(self.detailsPanel)
