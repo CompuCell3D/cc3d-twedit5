@@ -385,11 +385,13 @@ class {steppable_name}(SteppableBasePy):
 '''.format(plot_key=plot_key, series_name=series_spec.get("name", ""), color=color)
                 else:
                     line_plot_kwargs = self._format_line_plot_kwargs(plot_spec=plot_spec, series_spec=series_spec)
+                    plot_style = "Dots" if series_spec.get("style") == "Dots" else "Lines"
                     self.steppableCodeLines += '''
-        self.plot_windows[{plot_key!r}].add_plot({series_name!r}, style='Lines', color={color!r}, size=3{line_plot_kwargs})
+        self.plot_windows[{plot_key!r}].add_plot({series_name!r}, style={plot_style!r}, color={color!r}, size=3{line_plot_kwargs})
 '''.format(
                         plot_key=plot_key,
                         series_name=series_spec.get("name", ""),
+                        plot_style=plot_style,
                         color=color,
                         line_plot_kwargs=line_plot_kwargs
                     )

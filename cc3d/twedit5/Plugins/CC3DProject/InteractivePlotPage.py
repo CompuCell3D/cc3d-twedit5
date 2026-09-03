@@ -21,6 +21,8 @@ CELL_TYPE_SERIES_PREFIX = "Cell type: "
 DEFAULT_COLORS = ["red", "green", "blue", "magenta", "cyan", "yellow", "white"]
 LINE_PLOT_TYPE = "Line"
 HISTOGRAM_PLOT_TYPE = "Histogram"
+LINE_SERIES_STYLE = "Line"
+DOTS_SERIES_STYLE = "Dots"
 LEFT_Y_AXIS = "Left"
 RIGHT_Y_AXIS = "Right"
 CC3D_PLOTS_URL = "https://compucell3dreferencemanual.readthedocs.io/en/latest/example_plots_histograms.html#"
@@ -85,6 +87,8 @@ class InteractivePlotPage(QWizardPage):
         self.ui.showLegendCB.toggled.connect(self.on_plot_field_changed)
 
     def _setup_series_controls(self):
+        self.ui.seriesStyleCB.addItems([LINE_SERIES_STYLE, DOTS_SERIES_STYLE])
+        self.ui.seriesStyleCB.setCurrentText(LINE_SERIES_STYLE)
         self.ui.yAxisCB.addItems([LEFT_Y_AXIS, RIGHT_Y_AXIS])
         self.ui.yAxisCB.setCurrentText(LEFT_Y_AXIS)
         self.ui.yAxisCB.setEnabled(False)
@@ -250,17 +254,21 @@ class InteractivePlotPage(QWizardPage):
         for column, value in enumerate(values):
             item = QTableWidgetItem(value)
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+            if column == 0:
+                item.setData(Qt.UserRole, entry.get("style", LINE_SERIES_STYLE))
             self.ui.seriesTable.setItem(row, column, item)
 
     def _series_from_table(self):
         series = []
         for row in range(self.ui.seriesTable.rowCount()):
-            name = self.ui.seriesTable.item(row, 0).text()
+            name_item = self.ui.seriesTable.item(row, 0)
+            name = name_item.text()
             x_value = self.ui.seriesTable.item(row, 1).text()
             y_value = self.ui.seriesTable.item(row, 2).text()
             axis = self.ui.seriesTable.item(row, 3).text()
             y_min = self.ui.seriesTable.item(row, 4).text()
             y_max = self.ui.seriesTable.item(row, 5).text()
+            style = name_item.data(Qt.UserRole) or LINE_SERIES_STYLE
             source_type = "cell_type" if y_value in self.cell_types else "custom"
             series.append({
                 "name": name,
@@ -268,6 +276,7 @@ class InteractivePlotPage(QWizardPage):
                 "y": y_value,
                 "source_type": source_type,
                 "axis": axis,
+                "style": style,
                 "y_min": y_min,
                 "y_max": y_max
             })
@@ -335,8 +344,11 @@ class InteractivePlotPage(QWizardPage):
             else:
                 y_values = [max(1, i + index + 1) if plot["y_scale"] == "log" else math.sin(i / 2.0) + index
                             for i in x_values]
-                pen = pg.mkPen(color, width=2)
-                self.preview_widget.plot(x_values, y_values, pen=pen, name=entry["name"])
+                if entry.get("style", LINE_SERIES_STYLE) == DOTS_SERIES_STYLE:
+                    self.preview_widget.plot(x_values, y_values, pen=None, symbol="o", symbolBrush=color, name=entry["name"])
+                else:
+                    pen = pg.mkPen(color, width=2)
+                    self.preview_widget.plot(x_values, y_values, pen=pen, name=entry["name"])
 
     @pyqtSlot()
     def on_add_plot_clicked(self):
@@ -450,6 +462,7 @@ class InteractivePlotPage(QWizardPage):
             "y": y_value,
             "source_type": source_type,
             "axis": axis,
+            "style": self.ui.seriesStyleCB.currentText(),
             "y_min": self.ui.yMinLE.text().strip(),
             "y_max": self.ui.yMaxLE.text().strip()
         }
