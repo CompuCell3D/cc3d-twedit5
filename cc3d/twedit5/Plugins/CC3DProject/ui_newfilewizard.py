@@ -84,6 +84,8 @@ class Ui_NewFileWizard(object):
 
         self.fileTypeCB.addItem("")
 
+        self.fileTypeCB.addItem("")
+
         self.gridLayout.addWidget(self.fileTypeCB, 1, 3, 2, 2)
 
         spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -200,9 +202,11 @@ class Ui_NewFileWizard(object):
 
         self.fileTypeCB.setItemText(2, _translate("NewFileWizard", "Python File"))
 
-        self.fileTypeCB.setItemText(3, _translate("NewFileWizard", "PIF File"))
+        self.fileTypeCB.setItemText(3, _translate("NewFileWizard", "C++ File"))
 
-        self.fileTypeCB.setItemText(4, _translate("NewFileWizard", "Concentration File"))
+        self.fileTypeCB.setItemText(4, _translate("NewFileWizard", "PIF File"))
+
+        self.fileTypeCB.setItemText(5, _translate("NewFileWizard", "Concentration File"))
 
         self.label_4.setText(_translate("NewFileWizard", " Location:"))
 

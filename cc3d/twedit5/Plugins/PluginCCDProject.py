@@ -71,6 +71,20 @@ longDescription = """This plugin provides functionality that allows users to man
 
 error = ''
 
+CPP_RESOURCE_TYPE = "Cpp"
+CPP_RESOURCE_LABEL = "C++ File"
+CPP_STEPPABLE_ACTION = "Add C++ Steppable..."
+CPP_STEPPABLE_TEMPLATE = Path(__file__).parent / "CC3DProject" / "templates" / "cpp_steppable.cpp"
+CPP_STEPPABLE_DEFAULT_DIR = "Native"
+CPP_ICON_PATH = Path(__file__).parent / "CC3DProject" / "icons" / "c-plus-plus-128.png"
+
+
+def cpp_resource_icon():
+    icon = QIcon(':/icons/c-plus-plus-128.png')
+    if icon.isNull() and CPP_ICON_PATH.exists():
+        icon = QIcon(str(CPP_ICON_PATH))
+    return icon
+
 
 # this is bidirectional dictionary - tree-item to CC3DResource and path of the resource to item
 
@@ -428,6 +442,8 @@ class CC3DProjectTreeWidget(QTreeWidget):
         menu.addSeparator()
 
         self.addActionToContextMenu(menu, self.plugin.actions["Add Resource..."])
+
+        self.addActionToContextMenu(menu, self.plugin.actions[CPP_STEPPABLE_ACTION])
 
         # if selection.size():
 
@@ -909,6 +925,8 @@ class CC3DProject(QObject, TweditPluginBase):
 
         self.cc3dProjectMenu.addAction(self.actions["Add Resource..."])
 
+        self.cc3dProjectMenu.addAction(self.actions[CPP_STEPPABLE_ACTION])
+
         self.cc3dProjectMenu.addAction(self.actions["Remove Resources"])
 
         self.cc3dProjectMenu.addSeparator()
@@ -1167,6 +1185,14 @@ class CC3DProject(QObject, TweditPluginBase):
 
                                                             triggered=self.__addResource)
 
+        self.actions[CPP_STEPPABLE_ACTION] = QtWidgets.QAction(cpp_resource_icon(), CPP_STEPPABLE_ACTION, self,
+
+                                                               shortcut="",
+
+                                                               statusTip="Add C++ steppable source file",
+
+                                                               triggered=self.__add_cpp_steppable)
+
         self.actions["Add Serializer..."] = QtWidgets.QAction(QIcon(':/icons/add-serializer.png'), "Add Serializer ...",
 
                                                               self, shortcut="", statusTip="Add Serializer ",
@@ -1175,7 +1201,7 @@ class CC3DProject(QObject, TweditPluginBase):
 
         self.actions["Remove Resources"] = QtWidgets.QAction(QIcon(':/icons/remove.png'), "Remove Resources", self,
 
-                                                             shortcut="", statusTip="Remove Resource Files ",
+                                                             shortcut="", statusTip="Remove selected resources from the project",
 
                                                              triggered=self.__removeResources)
 
@@ -2236,7 +2262,7 @@ class CC3DProject(QObject, TweditPluginBase):
 
             projItem = self.treeWidget.getProjectParent(self.treeWidget.currentItem())
 
-            self.markProjectDirty(projItem)
+            self.__save_cc3d_project()
 
     def __convertXMLToPython(self):
 
@@ -2751,15 +2777,8 @@ class CC3DProject(QObject, TweditPluginBase):
 
             print("copy=", resource.copy)
 
-            # set dirtyFlag to True
-
-            try:
-
-                self.treeWidget.projects[qt_obj_hash(proj_item)].dirtyFlag = dirtyFlagLocal
-
-            except LookupError as e:
-
-                pass
+            if dirtyFlagLocal:
+                self.__save_cc3d_project()
 
 
 
@@ -2815,14 +2834,14 @@ class CC3DProject(QObject, TweditPluginBase):
 
         for path, resource in pdh.cc3dSimulationData.resources.items():
 
-            if resource.type == "Python":
+            if resource.type in ["Python", CPP_RESOURCE_TYPE]:
 
                 self.openFileInEditor(path)
 
-                pythonItem = tw.getItemByText(projItem, "Python")
+                resource_item = tw.getItemByText(projItem, resource.type)
 
-                if pythonItem:
-                    pythonItem.setExpanded(True)
+                if resource_item:
+                    resource_item.setExpanded(True)
 
         return
 
@@ -3062,12 +3081,120 @@ class CC3DProject(QObject, TweditPluginBase):
         if not proj_item:
             return
 
-        ret = QMessageBox.warning(tw, "Delete Selected Items?",
-                                  "Are you sure you want to delete selected items?<br>This cannot be undone.<br> "
-                                  "Proceed?",
-                                  QMessageBox.Yes | QMessageBox.No)
+        try:
+            ild = self.treeWidget.projects[qt_obj_hash(proj_item)]
+        except LookupError:
+            return
 
-        if ret == QMessageBox.No:
+        resource_paths = self.__selected_resource_paths(proj_item, ild)
+        delete_files = self.__confirm_remove_resources(resource_paths)
+
+        if delete_files is None:
+            return
+
+        self.__remove_selected_resources(delete_files=delete_files)
+
+    def __confirm_remove_resources(self, resource_paths):
+
+        dialog = QtWidgets.QDialog(self.treeWidget)
+        dialog.setWindowTitle("Remove Selected Items?")
+        dialog.setMinimumWidth(460)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+        layout.setContentsMargins(18, 18, 18, 14)
+        layout.setSpacing(12)
+
+        prompt_label = QtWidgets.QLabel(
+            "Remove selected items from the project?"
+        )
+        prompt_label.setWordWrap(True)
+        prompt_label.setStyleSheet("font-size: 13px; font-weight: bold;")
+        layout.addWidget(prompt_label)
+
+        detail_label = QtWidgets.QLabel("Files will remain on disk unless deletion is selected.")
+        detail_label.setWordWrap(True)
+        layout.addWidget(detail_label)
+
+        resource_names = [os.path.basename(resource_path) for resource_path in resource_paths if resource_path]
+        resource_summary = QtWidgets.QLabel(self.__resource_selection_summary(resource_names))
+        resource_summary.setWordWrap(True)
+        resource_summary.setMinimumHeight(36)
+        resource_summary.setStyleSheet("""
+            QLabel {
+                background-color: #f5f5f5;
+                border: 1px solid #d0d0d0;
+                padding: 8px;
+            }
+        """)
+        layout.addWidget(resource_summary)
+
+        delete_checkbox = QtWidgets.QCheckBox("Delete resource from disk.")
+        layout.addWidget(delete_checkbox)
+
+        warning_label = QtWidgets.QLabel()
+        warning_label.setWordWrap(True)
+        warning_label.setMinimumHeight(38)
+        warning_label.setStyleSheet("color: #b00020; font-weight: bold;")
+        warning_label.setVisible(False)
+        layout.addWidget(warning_label)
+
+        if len(resource_names) == 1:
+            warning_text = "Warning: %s will be deleted from disk." % resource_names[0]
+        elif len(resource_names) > 1:
+            warning_text = "Warning: %s resources will be deleted from disk." % len(resource_names)
+        else:
+            warning_text = "Warning: selected resource files will be deleted from disk."
+
+        def update_warning(checked):
+            warning_label.setText(warning_text)
+            warning_label.setVisible(checked)
+
+        delete_checkbox.toggled.connect(update_warning)
+
+        buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return None
+
+        return delete_checkbox.isChecked()
+
+    @staticmethod
+    def __resource_selection_summary(resource_names):
+
+        if len(resource_names) == 1:
+            return "Selected resource: %s" % resource_names[0]
+
+        if len(resource_names) > 1:
+            preview = ", ".join(resource_names[:3])
+            if len(resource_names) > 3:
+                preview += ", ..."
+            return "Selected resources: %s" % preview
+
+        return "Selected resources will be removed."
+
+    def __selected_resource_paths(self, proj_item, ild):
+
+        resource_paths = []
+        selection = self.treeWidget.selectedItems()
+
+        for item_tmp in selection:
+            if proj_item == item_tmp.parent():
+                for i in range(item_tmp.childCount()):
+                    resource_paths.append(ild.getFullPath(item_tmp.child(i)))
+            elif item_tmp != proj_item:
+                resource_paths.append(ild.getFullPath(item_tmp))
+
+        return resource_paths
+
+    def __remove_selected_resources(self, delete_files=False):
+
+        tw = self.treeWidget
+        proj_item = tw.getProjectParent(tw.currentItem())
+
+        if not proj_item:
             return
 
         try:
@@ -3099,7 +3226,11 @@ class CC3DProject(QObject, TweditPluginBase):
         # first process leaf items - remove them from the project
         for item_tmp in leaf_items:
             parent = item_tmp.parent()
-            pdh.cc3dSimulationData.removeResource(ild.getFullPath(item_tmp))
+            resource_path = ild.getFullPath(item_tmp)
+            if delete_files:
+                self.__delete_resource_file(resource_path, pdh.cc3dSimulationData.basePath)
+
+            pdh.cc3dSimulationData.removeResource(resource_path)
 
             if ild.getResourceName(item_tmp) == 'CC3DSerializerResource':
                 pdh.cc3dSimulationData.removeSerializerResource()
@@ -3122,7 +3253,11 @@ class CC3DProject(QObject, TweditPluginBase):
 
             for child_item in children_list:
                 # pdh.cc3dSimulationData.removeResource(ild.getFullPath(item_tmp))
-                pdh.cc3dSimulationData.removeResource(ild.getFullPath(child_item))
+                resource_path = ild.getFullPath(child_item)
+                if delete_files:
+                    self.__delete_resource_file(resource_path, pdh.cc3dSimulationData.basePath)
+
+                pdh.cc3dSimulationData.removeResource(resource_path)
                 ild.removeItem(child_item)
                 item_tmp.removeChild(child_item)
 
@@ -3141,6 +3276,58 @@ class CC3DProject(QObject, TweditPluginBase):
 
         # # mark project as dirty
         # self.markProjectDirty(proj_item)
+
+    def __delete_resource_file(self, resource_path, project_base_path):
+
+        if not resource_path:
+            return
+
+        resource_path = os.path.abspath(resource_path)
+        project_base_path = os.path.abspath(project_base_path)
+
+        try:
+            common_path = os.path.commonpath([resource_path, project_base_path])
+        except ValueError:
+            common_path = ""
+
+        if common_path != project_base_path:
+            QMessageBox.warning(self.treeWidget, "Cannot Delete File",
+                                "File %s is outside the project directory." % resource_path, QMessageBox.Ok)
+            return
+
+        if not os.path.isfile(resource_path):
+            return
+
+        try:
+            os.remove(resource_path)
+            self.__remove_empty_resource_directory(os.path.dirname(resource_path), project_base_path)
+        except OSError:
+            QMessageBox.warning(self.treeWidget, "Cannot Delete File",
+                                "Could not delete %s ." % resource_path, QMessageBox.Ok)
+
+    def __remove_empty_resource_directory(self, directory_path, project_base_path):
+
+        if not directory_path:
+            return
+
+        directory_path = os.path.abspath(directory_path)
+        project_base_path = os.path.abspath(project_base_path)
+
+        if directory_path == project_base_path:
+            return
+
+        try:
+            common_path = os.path.commonpath([directory_path, project_base_path])
+        except ValueError:
+            return
+
+        if common_path != project_base_path:
+            return
+
+        try:
+            os.rmdir(directory_path)
+        except OSError:
+            pass
 
     def checkFileExtension(self, _extension="", _expectedExtensions=[]):
 
@@ -3183,6 +3370,8 @@ class CC3DProject(QObject, TweditPluginBase):
                     file_type = "PIFFile"
                 elif file_type == "Python File":
                     file_type = "Python"
+                elif file_type == CPP_RESOURCE_LABEL:
+                    file_type = CPP_RESOURCE_TYPE
                 elif file_type == "Concentration File":
                     file_type = "ScalarField"
                 # check file extensions
@@ -3230,6 +3419,23 @@ class CC3DProject(QObject, TweditPluginBase):
                         if suggested_extension != "":
                             ret = QMessageBox.warning(self.treeWidget, "Possible Extension Mismatch",
                                                       "PIF File typically has extension <b>.piff</b> .<br> "
+                                                      "Your file has extension <b>%s</b> ."
+                                                      " <br> Do you want to continue?" % extension,
+                                                      QMessageBox.Yes | QMessageBox.No)
+
+                            if ret == QMessageBox.No:
+                                return
+
+                if file_type == CPP_RESOURCE_TYPE:
+
+                    if extension == "":
+                        name = name + '.cpp'
+
+                    else:
+                        suggested_extension = self.checkFileExtension(extension, ['.cpp', '.cxx', '.cc'])
+                        if suggested_extension != "":
+                            ret = QMessageBox.warning(self.treeWidget, "Possible Extension Mismatch",
+                                                      "C++ source files typically have extension <b>.cpp</b> .<br> "
                                                       "Your file has extension <b>%s</b> ."
                                                       " <br> Do you want to continue?" % extension,
                                                       QMessageBox.Yes | QMessageBox.No)
@@ -3290,7 +3496,13 @@ class CC3DProject(QObject, TweditPluginBase):
                 # file does not exist
                 try:
                     resource_name = os.path.join(full_location, name)
-                    write_file(os.path.join(full_location, name), "")
+                    if file_type == CPP_RESOURCE_TYPE:
+                        with open(CPP_STEPPABLE_TEMPLATE, "r", encoding="utf-8") as template_file:
+                            template_text = template_file.read()
+                        with open(resource_name, "w", encoding="utf-8") as resource_file:
+                            resource_file.write(template_text)
+                    else:
+                        write_file(os.path.join(full_location, name), "")
 
                 except IOError:
                     print("COULD NOT CREATE FILE")
@@ -3310,6 +3522,93 @@ class CC3DProject(QObject, TweditPluginBase):
 
             # save project
             self.__save_cc3d_project()
+
+    def __add_cpp_steppable(self):
+
+        tw = self.treeWidget
+        proj_item = tw.getProjectParent(tw.currentItem())
+
+        if not proj_item:
+            return
+
+        try:
+            pdh = self.projectDataHandlers[qt_obj_hash(proj_item)]
+        except LookupError:
+            return
+
+        input_dialog = QInputDialog(tw)
+        input_dialog.setWindowTitle("Add C++ Steppable")
+        input_dialog.setLabelText("Steppable source name:")
+        input_dialog.setMinimumWidth(460)
+        input_dialog.resize(520, input_dialog.height())
+
+        ok = input_dialog.exec_()
+        steppable_name = input_dialog.textValue()
+
+        if not ok:
+            return
+
+        steppable_name = str(steppable_name).strip()
+
+        if not steppable_name:
+            return
+
+        steppable_name = os.path.basename(steppable_name)
+        base_name, extension = os.path.splitext(steppable_name)
+
+        if not base_name:
+            return
+
+        if extension == "":
+            steppable_name = steppable_name + ".cpp"
+
+        resource_name = self.create_cpp_steppable_resource(
+            pdh=pdh,
+            file_name=steppable_name,
+            location=CPP_STEPPABLE_DEFAULT_DIR
+        )
+
+        if not resource_name:
+            return
+
+        pdh.cc3dSimulationData.addNewResource(resource_name, CPP_RESOURCE_TYPE)
+        self.insertNewTreeItem(resource_name, CPP_RESOURCE_TYPE)
+        self.__save_cc3d_project()
+        self.openFileInEditor(resource_name)
+
+    def create_cpp_steppable_resource(self, pdh, file_name, location=CPP_STEPPABLE_DEFAULT_DIR):
+
+        full_location = os.path.join(pdh.cc3dSimulationData.basePath, location)
+
+        try:
+            self.makeDirectory(full_location)
+        except IOError:
+            QMessageBox.warning(self.treeWidget, "COULD NOT MAKE DIRECTORY",
+                                "Write permission error. You do not have write permissions to %s directory" % (
+                                    pdh.cc3dSimulationData.basePath), QMessageBox.Ok)
+            return ""
+
+        resource_name = os.path.join(full_location, file_name)
+
+        if os.path.exists(resource_name):
+            QMessageBox.warning(self.treeWidget, "File already exists",
+                                "File %s already exists." % resource_name, QMessageBox.Ok)
+            return ""
+
+        try:
+            with open(CPP_STEPPABLE_TEMPLATE, "r", encoding="utf-8") as template_file:
+                template_text = template_file.read()
+
+            with open(resource_name, "w", encoding="utf-8") as resource_file:
+                resource_file.write(template_text)
+
+        except IOError:
+            QMessageBox.warning(self.treeWidget, "COULD NOT CREATE FILE",
+                                "Write permission error. You do not have write permissions to %s directory" % (
+                                    full_location), QMessageBox.Ok)
+            return ""
+
+        return resource_name
 
     def __addSerializerResource(self):
 
@@ -3349,13 +3648,11 @@ class CC3DProject(QObject, TweditPluginBase):
 
             se.modifySerializerResource(pdh.cc3dSimulationData.serializerResource)
 
-            projItem = self.treeWidget.getProjectParent(self.treeWidget.currentItem())
-
-            self.markProjectDirty(projItem)
-
             # insert new file into the tree
 
             self.insertNewGenericResourceTreeItem(pdh.cc3dSimulationData.serializerResource)
+
+            self.__save_cc3d_project()
 
     def insertNewGenericResourceTreeItem(self, _resource):
 
@@ -3638,6 +3935,9 @@ class CC3DProject(QObject, TweditPluginBase):
                 item = QTreeWidgetItem(projItem)
 
                 item.setText(0, fileType)
+
+                if fileType == CPP_RESOURCE_TYPE:
+                    item.setIcon(0, cpp_resource_icon())
 
                 item1 = QTreeWidgetItem(item)
 
@@ -4135,6 +4435,8 @@ class CC3DProject(QObject, TweditPluginBase):
 
                 if resource.type == "Python":
                     new_resource_item.setIcon(0, QIcon(':/icons/python-icon.png'))
+                elif resource.type == CPP_RESOURCE_TYPE:
+                    new_resource_item.setIcon(0, cpp_resource_icon())
 
                 # inserting parent element for given resource type to dictionary
 

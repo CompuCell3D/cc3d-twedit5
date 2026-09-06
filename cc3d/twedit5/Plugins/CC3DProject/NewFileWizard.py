@@ -28,6 +28,22 @@ class NewFileWizard(QWizard, ui_newfilewizard.Ui_NewFileWizard):
         self.projectPath = ""
 
         self.setupUi(self)
+        self.setWizardStyle(QWizard.ClassicStyle)
+        self.setOption(QWizard.NoBackButtonOnStartPage, True)
+        self.setMinimumWidth(520)
+        self.setStyleSheet("""
+            QWizard {
+                font-size: 12px;
+            }
+            QLineEdit, QComboBox {
+                min-height: 24px;
+            }
+            QPushButton {
+                min-height: 24px;
+                padding: 3px 10px;
+            }
+        """)
+        self.fileTypeCB.currentTextChanged.connect(self.on_file_type_changed)
 
         # if not MAC:
 
@@ -162,3 +178,11 @@ class NewFileWizard(QWizard, ui_newfilewizard.Ui_NewFileWizard):
             self.fileTypeCB.insertItem(0, "Main Python Script")
 
         return
+
+    @pyqtSlot(str)
+    def on_file_type_changed(self, file_type):
+
+        if file_type == "C++ File":
+            self.locationLE.setText("Native/")
+        elif self.locationLE.text().strip() == "Native/":
+            self.locationLE.setText("Simulation/")
