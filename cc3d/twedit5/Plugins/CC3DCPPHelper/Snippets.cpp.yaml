@@ -1,5 +1,17 @@
 version: 1
 menus:
+- name: C++ Steppable Patterns
+  description: Compiled C++ steppable patterns for the CC3D kernel context API.
+  snippets:
+  - name: Visit All Cells
+    description: Shows how to visit all cells from a compiled C++ steppable callback.
+    suggested_indent: -1
+    code: |+
+      for (auto cell : ctx->cells) {
+          // Put your code here
+          std::cerr << "cell id=" << static_cast<long>(cell.id) << std::endl;
+      }
+
 - name: Setup
   description: Common C++ setup code for obtaining simulator, Potts, XML, and registration pointers.
   snippets:

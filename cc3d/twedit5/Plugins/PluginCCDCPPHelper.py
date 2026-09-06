@@ -254,11 +254,20 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
         snippetMenuDict = psmp.getSnippetMenuDict()
 
+        core_api_menu = self.cc3dcppMenu.addMenu("Core CompuCell3D API")
+        steppable_patterns_menu = self.cc3dcppMenu.addMenu("C++ Steppable Patterns")
+        if self.snippetPreviewController is not None:
+            self.snippetPreviewController.attach_menu(core_api_menu)
+            self.snippetPreviewController.attach_menu(steppable_patterns_menu)
+
         for menuName, submenuDict in iter(sorted(snippetMenuDict.items())):
 
             print('menuName=', menuName)
 
-            groupMenu = self.cc3dcppMenu.addMenu(menuName)
+            if menuName == "C++ Steppable Patterns":
+                groupMenu = steppable_patterns_menu
+            else:
+                groupMenu = core_api_menu.addMenu(menuName)
             if self.snippetPreviewController is not None:
                 self.snippetPreviewController.attach_menu(groupMenu)
 
