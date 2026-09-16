@@ -474,7 +474,19 @@ class {steppable_name}(SteppableBasePy):
     @staticmethod
     def _format_line_plot_kwargs(plot_spec, series_spec):
         kwargs = []
-        separate_y_axis = bool(plot_spec.get("second_y_axis") and series_spec.get("axis") == "Right")
+        separate_y_axis = bool(
+            series_spec.get("separate_y_axis")
+            or CC3DPythonGenerator._series_has_y_range(series_spec)
+            or (
+                plot_spec.get("second_y_axis")
+                and (
+                    series_spec.get("axis") == "Right"
+                    or CC3DPythonGenerator._series_has_different_y_range(
+                        plot_spec=plot_spec, series_spec=series_spec
+                    )
+                )
+            )
+        )
         if separate_y_axis:
             kwargs.append("separate_y_axis=True")
 
@@ -498,6 +510,33 @@ class {steppable_name}(SteppableBasePy):
         if not kwargs:
             return ""
         return ", " + ", ".join(kwargs)
+
+    @staticmethod
+    def _series_has_different_y_range(plot_spec, series_spec):
+        series = plot_spec.get("series", [])
+        if not series or series_spec is series[0]:
+            return False
+
+        return CC3DPythonGenerator._series_y_range(series_spec) != CC3DPythonGenerator._series_y_range(series[0])
+
+    @staticmethod
+    def _series_has_y_range(series_spec):
+        y_min, y_max = CC3DPythonGenerator._series_y_range(series_spec)
+        return y_min is not None or y_max is not None
+
+    @staticmethod
+    def _series_y_range(series_spec):
+        y_range = []
+        for key in ("y_min", "y_max"):
+            value = series_spec.get(key, "")
+            if value == "":
+                y_range.append(None)
+                continue
+            try:
+                y_range.append(float(value))
+            except ValueError:
+                y_range.append(None)
+        return tuple(y_range)
 
     @staticmethod
     def _custom_plot_y_sources(plot_specs):

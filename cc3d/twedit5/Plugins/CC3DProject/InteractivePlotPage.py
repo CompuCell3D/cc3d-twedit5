@@ -84,6 +84,7 @@ class InteractivePlotPage(QWizardPage):
         self.ui.histogramPlotRB.toggled.connect(self.on_plot_type_changed)
         self.ui.xLogScaleCB.toggled.connect(self.on_plot_field_changed)
         self.ui.yLogScaleCB.toggled.connect(self.on_plot_field_changed)
+        self.ui.autoscaleYAxisCB.toggled.connect(self.on_autoscale_y_axis_toggled)
         self.ui.showLegendCB.toggled.connect(self.on_plot_field_changed)
 
     def _setup_series_controls(self):
@@ -150,6 +151,7 @@ class InteractivePlotPage(QWizardPage):
             "y_axis_title": "",
             "x_scale": "linear",
             "y_scale": "linear",
+            "autoscale_y_axis": True,
             "legend": True,
             "second_y_axis": False,
             "series": []
@@ -204,6 +206,7 @@ class InteractivePlotPage(QWizardPage):
         self.ui.histogramPlotRB.setChecked(plot.get("plot_type") == HISTOGRAM_PLOT_TYPE)
         self.ui.xLogScaleCB.setChecked(plot["x_scale"] == "log")
         self.ui.yLogScaleCB.setChecked(plot["y_scale"] == "log")
+        self.ui.autoscaleYAxisCB.setChecked(plot.get("autoscale_y_axis", True))
         self.ui.showLegendCB.setChecked(plot["legend"])
         self.ui.secondYAxisCB.setChecked(plot.get("second_y_axis", False))
         self._fill_series_table(plot["series"])
@@ -227,9 +230,11 @@ class InteractivePlotPage(QWizardPage):
         plot["y_axis_title"] = self.ui.yAxisTitleLE.text().strip()
         plot["x_scale"] = "log" if self.ui.xLogScaleCB.isChecked() else "linear"
         plot["y_scale"] = "log" if self.ui.yLogScaleCB.isChecked() else "linear"
+        plot["autoscale_y_axis"] = self.ui.autoscaleYAxisCB.isChecked()
         plot["legend"] = self.ui.showLegendCB.isChecked()
         plot["second_y_axis"] = self.ui.secondYAxisCB.isChecked()
         plot["series"] = self._series_from_table()
+        self._update_series_separate_y_axis_options(plot)
         if self.current_plot_index >= 0:
             item = self.ui.plotListWidget.item(self.current_plot_index)
             if item is not None:
@@ -277,10 +282,47 @@ class InteractivePlotPage(QWizardPage):
                 "source_type": source_type,
                 "axis": axis,
                 "style": style,
+                "separate_y_axis": False,
                 "y_min": y_min,
                 "y_max": y_max
             })
         return series
+
+    def _update_series_separate_y_axis_options(self, plot):
+        series = plot.get("series", [])
+        if not series:
+            return
+
+        use_second_y_axis = bool(plot.get("second_y_axis", False))
+        first_series_y_range = self._series_y_range(series[0])
+        for index, entry in enumerate(series):
+            entry["separate_y_axis"] = bool(
+                self._series_has_y_range(entry)
+                or (
+                    use_second_y_axis
+                    and index > 0
+                    and self._series_y_range(entry) != first_series_y_range
+                )
+            )
+
+    @staticmethod
+    def _series_y_range(series_entry):
+        y_range = []
+        for key in ("y_min", "y_max"):
+            value = series_entry.get(key, "")
+            if value == "":
+                y_range.append(None)
+                continue
+            try:
+                y_range.append(float(value))
+            except ValueError:
+                y_range.append(None)
+        return tuple(y_range)
+
+    @staticmethod
+    def _series_has_y_range(series_entry):
+        y_min, y_max = InteractivePlotPage._series_y_range(series_entry)
+        return y_min is not None or y_max is not None
 
     def _line_plot_with_multiple_series(self, plot=None):
         if plot is None:
@@ -309,7 +351,15 @@ class InteractivePlotPage(QWizardPage):
         if not enable_axis_choice:
             self.ui.yAxisCB.setCurrentText(LEFT_Y_AXIS)
 
-        enable_ranges = plot is not None and plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE
+        autoscale_y_axis = self.ui.autoscaleYAxisCB.isChecked()
+        if autoscale_y_axis:
+            self.ui.yMinLE.clear()
+            self.ui.yMaxLE.clear()
+        enable_ranges = (
+            plot is not None
+            and plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE
+            and not autoscale_y_axis
+        )
         self.ui.yMinLE.setEnabled(enable_ranges)
         self.ui.yMaxLE.setEnabled(enable_ranges)
 
@@ -415,6 +465,17 @@ class InteractivePlotPage(QWizardPage):
             self.ui.yAxisCB.setCurrentText(LEFT_Y_AXIS)
         self._save_current_plot()
 
+    @pyqtSlot(bool)
+    def on_autoscale_y_axis_toggled(self, checked):
+        if checked:
+            self.ui.yMinLE.clear()
+            self.ui.yMaxLE.clear()
+        if self._loading_plot:
+            return
+        self._save_current_plot()
+        self._update_series_axis_controls()
+        self._update_preview()
+
     @pyqtSlot(int)
     def on_y_value_changed(self, index):
         if self._prompting_custom_y_value:
@@ -456,6 +517,11 @@ class InteractivePlotPage(QWizardPage):
         else:
             name = f"{y_value} count"
         axis = self.ui.yAxisCB.currentText() if self.ui.yAxisCB.isEnabled() else LEFT_Y_AXIS
+        y_min = ""
+        y_max = ""
+        if not self.ui.autoscaleYAxisCB.isChecked():
+            y_min = self.ui.yMinLE.text().strip()
+            y_max = self.ui.yMaxLE.text().strip()
         entry = {
             "name": name,
             "x": x_value,
@@ -463,10 +529,11 @@ class InteractivePlotPage(QWizardPage):
             "source_type": source_type,
             "axis": axis,
             "style": self.ui.seriesStyleCB.currentText(),
-            "y_min": self.ui.yMinLE.text().strip(),
-            "y_max": self.ui.yMaxLE.text().strip()
+            "y_min": y_min,
+            "y_max": y_max
         }
         plot["series"].append(entry)
+        self._update_series_separate_y_axis_options(plot)
         self._append_series_row(entry)
         self._update_series_axis_controls()
         self._update_preview()
@@ -491,6 +558,7 @@ class InteractivePlotPage(QWizardPage):
                 "y_axis_title": plot["y_axis_title"],
                 "x_scale": plot["x_scale"],
                 "y_scale": plot["y_scale"],
+                "autoscale_y_axis": plot.get("autoscale_y_axis", True),
                 "legend": plot["legend"],
                 "second_y_axis": plot.get("second_y_axis", False),
                 "series": list(plot["series"])

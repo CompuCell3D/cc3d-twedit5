@@ -92,10 +92,15 @@ class Ui_interactivePlotPage(object):
         self.yLogScaleCB.setObjectName("yLogScaleCB")
         self.plotParamsLayout.addWidget(self.yLogScaleCB, 4, 1, 1, 1)
 
+        self.autoscaleYAxisCB = QtWidgets.QCheckBox(self.plotParamsGB)
+        self.autoscaleYAxisCB.setChecked(True)
+        self.autoscaleYAxisCB.setObjectName("autoscaleYAxisCB")
+        self.plotParamsLayout.addWidget(self.autoscaleYAxisCB, 4, 2, 1, 1)
+
         self.showLegendCB = QtWidgets.QCheckBox(self.plotParamsGB)
         self.showLegendCB.setChecked(True)
         self.showLegendCB.setObjectName("showLegendCB")
-        self.plotParamsLayout.addWidget(self.showLegendCB, 4, 2, 1, 1)
+        self.plotParamsLayout.addWidget(self.showLegendCB, 4, 3, 1, 1)
         self.detailsLayout.addWidget(self.plotParamsGB)
 
         self.seriesGB = QtWidgets.QGroupBox(self.detailsPanel)
@@ -219,6 +224,7 @@ class Ui_interactivePlotPage(object):
         self.histogramPlotRB.setText(_translate("interactivePlotPage", "Histogram"))
         self.xLogScaleCB.setText(_translate("interactivePlotPage", "Log X scale"))
         self.yLogScaleCB.setText(_translate("interactivePlotPage", "Log Y scale"))
+        self.autoscaleYAxisCB.setText(_translate("interactivePlotPage", "Autoscale Y axis"))
         self.showLegendCB.setText(_translate("interactivePlotPage", "Show legend"))
         self.seriesGB.setTitle(_translate("interactivePlotPage", "Data Series"))
         self.xValueLabel.setText(_translate("interactivePlotPage", "X"))
@@ -230,4 +236,4 @@ class Ui_interactivePlotPage(object):
         self.removeSeriesPB.setText(_translate("interactivePlotPage", "Remove Series"))
         self.seriesStyleLabel.setText(_translate("interactivePlotPage", "Style"))
         self.secondYAxisCB.setText(_translate("interactivePlotPage", "Use second Y axis"))
-        self.previewGB.setTitle(_translate("interactivePlotPage", "Preview"))
+        self.previewGB.setTitle(_translate("interactivePlotPage", "Preview (axes scales are arbitrary)"))
