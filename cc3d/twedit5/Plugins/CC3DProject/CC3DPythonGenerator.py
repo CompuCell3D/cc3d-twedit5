@@ -373,6 +373,7 @@ class {steppable_name}(SteppableBasePy):
                 y_scale=plot_spec.get("y_scale", "linear"),
                 legend=bool(plot_spec.get("legend", True))
             )
+            self.steppableCodeLines += self._format_shared_y_range(plot_key=plot_key, plot_spec=plot_spec)
 
             for series_idx, series_spec in enumerate(plot_spec.get("series", [])):
                 color = ["red", "green", "blue", "magenta", "cyan", "yellow"][series_idx % 6]
@@ -474,12 +475,18 @@ class {steppable_name}(SteppableBasePy):
     @staticmethod
     def _format_line_plot_kwargs(plot_spec, series_spec):
         kwargs = []
+        use_second_y_axis = bool(plot_spec.get("second_y_axis"))
+        add_series_y_scale = (
+            plot_spec.get("y_scale") == "log"
+            and not plot_spec.get("autoscale_y_axis", True)
+        )
         separate_y_axis = bool(
-            series_spec.get("separate_y_axis")
-            or CC3DPythonGenerator._series_has_y_range(series_spec)
-            or (
-                plot_spec.get("second_y_axis")
-                and (
+            use_second_y_axis
+            and (
+                series_spec.get("separate_y_axis")
+                or CC3DPythonGenerator._series_has_y_range(series_spec)
+                or add_series_y_scale
+                or (
                     series_spec.get("axis") == "Right"
                     or CC3DPythonGenerator._series_has_different_y_range(
                         plot_spec=plot_spec, series_spec=series_spec
@@ -490,26 +497,44 @@ class {steppable_name}(SteppableBasePy):
         if separate_y_axis:
             kwargs.append("separate_y_axis=True")
 
-        y_min = series_spec.get("y_min", "")
-        if y_min != "":
-            try:
-                kwargs.append("y_min={}".format(float(y_min)))
-            except ValueError:
-                pass
+        if separate_y_axis:
+            y_min = series_spec.get("y_min", "")
+            if y_min != "":
+                try:
+                    kwargs.append("y_min={}".format(float(y_min)))
+                except ValueError:
+                    pass
 
-        y_max = series_spec.get("y_max", "")
-        if y_max != "":
-            try:
-                kwargs.append("y_max={}".format(float(y_max)))
-            except ValueError:
-                pass
+            y_max = series_spec.get("y_max", "")
+            if y_max != "":
+                try:
+                    kwargs.append("y_max={}".format(float(y_max)))
+                except ValueError:
+                    pass
 
-        if plot_spec.get("y_scale") == "log":
+        if separate_y_axis and add_series_y_scale:
             kwargs.append("y_scale_type='log'")
 
         if not kwargs:
             return ""
         return ", " + ", ".join(kwargs)
+
+    @staticmethod
+    def _format_shared_y_range(plot_key, plot_spec):
+        if plot_spec.get("autoscale_y_axis", True) or plot_spec.get("second_y_axis", False):
+            return ""
+
+        for series_spec in plot_spec.get("series", []):
+            y_min, y_max = CC3DPythonGenerator._series_y_range(series_spec)
+            if y_min is None or y_max is None:
+                continue
+            if y_min >= y_max:
+                continue
+            return '''
+        self.plot_windows[{plot_key!r}].pW.setYRange({y_min}, {y_max})
+'''.format(plot_key=plot_key, y_min=y_min, y_max=y_max)
+
+        return ""
 
     @staticmethod
     def _series_has_different_y_range(plot_spec, series_spec):
