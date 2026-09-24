@@ -369,7 +369,7 @@ class {steppable_name}(SteppableBasePy):
                 title=plot_spec.get("title", ""),
                 x_axis_title=plot_spec.get("x_axis_title", ""),
                 y_axis_title=plot_spec.get("y_axis_title", ""),
-                x_scale=plot_spec.get("x_scale", "linear"),
+                x_scale="linear",
                 y_scale=plot_spec.get("y_scale", "linear"),
                 legend=bool(plot_spec.get("legend", True))
             )
@@ -418,7 +418,7 @@ class {steppable_name}(SteppableBasePy):
             for series_idx, series_spec in enumerate(plot_spec.get("series", [])):
                 y_source = series_spec.get("y", "")
                 x_source = series_spec.get("x", "mcs")
-                x_expression = "max(mcs, 1)" if plot_spec.get("x_scale") == "log" else "mcs"
+                x_expression = "mcs"
                 series_var = "y_value_{plot_idx}_{series_idx}".format(plot_idx=plot_idx, series_idx=series_idx)
                 source_type = series_spec.get("source_type", "custom")
                 if plot_type == "Histogram":
@@ -481,7 +481,8 @@ class {steppable_name}(SteppableBasePy):
             and not plot_spec.get("autoscale_y_axis", True)
         )
         separate_y_axis = bool(
-            use_second_y_axis
+            plot_spec.get("y_scale") == "log"
+            or use_second_y_axis
             and (
                 series_spec.get("separate_y_axis")
                 or CC3DPythonGenerator._series_has_y_range(series_spec)

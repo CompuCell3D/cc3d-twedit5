@@ -82,7 +82,6 @@ class InteractivePlotPage(QWizardPage):
         self.ui.yAxisTitleLE.textChanged.connect(self.on_plot_field_changed)
         self.ui.linePlotRB.toggled.connect(self.on_plot_type_changed)
         self.ui.histogramPlotRB.toggled.connect(self.on_plot_type_changed)
-        self.ui.xLogScaleCB.toggled.connect(self.on_plot_field_changed)
         self.ui.yLogScaleCB.toggled.connect(self.on_y_log_scale_toggled)
         self.ui.autoscaleYAxisCB.toggled.connect(self.on_autoscale_y_axis_toggled)
         self.ui.showLegendCB.toggled.connect(self.on_plot_field_changed)
@@ -204,7 +203,6 @@ class InteractivePlotPage(QWizardPage):
         self.ui.yAxisTitleLE.setText(plot["y_axis_title"])
         self.ui.linePlotRB.setChecked(plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE)
         self.ui.histogramPlotRB.setChecked(plot.get("plot_type") == HISTOGRAM_PLOT_TYPE)
-        self.ui.xLogScaleCB.setChecked(plot["x_scale"] == "log")
         self.ui.yLogScaleCB.setChecked(plot["y_scale"] == "log")
         self.ui.autoscaleYAxisCB.setChecked(plot.get("autoscale_y_axis", True))
         self.ui.showLegendCB.setChecked(plot["legend"])
@@ -228,7 +226,7 @@ class InteractivePlotPage(QWizardPage):
         plot["plot_type"] = HISTOGRAM_PLOT_TYPE if self.ui.histogramPlotRB.isChecked() else LINE_PLOT_TYPE
         plot["x_axis_title"] = self.ui.xAxisTitleLE.text().strip() or DEFAULT_X_AXIS_TITLE
         plot["y_axis_title"] = self.ui.yAxisTitleLE.text().strip()
-        plot["x_scale"] = "log" if self.ui.xLogScaleCB.isChecked() else "linear"
+        plot["x_scale"] = "linear"
         plot["y_scale"] = "log" if self.ui.yLogScaleCB.isChecked() else "linear"
         plot["autoscale_y_axis"] = self.ui.yLogScaleCB.isChecked() or self.ui.autoscaleYAxisCB.isChecked()
         plot["legend"] = self.ui.showLegendCB.isChecked()
@@ -405,14 +403,14 @@ class InteractivePlotPage(QWizardPage):
         self.preview_widget.setTitle(plot["title"])
         self.preview_widget.setLabel("bottom", plot["x_axis_title"])
         self.preview_widget.setLabel("left", plot["y_axis_title"])
-        self.preview_widget.setLogMode(x=plot["x_scale"] == "log", y=plot["y_scale"] == "log")
-        x_values = list(range(1, 11)) if plot["x_scale"] == "log" else list(range(0, 10))
+        self.preview_widget.setLogMode(x=False, y=plot["y_scale"] == "log")
+        x_values = list(range(0, 10))
         for index, entry in enumerate(plot["series"] or [{"name": "series"}]):
             color = DEFAULT_COLORS[index % len(DEFAULT_COLORS)]
             if plot.get("plot_type", LINE_PLOT_TYPE) == HISTOGRAM_PLOT_TYPE:
                 heights = [max(1, 10 - abs(i - 5) + index) if plot["y_scale"] == "log" else 10 - abs(i - 5) + index
                            for i in range(10)]
-                bar_x_values = list(range(1, 11)) if plot["x_scale"] == "log" else list(range(10))
+                bar_x_values = list(range(10))
                 self.preview_widget.addItem(
                     pg.BarGraphItem(
                         x=bar_x_values,

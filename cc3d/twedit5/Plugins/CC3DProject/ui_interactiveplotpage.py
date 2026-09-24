@@ -84,25 +84,20 @@ class Ui_interactivePlotPage(object):
         self.plotTypeLayout.addWidget(self.histogramPlotRB)
         self.plotParamsLayout.addWidget(self.plotTypeGB, 3, 0, 1, 2)
 
-        self.xLogScaleCB = QtWidgets.QCheckBox(self.plotParamsGB)
-        self.xLogScaleCB.setChecked(False)
-        self.xLogScaleCB.setObjectName("xLogScaleCB")
-        self.plotParamsLayout.addWidget(self.xLogScaleCB, 4, 0, 1, 1)
-
         self.yLogScaleCB = QtWidgets.QCheckBox(self.plotParamsGB)
         self.yLogScaleCB.setChecked(False)
         self.yLogScaleCB.setObjectName("yLogScaleCB")
-        self.plotParamsLayout.addWidget(self.yLogScaleCB, 4, 1, 1, 1)
+        self.plotParamsLayout.addWidget(self.yLogScaleCB, 4, 0, 1, 1)
 
         self.autoscaleYAxisCB = QtWidgets.QCheckBox(self.plotParamsGB)
         self.autoscaleYAxisCB.setChecked(True)
         self.autoscaleYAxisCB.setObjectName("autoscaleYAxisCB")
-        self.plotParamsLayout.addWidget(self.autoscaleYAxisCB, 4, 2, 1, 1)
+        self.plotParamsLayout.addWidget(self.autoscaleYAxisCB, 4, 1, 1, 1)
 
         self.showLegendCB = QtWidgets.QCheckBox(self.plotParamsGB)
         self.showLegendCB.setChecked(True)
         self.showLegendCB.setObjectName("showLegendCB")
-        self.plotParamsLayout.addWidget(self.showLegendCB, 4, 3, 1, 1)
+        self.plotParamsLayout.addWidget(self.showLegendCB, 4, 2, 1, 1)
         self.detailsLayout.addWidget(self.plotParamsGB)
 
         self.seriesGB = QtWidgets.QGroupBox(self.detailsPanel)
@@ -227,7 +222,6 @@ class Ui_interactivePlotPage(object):
         self.plotTypeGB.setTitle(_translate("interactivePlotPage", "Plot type"))
         self.linePlotRB.setText(_translate("interactivePlotPage", "Line"))
         self.histogramPlotRB.setText(_translate("interactivePlotPage", "Histogram"))
-        self.xLogScaleCB.setText(_translate("interactivePlotPage", "Log X scale"))
         self.yLogScaleCB.setText(_translate("interactivePlotPage", "Log Y scale"))
         self.autoscaleYAxisCB.setText(_translate("interactivePlotPage", "Autoscale Y axis"))
         self.showLegendCB.setText(_translate("interactivePlotPage", "Show legend"))
