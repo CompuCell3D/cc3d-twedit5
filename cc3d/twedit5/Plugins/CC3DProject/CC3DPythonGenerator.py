@@ -475,18 +475,12 @@ class {steppable_name}(SteppableBasePy):
     @staticmethod
     def _format_line_plot_kwargs(plot_spec, series_spec):
         kwargs = []
-        use_second_y_axis = bool(plot_spec.get("second_y_axis"))
-        add_series_y_scale = (
-            plot_spec.get("y_scale") == "log"
-            and not plot_spec.get("autoscale_y_axis", True)
-        )
+        use_second_y_axis = bool(plot_spec.get("second_y_axis")) and plot_spec.get("y_scale") != "log"
         separate_y_axis = bool(
-            plot_spec.get("y_scale") == "log"
-            or use_second_y_axis
+            use_second_y_axis
             and (
                 series_spec.get("separate_y_axis")
                 or CC3DPythonGenerator._series_has_y_range(series_spec)
-                or add_series_y_scale
                 or (
                     series_spec.get("axis") == "Right"
                     or CC3DPythonGenerator._series_has_different_y_range(
@@ -512,9 +506,6 @@ class {steppable_name}(SteppableBasePy):
                     kwargs.append("y_max={}".format(float(y_max)))
                 except ValueError:
                     pass
-
-        if separate_y_axis and add_series_y_scale:
-            kwargs.append("y_scale_type='log'")
 
         if not kwargs:
             return ""

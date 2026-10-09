@@ -230,7 +230,7 @@ class InteractivePlotPage(QWizardPage):
         plot["y_scale"] = "log" if self.ui.yLogScaleCB.isChecked() else "linear"
         plot["autoscale_y_axis"] = self.ui.yLogScaleCB.isChecked() or self.ui.autoscaleYAxisCB.isChecked()
         plot["legend"] = self.ui.showLegendCB.isChecked()
-        plot["second_y_axis"] = self.ui.secondYAxisCB.isChecked()
+        plot["second_y_axis"] = self.ui.secondYAxisCB.isChecked() and plot["y_scale"] != "log"
         plot["series"] = self._series_from_table()
         self._update_series_separate_y_axis_options(plot)
         if self.current_plot_index >= 0:
@@ -345,10 +345,23 @@ class InteractivePlotPage(QWizardPage):
             plot = self._current_plot()
         if plot is None:
             return False
-        return plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE and len(plot.get("series", [])) >= 1
+        return (
+            plot.get("plot_type", LINE_PLOT_TYPE) == LINE_PLOT_TYPE
+            and len(plot.get("series", [])) >= 1
+            and not self.ui.yLogScaleCB.isChecked()
+        )
 
     def _update_series_axis_controls(self):
         plot = self._current_plot()
+        y_log_scale = self.ui.yLogScaleCB.isChecked()
+        self.ui.seriesStyleCB.setEnabled(not y_log_scale)
+        if y_log_scale:
+            self.ui.seriesStyleCB.setCurrentText(DOTS_SERIES_STYLE)
+            for row in range(self.ui.seriesTable.rowCount()):
+                self.ui.seriesTable.item(row, 0).setData(Qt.UserRole, DOTS_SERIES_STYLE)
+            if plot is not None:
+                for entry in plot["series"]:
+                    entry["style"] = DOTS_SERIES_STYLE
         enable_second_axis = self._line_plot_can_add_secondary_axis(plot)
         self.ui.secondYAxisCB.setEnabled(enable_second_axis)
         if not enable_second_axis:
@@ -573,7 +586,7 @@ class InteractivePlotPage(QWizardPage):
             "y": y_value,
             "source_type": source_type,
             "axis": axis,
-            "style": self.ui.seriesStyleCB.currentText(),
+            "style": DOTS_SERIES_STYLE if self.ui.yLogScaleCB.isChecked() else self.ui.seriesStyleCB.currentText(),
             "y_min": y_min,
             "y_max": y_max
         }
