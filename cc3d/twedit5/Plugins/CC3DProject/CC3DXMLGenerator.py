@@ -112,6 +112,23 @@ class CC3DXMLGenerator:
 
         return sim_3d_flag
 
+    def generateMetadataSimulationProperties(self):
+        """
+        generates Metadata Section
+        :return:
+        """
+
+        self.cc3d.addComment("newline")
+        self.cc3d.addComment("Basic properties simulation")
+
+        metadata = self.cc3d.ElementCC3D("Metadata")
+        gpd = self.generalPropertiesDict
+        metadata.ElementCC3D("NumberOfProcessors", {}, gpd.get("NumberOfProcessors", 1))
+        metadata.ElementCC3D("DebugOutputFrequency", {}, gpd.get("DebugOutputFrequency", 100))
+
+        if gpd.get("NonParallelModule") == "Potts":
+            metadata.ElementCC3D("NonParallelModule", {"Name": "Potts"})
+
     def generatePottsSection(self):
         """
         generates Potts Section
@@ -1290,4 +1307,3 @@ class CC3DXMLGenerator:
         # self.cc3d.CC3DXMLElement.saveXMLInPython(str(self.fileName+".py"))
         print("SAVING XML = ", self.fileName)
         # print "SAVING XML in Python= ",self.fileName+".py"
-

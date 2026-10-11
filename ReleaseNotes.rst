@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 4.10.0
+--------------
+**2026-10-10**
+
+New features:
+ - Autosave is now enabled by default
+ - Added automatic character pairing for brackets, quotes, and related characters
+ - Added processor-count and debug-frequency options to the Simulation Wizard
+
+Improvements:
+
+Bug fixes:
+ - Fixed configuration dialog and settings persistence issues
+
+
 Version 4.9.0
 -------------
 **2026-05-16**

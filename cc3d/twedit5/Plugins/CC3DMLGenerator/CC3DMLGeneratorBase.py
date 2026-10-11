@@ -220,11 +220,12 @@ class CC3DMLGeneratorBase:
 
         m_element.addComment("Basic properties simulation")
 
-        m_element.ElementCC3D("NumberOfProcessors", {}, 1)
+        m_element.ElementCC3D("NumberOfProcessors", {}, gpd.get("NumberOfProcessors", 1))
 
-        m_element.ElementCC3D("DebugOutputFrequency", {}, 10)
-        non_parallel_elem = m_element.ElementCC3D("NonParallelModule", {"Name": "Potts"})
-        non_parallel_elem.commentOutElement()
+        m_element.ElementCC3D("DebugOutputFrequency", {}, gpd.get("DebugOutputFrequency", 100))
+        non_parallel_module = gpd.get("NonParallelModule")
+        if non_parallel_module == "Potts":
+            m_element.ElementCC3D("NonParallelModule", {"Name": "Potts"})
         # assume format of 'display_name (unit_abrev)'
         time_labels: list[str] = gpd["mcsConversionUnits"].rstrip(")").split("(")
         display_name = time_labels[0].strip()
@@ -859,6 +860,13 @@ class CC3DMLGeneratorBase:
     def generateFocalPointPlasticityPlugin(self, *args, **kwds):
 
         m_element = self.mElement
+        internal_contact_plugin_used = False
+        try:
+            if kwds['internal_contact_energies'] is not None:
+                if len(kwds['internal_contact_energies']) > 0:
+                    internal_contact_plugin_used = True
+        except LookupError:
+            internal_contact_plugin_used = False
 
         try:
             n_order = kwds['NeighborOrder']
@@ -885,29 +893,30 @@ class CC3DMLGeneratorBase:
         m_element.addComment("See CC3D manual for details on FPP plugin ")
 
         for type_name1, type_name2 in self.decorated_type_pairs:
+            if type_name1 != "Medium" and type_name2 != "Medium":
+                m_element.addComment("newline")
+                attr = {"Type1": type_name1, "Type2": type_name2}
 
-            m_element.addComment("newline")
-            attr = {"Type1": type_name1, "Type2": type_name2}
+                param_element = m_element.ElementCC3D("Parameters", attr)
+                param_element.ElementCC3D("Lambda", {}, 10)
+                param_element.ElementCC3D("ActivationEnergy", {}, -50)
+                param_element.ElementCC3D("TargetDistance", {}, 7)
+                param_element.ElementCC3D("MaxDistance", {}, 20)
+                param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
 
-            param_element = m_element.ElementCC3D("Parameters", attr)
-            param_element.ElementCC3D("Lambda", {}, 10)
-            param_element.ElementCC3D("ActivationEnergy", {}, -50)
-            param_element.ElementCC3D("TargetDistance", {}, 7)
-            param_element.ElementCC3D("MaxDistance", {}, 20)
-            param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
+        if internal_contact_plugin_used:
+            for type_name1, type_name2 in self.decorated_type_pairs:
+                if type_name1 != "Medium" and type_name2 != "Medium":
+                    m_element.addComment("newline")
 
-        for type_name1, type_name2 in self.decorated_type_pairs:
+                    attr = {"Type1": type_name1, "Type2": type_name2}
 
-            m_element.addComment("newline")
-
-            attr = {"Type1": type_name1, "Type2": type_name2}
-
-            param_element = m_element.ElementCC3D("InternalParameters", attr)
-            param_element.ElementCC3D("Lambda", {}, 10)
-            param_element.ElementCC3D("ActivationEnergy", {}, -50)
-            param_element.ElementCC3D("TargetDistance", {}, 7)
-            param_element.ElementCC3D("MaxDistance", {}, 20)
-            param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
+                    param_element = m_element.ElementCC3D("InternalParameters", attr)
+                    param_element.ElementCC3D("Lambda", {}, 10)
+                    param_element.ElementCC3D("ActivationEnergy", {}, -50)
+                    param_element.ElementCC3D("TargetDistance", {}, 7)
+                    param_element.ElementCC3D("MaxDistance", {}, 20)
+                    param_element.ElementCC3D("MaxNumberOfJunctions", {"NeighborOrder": 1}, 1)
 
         m_element.addComment("newline")
 
@@ -2499,4 +2508,3 @@ class CC3DMLGeneratorBase:
         xml_file = open(_fileName, 'w')
         xml_file.write('%s' % self.cc3d.CC3DXMLElement.getCC3DXMLElementString())
         xml_file.close()
-

@@ -7,6 +7,14 @@ import cc3d.twedit5.twedit.ActionManager as am
 
 class QsciScintillaCustom(QsciScintilla):
 
+    AUTO_PAIR_CHARS = {
+        "'": "'",
+        '"': '"',
+        "(": ")",
+        "[": "]",
+        "{": "}"
+    }
+
     def __init__(self, parent=None, _panel=None):
 
         super(QsciScintillaCustom, self).__init__(parent)
@@ -88,8 +96,67 @@ class QsciScintillaCustom(QsciScintilla):
         elif event.modifiers() & Qt.ControlModifier and event.modifiers() & Qt.ShiftModifier:
             self.handleScintillaDefaultShortcut('Ctrl+Shift', event)
 
+        elif self.handle_auto_pair_characters(event):
+            event.accept()
+
         else:
             super(QsciScintillaCustom, self).keyPressEvent(event)
+
+    def handle_auto_pair_characters(self, event):
+        """
+        Inserts matching closing characters or wraps selected text when enabled.
+
+        :param event: keyboard event
+        :return: True when this method handled the event
+        """
+        typed_text = event.text()
+        if len(typed_text) != 1:
+            return False
+
+        if not self.__auto_pair_characters_enabled():
+            return False
+
+        if event.modifiers() & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier):
+            return False
+
+        if typed_text in self.AUTO_PAIR_CHARS:
+            self.__insert_auto_pair(typed_text, self.AUTO_PAIR_CHARS[typed_text])
+            return True
+
+        if typed_text in self.AUTO_PAIR_CHARS.values() and self.__current_char() == typed_text:
+            line, index = self.getCursorPosition()
+            self.setCursorPosition(line, index + 1)
+            return True
+
+        return False
+
+    def __auto_pair_characters_enabled(self):
+        try:
+            return self.editorWindow.configuration.setting("AutoPairCharacters")
+        except AttributeError:
+            return True
+
+    def __insert_auto_pair(self, opening_char, closing_char):
+        if self.hasSelectedText():
+            selected_text = self.selectedText()
+            self.beginUndoAction()
+            self.replaceSelectedText(opening_char + selected_text + closing_char)
+            self.endUndoAction()
+            return
+
+        line, index = self.getCursorPosition()
+        self.beginUndoAction()
+        self.insert(opening_char + closing_char)
+        self.endUndoAction()
+        self.setCursorPosition(line, index + 1)
+
+    def __current_char(self):
+        line, index = self.getCursorPosition()
+        line_text = self.text(line)
+        if index < len(line_text):
+            return line_text[index]
+
+        return ''
 
     def focusInEvent(self, event):
         editor_tab = 0

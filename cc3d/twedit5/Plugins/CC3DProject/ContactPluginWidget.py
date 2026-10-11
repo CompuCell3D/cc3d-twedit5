@@ -12,7 +12,7 @@ CONTACT_SMALL_FONT_SIZE = 8
 DEFAULT_CONTACT_ENERGY = '10.0'
 DEFAULT_MIX_ENERGY = '2.0'
 DEFAULT_SORT_ENERGY = '2.0'
-DEFAULT_CONTACT_NEIGHBOR_ORDER = 2
+DEFAULT_CONTACT_NEIGHBOR_ORDER = 4
 MEDIUM_CELL_TYPE = "Medium"
 NEIGHBOR_ORDER_TOOLTIP_1 = "How many nearby pixels the Contact(Internal) plugin algorithm will check " \
                            "each time it needs to do an energy calculation."
@@ -56,6 +56,8 @@ class ContactPluginWidget(QWidget):
         self.contact_cell_cell_energy: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
         self.internal_contact_cell_cell_energy: list[tuple[str, str, str]] = []  # list[ tuple[ mol1, mol2, binding param]]
         self.contact_internal_callBack = contact_internal_call_back
+        #self.focal_plasticity_plugin_used = False
+
         descr_font = QFont()
         descr_font.setPointSize(CONTACT_DESCR_FONT_SIZE)
         self.ui.contact_reset_tablesPB.setText(RESET_MATRIX_TABLES_PB_TEXT)
@@ -215,6 +217,9 @@ class ContactPluginWidget(QWidget):
         cell_1 = self.ui.contact_matrix_table.horizontalHeaderItem(item.column()).text()
         cell_2 = self.ui.contact_matrix_table.verticalHeaderItem(item.row()).text()
         val_str = item.text()
+        # can also be "-", need to check:
+        if val_str.strip() == "-":
+            return True
         if self.checkEnergyValue(val_str):
             return True
         else:
@@ -246,7 +251,7 @@ class ContactPluginWidget(QWidget):
         return issues
 
     def initContactMatrix(self, cell_types: list[str]):
-        """ Sets up the initial Contact matrix then fills with default values."""
+        """ Sets up the initial Contact matrix then fills with default values. """
 
         header_font = QFont()
         header_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
@@ -268,7 +273,10 @@ class ContactPluginWidget(QWidget):
 
         for row in range(0, cell_type_count):
             self.ui.contact_matrix_table.insertRow(row)
+            cell_type_h = self.ui.contact_matrix_table.horizontalHeaderItem(row).text()
             for column in range(0, cell_type_count):
+                if cell_type_h == MEDIUM_CELL_TYPE:
+                    medium_col = row
                 if row <= column:
                     binding_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                     binding_par_item.setFont(header_font)
@@ -294,7 +302,7 @@ class ContactPluginWidget(QWidget):
         self.ui.contact_matrix_table.blockSignals(False)
 
     def initInternalContactMatrix(self, cell_types: list[str]):
-        """ Sets up the initial Internal Contact matrix with default values."""
+        """ Sets up the initial Internal Contact matrix with default values. """
 
         self.ui.contact_internalCB.setChecked(True)
         self.ui.internal_contact_matrixGB.setEnabled(True)
@@ -352,7 +360,7 @@ class ContactPluginWidget(QWidget):
 
     def setUpSortedCellsContactEnergiesMatrix(self):
         """ Generates default contact energies for contact matrix that should lead to cell type sorting.
-            Updates the contact_matrix_table (QTableWidget) with new energy values."""
+            Updates the contact_matrix_table (QTableWidget) with new energy values. """
 
         table_cell_font = QFont()
         table_cell_font.setPointSize(CONTACT_TABLE_HEADER_FONT_SIZE)
@@ -369,10 +377,7 @@ class ContactPluginWidget(QWidget):
                             else:
                                 cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))
                         else:  # Same cell type contact:
-                            if cell_1 == MEDIUM_CELL_TYPE and cell_2 == MEDIUM_CELL_TYPE:
-                                cell_to_update.setText(str('0.0'))
-                            else:
-                                cell_to_update.setText(str(DEFAULT_SORT_ENERGY))
+                            cell_to_update.setText(str(DEFAULT_SORT_ENERGY))
                     else:  # create new table cell:
                         energy_par_item = QTableWidgetItem(str(DEFAULT_CONTACT_ENERGY))
                         energy_par_item.setFont(table_cell_font)
@@ -393,9 +398,10 @@ class ContactPluginWidget(QWidget):
                 if row <= column:
                     cell_to_update: QTableWidgetItem = self.ui.contact_matrix_table.item(row, column)
                     if cell_to_update:
+                        cell_1: str = self.ui.contact_matrix_table.horizontalHeaderItem(row).text()
+                        cell_2: str = self.ui.contact_matrix_table.verticalHeaderItem(column).text()
                         if row < column:
-                            if self.ui.contact_matrix_table.horizontalHeaderItem(row).text() == MEDIUM_CELL_TYPE or \
-                                    self.ui.contact_matrix_table.verticalHeaderItem(column).text() == MEDIUM_CELL_TYPE:
+                            if cell_1 == MEDIUM_CELL_TYPE or cell_2 == MEDIUM_CELL_TYPE:
                                 cell_to_update.setText(str(DEFAULT_CONTACT_ENERGY))  # Do not mix with Medium cell type
                             else:
                                 cell_to_update.setText(str(DEFAULT_MIX_ENERGY))
