@@ -3186,15 +3186,20 @@ class CC3DProject(QObject, TweditPluginBase):
 
     def __selected_resource_paths(self, proj_item, ild):
 
-        resource_paths = []
-        selection = self.treeWidget.selectedItems()
+        def resource_paths_for_item(item):
+            resource_path = ild.getFullPath(item)
+            if resource_path:
+                return [resource_path]
 
-        for item_tmp in selection:
-            if proj_item == item_tmp.parent():
-                for i in range(item_tmp.childCount()):
-                    resource_paths.append(ild.getFullPath(item_tmp.child(i)))
-            elif item_tmp != proj_item:
-                resource_paths.append(ild.getFullPath(item_tmp))
+            paths = []
+            for index in range(item.childCount()):
+                paths.extend(resource_paths_for_item(item.child(index)))
+            return paths
+
+        resource_paths = []
+        for selected_item in self.treeWidget.selectedItems():
+            if selected_item != proj_item:
+                resource_paths.extend(resource_paths_for_item(selected_item))
 
         return resource_paths
 
@@ -3216,71 +3221,58 @@ class CC3DProject(QObject, TweditPluginBase):
         except LookupError:
             return
 
-        selection = self.treeWidget.selectedItems()
+        def resource_items(item):
+            resource_path = ild.getFullPath(item)
+            if resource_path:
+                return [item]
 
-        # divide the selection into type level items (e.g. items like Main Python Script, Python ,PIF File etc.)
-        # and leaf items (i.e files)
+            descendants = []
+            for index in range(item.childCount()):
+                descendants.extend(resource_items(item.child(index)))
+            return descendants
 
-        type_items = []
+        selected_resource_items = []
+        seen_paths = set()
+        for selected_item in self.treeWidget.selectedItems():
+            if selected_item == proj_item:
+                continue
+            for resource_item in resource_items(selected_item):
+                resource_path = ild.getFullPath(resource_item)
+                normalized_path = os.path.normcase(os.path.abspath(resource_path))
+                if normalized_path not in seen_paths:
+                    seen_paths.add(normalized_path)
+                    selected_resource_items.append(resource_item)
 
-        leaf_items = []
-
-        for item_tmp in selection:
-
-            if proj_item == item_tmp.parent():
-                type_items.append(item_tmp)
-            elif item_tmp != proj_item:
-                leaf_items.append(item_tmp)
-
-        # first process leaf items - remove them from the project
-        for item_tmp in leaf_items:
+        for item_tmp in selected_resource_items:
             parent = item_tmp.parent()
             resource_path = ild.getFullPath(item_tmp)
+            resource_name = ild.getResourceName(item_tmp)
+
             if delete_files:
                 self.__delete_resource_file(resource_path, pdh.cc3dSimulationData.basePath)
 
             pdh.cc3dSimulationData.removeResource(resource_path)
 
-            if ild.getResourceName(item_tmp) == 'CC3DSerializerResource':
+            if resource_name == 'CC3DSerializerResource':
                 pdh.cc3dSimulationData.removeSerializerResource()
 
             ild.removeItem(item_tmp)
-
             parent.removeChild(item_tmp)
 
-            if not parent.childCount() and parent not in type_items:
+            # Remove empty folder/type branches, but retain the project node.
+            while parent is not None and parent != proj_item and not parent.childCount():
+                grandparent = parent.parent()
                 ild.removeItem(parent)
-
-                proj_item.removeChild(parent)
-
-        # process type_items
-        for item_tmp in type_items:
-            children_list = []
-
-            for i in range(item_tmp.childCount()):
-                children_list.append(item_tmp.child(i))
-
-            for child_item in children_list:
-                # pdh.cc3dSimulationData.removeResource(ild.getFullPath(item_tmp))
-                resource_path = ild.getFullPath(child_item)
-                if delete_files:
-                    self.__delete_resource_file(resource_path, pdh.cc3dSimulationData.basePath)
-
-                pdh.cc3dSimulationData.removeResource(resource_path)
-                ild.removeItem(child_item)
-                item_tmp.removeChild(child_item)
-
-            if ild.getResourceName(item_tmp) == 'CC3DSerializerResource':
-                pdh.cc3dSimulationData.removeSerializerResource()
-
-            elif ild.getResourceName(item_tmp) == 'CC3DParameterScanResource':
-                pdh.cc3dSimulationData.removeParameterScanResource()
-
-            ild.removeItem(item_tmp)
-
-            proj_item.removeChild(item_tmp)
+                if grandparent is None:
+                    break
+                grandparent.removeChild(parent)
+                parent = grandparent
 
         # save project
+        # The selected item may have been detached from the tree.  Make the
+        # project item current so __save_cc3d_project can still find its data
+        # handler and serialize the updated resource list.
+        tw.setCurrentItem(proj_item)
         self.__save_cc3d_project()
 
         # # mark project as dirty
@@ -3641,7 +3633,7 @@ class CC3DProject(QObject, TweditPluginBase):
             return
 
         pdh.cc3dSimulationData.addNewResource(resource_name, CPP_STEPPABLE_RESOURCE_TYPE)
-        self.insertNewTreeItem(resource_name, CPP_STEPPABLE_RESOURCE_TYPE)
+        self.insertNewTreeItem(resource_name, CPP_STEPPABLE_RESOURCE_TYPE, folder_name=location)
         self.__save_cc3d_project()
         self.openFileInEditor(resource_name)
 
@@ -3820,15 +3812,22 @@ class CC3DProject(QObject, TweditPluginBase):
 
                 pass
 
-    def __insert_cpp_steppable_tree_item(self, projItem, ild, resource):
+    def __insert_cpp_steppable_tree_item(self, projItem, ild, resource, folder_name=None):
         """Insert one C++ steppable as CppSteppables/folder/source.cpp."""
-        root_item = self.findTypeItemByName(CPP_STEPPABLE_RESOURCE_TYPE)
+        root_item = None
+        for index in range(projItem.childCount()):
+            candidate = projItem.child(index)
+            if str(candidate.text(0)) == CPP_STEPPABLE_RESOURCE_TYPE:
+                root_item = candidate
+                break
+
         if root_item is None:
             root_item = QTreeWidgetItem(projItem)
             root_item.setText(0, CPP_STEPPABLE_RESOURCE_TYPE)
             root_item.setIcon(0, cpp_resource_icon())
 
-        folder_name = os.path.basename(os.path.dirname(resource.path))
+        if folder_name is None:
+            folder_name = os.path.basename(os.path.dirname(resource.path))
         folder_item = None
         for index in range(root_item.childCount()):
             candidate = root_item.child(index)
@@ -3849,7 +3848,7 @@ class CC3DProject(QObject, TweditPluginBase):
         source_item.setText(0, os.path.basename(resource.path))
         ild.insertNewItem(source_item, resource)
 
-    def insertNewTreeItem(self, resourceName, fileType):
+    def insertNewTreeItem(self, resourceName, fileType, folder_name=None):
 
         # first find the node where to insert new item
 
@@ -3893,7 +3892,7 @@ class CC3DProject(QObject, TweditPluginBase):
                 resource = pd.resources[resourceName]
             except LookupError:
                 resource = pd.resources[os.path.abspath(resourceName)]
-            self.__insert_cpp_steppable_tree_item(projItem, ild, resource)
+            self.__insert_cpp_steppable_tree_item(projItem, ild, resource, folder_name=folder_name)
             return
 
         if fileType == "PythonScript":
