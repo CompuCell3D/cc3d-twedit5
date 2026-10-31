@@ -1,0 +1,73 @@
+#include <cc3d/kernel.h>
+
+#include <iostream>
+
+namespace {
+
+class {{ STEPPABLE_CLASS_NAME }} {
+public:
+    void init(CC3DKernelContext *) {}
+
+    void start(CC3DKernelContext *) {
+        stepCount_ = 0;
+        std::cout << "{{ STEPPABLE_CLASS_NAME }} start" << std::endl;
+    }
+
+    void step(CC3DKernelContext *ctx) {
+        ++stepCount_;
+
+        if (ctx->mcs % 10 == 0) {
+            std::cout << "{{ STEPPABLE_CLASS_NAME }} mcs=" << ctx->mcs
+                      << " steps=" << stepCount_ << std::endl;
+        }
+    }
+
+    void finish(CC3DKernelContext *) {
+        std::cout << "{{ STEPPABLE_CLASS_NAME }} finish steps="
+                  << stepCount_ << std::endl;
+    }
+
+private:
+    unsigned long long stepCount_ = 0;
+};
+
+void *create() {
+    return new {{ STEPPABLE_CLASS_NAME }}();
+}
+
+void init(CC3DKernelContext *ctx, void *state) {
+    static_cast<{{ STEPPABLE_CLASS_NAME }} *>(state)->init(ctx);
+}
+
+void start(CC3DKernelContext *ctx, void *state) {
+    static_cast<{{ STEPPABLE_CLASS_NAME }} *>(state)->start(ctx);
+}
+
+void step(CC3DKernelContext *ctx, void *state) {
+    static_cast<{{ STEPPABLE_CLASS_NAME }} *>(state)->step(ctx);
+}
+
+void finish(CC3DKernelContext *ctx, void *state) {
+    static_cast<{{ STEPPABLE_CLASS_NAME }} *>(state)->finish(ctx);
+}
+
+void destroy(void *state) {
+    delete static_cast<{{ STEPPABLE_CLASS_NAME }} *>(state);
+}
+
+const CC3DSteppableV1 api = {
+    CC3D_KERNEL_ABI_VERSION,
+    &create,
+    &start,
+    &step,
+    &finish,
+    &destroy,
+    &init,
+};
+
+} // namespace
+
+extern "C" CC3D_STEPPABLE_EXPORT
+const CC3DSteppableV1 *cc3d_get_steppable_v1() {
+    return &api;
+}

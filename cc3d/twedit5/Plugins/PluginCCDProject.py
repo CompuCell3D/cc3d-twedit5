@@ -56,6 +56,7 @@ from cc3d.core.ParameterScanUtils import ParameterScanUtils
 from cc3d.core.ParameterScanEnums import PYTHON_GLOBAL
 import contextlib
 from pathlib import Path
+from cc3d.twedit5.twedit.utils.utils import render_j2_template
 
 # Start-Of-Header
 
@@ -82,7 +83,12 @@ CPP_RESOURCE_TYPES = (
 )
 CPP_RESOURCE_LABEL = "C++ File"
 CPP_STEPPABLE_ACTION = "Add C++ Steppable..."
-CPP_STEPPABLE_TEMPLATE = Path(__file__).parent / "CC3DProject" / "templates" / "cpp_steppable.cpp"
+CPP_STEPPABLE_TEMPLATE = Path(__file__).parent / "CC3DProject" / "templates" / "cpp_class_steppable.cpp.j2"
+CPP_STEPPABLE_LEGACY_TEMPLATE = Path(__file__).parent / "CC3DProject" / "templates" / "cpp_steppable.cpp.j2"
+CPP_STEPPABLE_TEMPLATE_OPTIONS = {
+    "Class-based steppable": CPP_STEPPABLE_TEMPLATE,
+    "Function-based steppable (legacy)": CPP_STEPPABLE_LEGACY_TEMPLATE,
+}
 CPP_STEPPABLE_DEFAULT_DIR = "Native"
 CPP_ICON_PATH = Path(__file__).parent / "CC3DProject" / "icons" / "c-plus-plus-128.png"
 
@@ -386,6 +392,8 @@ class CC3DProjectTreeWidget(QTreeWidget):
 
         if self.currentItem() == projItem:
             self.addActionToContextMenu(menu, self.plugin.actions["Open XML/Python In Editor"])
+
+            self.addActionToContextMenu(menu, self.plugin.actions["Add Steppable..."])
 
             if installed_player:
                 self.addActionToContextMenu(menu, self.plugin.actions["Open in Player"])
@@ -2385,7 +2393,8 @@ class CC3DProject(QObject, TweditPluginBase):
         editor = self.__ui.getCurrentEditor()
         return editor
 
-    def insert_steppable_template(self, main_python_script_editor, steppable_script_editor):
+    def insert_steppable_template(self, main_python_script_editor, steppable_script_editor,
+                                  generator_dialog=None):
         """
         Inserts template steppable code into editors - main python and steppable editors
         :param main_python_script_editor:
@@ -2399,11 +2408,11 @@ class CC3DProject(QObject, TweditPluginBase):
 
         basename_for_import, ext = os.path.splitext(os.path.basename(steppable_script))
 
-        sgd = SteppableGeneratorDialog(tw)
+        sgd = generator_dialog or SteppableGeneratorDialog(tw)
 
         sgd.mainScriptLB.setText(main_python_script_path)
 
-        if not sgd.exec_():
+        if generator_dialog is None and not sgd.exec_():
             return
 
         steppeble_name = str(sgd.steppebleNameLE.text())
@@ -2504,10 +2513,27 @@ class CC3DProject(QObject, TweditPluginBase):
                                 "Please edit python main script position properly steppable registration code ")
 
         main_python_script_editor.insertAt(steppable_registration_code, entry_line, 0)
+        self.__highlight_inserted_text(
+            main_python_script_editor,
+            entry_line,
+            steppable_registration_code,
+        )
+        if main_python_script_path:
+            self.open_file_in_editor(main_python_script_path)
 
         main_python_script_editor.ensureLineVisible(max_line_idx + 10)
         # steppableScriptEditorWindow
         print("ENTRY LINE FOR REGISTRATION OF STEPPABLE IS ", entry_line)
+
+    @staticmethod
+    def __highlight_inserted_text(editor, start_line, inserted_text):
+        inserted_lines = inserted_text.splitlines()
+        if not inserted_lines:
+            return
+
+        end_line = start_line + len(inserted_lines) - 1
+        editor.setSelection(start_line, 0, end_line, len(inserted_lines[-1]))
+        editor.ensureLineVisible(start_line)
 
     def add_steppable_cc3d_python(self):
         """
@@ -2561,6 +2587,81 @@ class CC3DProject(QObject, TweditPluginBase):
         self.insert_steppable_template(main_python_script_editor=main_python_script_editor,
                                        steppable_script_editor=steppable_script_editor)
 
+    def __add_python_steppable_resource(self, proj_item, pdh):
+        main_script_path = str(getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", "") or
+                               pdh.cc3dSimulationData.pythonScript or "").strip()
+        generator_dialog = SteppableGeneratorDialog(self.treeWidget)
+        generator_dialog.enable_new_file_mode("Simulation")
+        generator_dialog.mainScriptLB.setText(main_script_path)
+
+        while generator_dialog.exec_() == QtWidgets.QDialog.Accepted:
+            location = generator_dialog.generated_folder()
+            if location in (".", "..") or os.path.basename(location) != location:
+                QMessageBox.warning(
+                    generator_dialog, "Invalid Folder", "Please specify a single folder name.", QMessageBox.Ok
+                )
+                continue
+
+            steppable_path = os.path.join(
+                pdh.cc3dSimulationData.basePath,
+                location,
+                generator_dialog.generated_file_name(),
+            )
+            if os.path.exists(steppable_path):
+                QMessageBox.warning(
+                    generator_dialog,
+                    "Steppable Already Exists",
+                    "The file %s already exists. Please choose a different name." % steppable_path,
+                    QMessageBox.Ok,
+                )
+                generator_dialog.steppebleNameLE.setFocus()
+                generator_dialog.steppebleNameLE.selectAll()
+                continue
+
+            try:
+                self.makeDirectory(os.path.dirname(steppable_path))
+                with open(steppable_path, "w", encoding="utf-8"):
+                    pass
+            except IOError:
+                QMessageBox.warning(
+                    generator_dialog,
+                    "Could Not Create Steppable",
+                    "Could not create %s." % steppable_path,
+                    QMessageBox.Ok,
+                )
+                continue
+
+            pdh.cc3dSimulationData.addNewResource(steppable_path, "Python")
+            self.insertNewTreeItem(steppable_path, "Python")
+            self.__save_cc3d_project()
+
+            if not main_script_path:
+                QMessageBox.warning(
+                    self.treeWidget,
+                    "Could Not Locate Main Python Script",
+                    "The Python steppable was created, but no main Python script was found.",
+                    QMessageBox.Ok,
+                )
+                return
+
+            main_editor = self.open_file_in_editor(main_script_path)
+            steppable_editor = self.open_file_in_editor(steppable_path)
+            if not main_editor or not steppable_editor:
+                QMessageBox.warning(
+                    self.treeWidget,
+                    "Could Not Open Steppable",
+                    "The Python steppable was created, but one of the scripts could not be opened.",
+                    QMessageBox.Ok,
+                )
+                return
+
+            self.insert_steppable_template(
+                main_editor,
+                steppable_editor,
+                generator_dialog=generator_dialog,
+            )
+            return
+
     def add_steppable(self):
         """
         Inserts template steppable code into Steppable script and also registers newly created steppable in the main
@@ -2579,6 +2680,10 @@ class CC3DProject(QObject, TweditPluginBase):
         try:
             pdh = self.projectDataHandlers[qt_obj_hash(proj_item)]
         except LookupError:
+            return
+
+        if cur_item == proj_item:
+            self.__add_python_steppable_resource(proj_item, pdh)
             return
 
         main_python_script_path = pdh.cc3dSimulationData.pythonScriptResource.path
@@ -3643,10 +3748,13 @@ class CC3DProject(QObject, TweditPluginBase):
                 try:
                     resource_name = os.path.join(full_location, name)
                     if file_type in CPP_RESOURCE_TYPES:
-                        with open(CPP_STEPPABLE_TEMPLATE, "r", encoding="utf-8") as template_file:
-                            template_text = template_file.read()
-                        with open(resource_name, "w", encoding="utf-8") as resource_file:
-                            resource_file.write(template_text)
+                        render_j2_template(
+                            source_template=CPP_STEPPABLE_LEGACY_TEMPLATE,
+                            target_path=resource_name,
+                            substitutions={
+                                "STEPPABLE_CLASS_NAME": self.__cpp_steppable_class_name(name),
+                            },
+                        )
                     else:
                         write_file(os.path.join(full_location, name), "")
 
@@ -3690,8 +3798,11 @@ class CC3DProject(QObject, TweditPluginBase):
         steppable_name_edit = QtWidgets.QLineEdit(dialog)
         folder_edit = QtWidgets.QLineEdit(CPP_STEPPABLE_DEFAULT_DIR, dialog)
         folder_edit.setToolTip("Conventionally starts with Native_, but any folder name is allowed.")
+        template_combo = QtWidgets.QComboBox(dialog)
+        template_combo.addItems(list(CPP_STEPPABLE_TEMPLATE_OPTIONS.keys()))
         layout.addRow("Steppable source name:", steppable_name_edit)
         layout.addRow("Subfolder:", folder_edit)
+        layout.addRow("Template:", template_combo)
 
         hint = QtWidgets.QLabel(
             "Each subfolder may contain only one C++ steppable source file. "
@@ -3771,7 +3882,8 @@ class CC3DProject(QObject, TweditPluginBase):
         resource_name = self.create_cpp_steppable_resource(
             pdh=pdh,
             file_name=steppable_name,
-            location=location
+            location=location,
+            template_path=CPP_STEPPABLE_TEMPLATE_OPTIONS[template_combo.currentText()]
         )
 
         if not resource_name:
@@ -3779,10 +3891,79 @@ class CC3DProject(QObject, TweditPluginBase):
 
         pdh.cc3dSimulationData.addNewResource(resource_name, CPP_STEPPABLE_RESOURCE_TYPE)
         self.insertNewTreeItem(resource_name, CPP_STEPPABLE_RESOURCE_TYPE, folder_name=location)
+        self.__register_cpp_steppable_in_main_script(
+            pdh=pdh,
+            location=location,
+            file_name=steppable_name,
+        )
         self.__save_cc3d_project()
         self.openFileInEditor(resource_name)
+        self.open_file_in_editor(
+            str(getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", "") or
+                pdh.cc3dSimulationData.pythonScript or "").strip()
+        )
 
-    def create_cpp_steppable_resource(self, pdh, file_name, location=CPP_STEPPABLE_DEFAULT_DIR):
+    def __register_cpp_steppable_in_main_script(self, pdh, location, file_name):
+        simulation_data = pdh.cc3dSimulationData
+        main_script_path = str(getattr(simulation_data.pythonScriptResource, "path", "") or
+                               simulation_data.pythonScript or "").strip()
+
+        if not main_script_path:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Could Not Register C++ Steppable",
+                "The C++ steppable was created, but this project has no main Python script.",
+                QMessageBox.Ok
+            )
+            return
+
+        main_script_editor = self.open_file_in_editor(main_script_path)
+        if not main_script_editor:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Could Not Register C++ Steppable",
+                "The C++ steppable was created, but the main Python script could not be opened.",
+                QMessageBox.Ok
+            )
+            return
+
+        entry_line, indentation_level = self.find_entry_point_for_steppable_registration(main_script_editor)
+        if entry_line == -1:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Could Not Register C++ Steppable",
+                "The C++ steppable was created, but the insertion point before "
+                "CompuCellSetup.run() could not be found in the main Python script.",
+                QMessageBox.Ok
+            )
+            return
+
+        library_name = os.path.splitext(os.path.basename(file_name))[0]
+        library_path = "/".join(part for part in (location.replace("\\", "/"), library_name) if part)
+        registration = (
+            "CompuCellSetup.register_compiled_steppable(\n"
+            "    library_path=\"%s\",\n"
+            "    frequency=1,\n"
+            ")\n\n" % library_path
+        )
+
+        main_script_editor.insertAt(registration, entry_line, 0)
+        self.__highlight_inserted_text(main_script_editor, entry_line, registration)
+        self.__ui.saveFile(main_script_path, _editor=main_script_editor)
+
+    @staticmethod
+    def __cpp_steppable_class_name(file_name):
+        base_name = os.path.splitext(os.path.basename(file_name))[0]
+        words = re.findall(r"[A-Za-z0-9]+", base_name)
+        class_name = "".join(word[:1].upper() + word[1:] for word in words)
+        if not class_name or not class_name[0].isalpha():
+            class_name = "Steppable" + class_name
+        if not class_name.lower().endswith("steppable"):
+            class_name += "Steppable"
+        return class_name
+
+    def create_cpp_steppable_resource(self, pdh, file_name, location=CPP_STEPPABLE_DEFAULT_DIR,
+                                      template_path=CPP_STEPPABLE_TEMPLATE):
 
         full_location = os.path.join(pdh.cc3dSimulationData.basePath, location)
 
@@ -3818,11 +3999,13 @@ class CC3DProject(QObject, TweditPluginBase):
             return ""
 
         try:
-            with open(CPP_STEPPABLE_TEMPLATE, "r", encoding="utf-8") as template_file:
-                template_text = template_file.read()
-
-            with open(resource_name, "w", encoding="utf-8") as resource_file:
-                resource_file.write(template_text)
+            render_j2_template(
+                source_template=template_path,
+                target_path=resource_name,
+                substitutions={
+                    "STEPPABLE_CLASS_NAME": self.__cpp_steppable_class_name(file_name),
+                },
+            )
 
         except IOError:
             QMessageBox.warning(self.treeWidget, "COULD NOT CREATE FILE",
