@@ -25,6 +25,7 @@ import re
 import os
 import shutil
 import platform
+from html import escape
 from copy import deepcopy
 from distutils.file_util import write_file
 from distutils.dir_util import mkpath
@@ -72,14 +73,12 @@ longDescription = """This plugin provides functionality that allows users to man
 error = ''
 
 CPP_RESOURCE_TYPE = "Cpp"
-CPP_STEPPABLE_RESOURCE_TYPE = "CppSteppables"
-# Keep the singular spelling readable as well when opening projects produced
-# by an earlier version of the resource-type change.
-CPP_STEPPABLE_RESOURCE_TYPE_LEGACY = "CppSteppable"
+CPP_STEPPABLE_RESOURCE_TYPE = "CppSteppable"
+
 CPP_RESOURCE_TYPES = (
     CPP_RESOURCE_TYPE,
     CPP_STEPPABLE_RESOURCE_TYPE,
-    CPP_STEPPABLE_RESOURCE_TYPE_LEGACY,
+
 )
 CPP_RESOURCE_LABEL = "C++ File"
 CPP_STEPPABLE_ACTION = "Add C++ Steppable..."
@@ -3096,14 +3095,21 @@ class CC3DProject(QObject, TweditPluginBase):
             return
 
         resource_paths = self.__selected_resource_paths(proj_item, ild)
-        delete_files = self.__confirm_remove_resources(resource_paths)
+        recursive_directories = self.__selected_cpp_steppable_directories(proj_item, ild)
+        delete_files = self.__confirm_remove_resources(resource_paths, recursive_directories)
 
         if delete_files is None:
             return
 
+        if delete_files and recursive_directories:
+            if not self.__confirm_recursive_steppable_deletion(recursive_directories):
+                return
+
         self.__remove_selected_resources(delete_files=delete_files)
 
-    def __confirm_remove_resources(self, resource_paths):
+    def __confirm_remove_resources(self, resource_paths, recursive_directories=None):
+
+        recursive_directories = recursive_directories or []
 
         dialog = QtWidgets.QDialog(self.treeWidget)
         dialog.setWindowTitle("Remove Selected Items?")
@@ -3140,6 +3146,17 @@ class CC3DProject(QObject, TweditPluginBase):
         delete_checkbox = QtWidgets.QCheckBox("Delete resource from disk.")
         layout.addWidget(delete_checkbox)
 
+        recursive_warning = None
+        if recursive_directories:
+            recursive_warning = QtWidgets.QLabel(
+                "Deleting from disk will recursively remove the steppable folder(s), "
+                "including nested source folders, DLLs, and compilation artifacts."
+            )
+            recursive_warning.setWordWrap(True)
+            recursive_warning.setStyleSheet("color: #b00020; font-weight: bold;")
+            recursive_warning.setVisible(False)
+            layout.addWidget(recursive_warning)
+
         warning_label = QtWidgets.QLabel()
         warning_label.setWordWrap(True)
         warning_label.setMinimumHeight(38)
@@ -3157,6 +3174,8 @@ class CC3DProject(QObject, TweditPluginBase):
         def update_warning(checked):
             warning_label.setText(warning_text)
             warning_label.setVisible(checked)
+            if recursive_warning is not None:
+                recursive_warning.setVisible(checked)
 
         delete_checkbox.toggled.connect(update_warning)
 
@@ -3169,6 +3188,49 @@ class CC3DProject(QObject, TweditPluginBase):
             return None
 
         return delete_checkbox.isChecked()
+
+    def __confirm_recursive_steppable_deletion(self, directories):
+
+        dialog = QtWidgets.QDialog(self.treeWidget)
+        dialog.setWindowTitle("Delete Entire Steppable Folder?")
+        dialog.setMinimumSize(560, 360)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+        layout.setContentsMargins(18, 18, 18, 14)
+        layout.setSpacing(12)
+
+        title = QtWidgets.QLabel("The following C++ steppable folder(s) will be deleted recursively:")
+        title.setStyleSheet("font-size: 14px; font-weight: bold;")
+        title.setWordWrap(True)
+        layout.addWidget(title)
+
+        folder_list = "".join("<li>%s</li>" % escape(directory) for directory in directories)
+        details = QtWidgets.QTextEdit(dialog)
+        details.setReadOnly(True)
+        details.setAcceptRichText(False)
+        details.setHtml(
+            "<p><b>Folders:</b></p>"
+            "<ul>%s</ul>"
+            "<p><b>Warning:</b> this includes nested source folders, DLLs, "
+            "and compilation artifacts such as <code>.cc3d-build</code>.</p>" % folder_list
+        )
+        details.setStyleSheet("""
+            QTextEdit {
+                background-color: #f7f7f7;
+                border: 1px solid #c8c8c8;
+                padding: 6px;
+            }
+        """)
+        layout.addWidget(details, 1)
+
+        buttons = QtWidgets.QDialogButtonBox(parent=dialog)
+        delete_button = buttons.addButton("Delete Folder(s)", QtWidgets.QDialogButtonBox.DestructiveRole)
+        cancel_button = buttons.addButton(QtWidgets.QDialogButtonBox.Cancel)
+        delete_button.clicked.connect(dialog.accept)
+        cancel_button.clicked.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        return dialog.exec_() == QtWidgets.QDialog.Accepted
 
     @staticmethod
     def __resource_selection_summary(resource_names):
@@ -3202,6 +3264,43 @@ class CC3DProject(QObject, TweditPluginBase):
                 resource_paths.extend(resource_paths_for_item(selected_item))
 
         return resource_paths
+
+    def __selected_cpp_steppable_directories(self, proj_item, ild):
+
+        pdh = self.projectDataHandlers.get(qt_obj_hash(proj_item))
+        if pdh is None:
+            return []
+
+        simulation_data = pdh.cc3dSimulationData
+        directories = []
+
+        def resource_items(item):
+            resource_path = ild.getFullPath(item)
+            if resource_path:
+                return [resource_path]
+
+            paths = []
+            for index in range(item.childCount()):
+                paths.extend(resource_items(item.child(index)))
+            return paths
+
+        for selected_item in self.treeWidget.selectedItems():
+            if selected_item == proj_item:
+                continue
+
+            for resource_path in resource_items(selected_item):
+                resource = next(
+                    (candidate for candidate in simulation_data.resources.values()
+                     if os.path.normcase(os.path.abspath(candidate.path)) ==
+                     os.path.normcase(os.path.abspath(resource_path))),
+                    None
+                )
+                if resource and resource.type in CPP_RESOURCE_TYPES[1:]:
+                    directory = os.path.abspath(os.path.dirname(resource.path))
+                    if directory not in directories:
+                        directories.append(directory)
+
+        return directories
 
     def __remove_selected_resources(self, delete_files=False):
 
@@ -3249,7 +3348,18 @@ class CC3DProject(QObject, TweditPluginBase):
             resource_name = ild.getResourceName(item_tmp)
 
             if delete_files:
-                self.__delete_resource_file(resource_path, pdh.cc3dSimulationData.basePath)
+                resource = next(
+                    (candidate for candidate in pdh.cc3dSimulationData.resources.values()
+                     if os.path.normcase(os.path.abspath(candidate.path)) ==
+                     os.path.normcase(os.path.abspath(resource_path))),
+                    None
+                )
+                if resource and resource.type in CPP_RESOURCE_TYPES[1:]:
+                    self.__delete_resource_directory(
+                        os.path.dirname(resource.path), pdh.cc3dSimulationData.basePath
+                    )
+                else:
+                    self.__delete_resource_file(resource_path, pdh.cc3dSimulationData.basePath)
 
             pdh.cc3dSimulationData.removeResource(resource_path)
 
@@ -3305,6 +3415,41 @@ class CC3DProject(QObject, TweditPluginBase):
         except OSError:
             QMessageBox.warning(self.treeWidget, "Cannot Delete File",
                                 "Could not delete %s ." % resource_path, QMessageBox.Ok)
+
+    def __delete_resource_directory(self, directory_path, project_base_path):
+
+        if not directory_path:
+            return
+
+        directory_path = os.path.abspath(directory_path)
+        project_base_path = os.path.abspath(project_base_path)
+
+        try:
+            common_path = os.path.commonpath([directory_path, project_base_path])
+        except ValueError:
+            common_path = ""
+
+        if common_path != project_base_path or directory_path == project_base_path:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Cannot Delete Folder",
+                "The steppable folder is outside the project directory or is the project directory.",
+                QMessageBox.Ok
+            )
+            return
+
+        if not os.path.isdir(directory_path):
+            return
+
+        try:
+            shutil.rmtree(directory_path)
+        except OSError:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Cannot Delete Folder",
+                "Could not delete %s ." % directory_path,
+                QMessageBox.Ok
+            )
 
     def __remove_empty_resource_directory(self, directory_path, project_base_path):
 
@@ -4543,7 +4688,7 @@ class CC3DProject(QObject, TweditPluginBase):
         # Resources
         for resource_key, resource in pd.resources.items():
 
-            if resource.type in (CPP_STEPPABLE_RESOURCE_TYPE, CPP_STEPPABLE_RESOURCE_TYPE_LEGACY):
+            if resource.type in (CPP_STEPPABLE_RESOURCE_TYPE):
                 self.__insert_cpp_steppable_tree_item(projItem, ild, resource)
                 continue
 
