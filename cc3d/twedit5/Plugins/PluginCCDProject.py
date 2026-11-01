@@ -3199,6 +3199,11 @@ class CC3DProject(QObject, TweditPluginBase):
         except LookupError:
             return
 
+        try:
+            pdh = self.projectDataHandlers[qt_obj_hash(proj_item)]
+        except LookupError:
+            return
+
         resource_paths = self.__selected_resource_paths(proj_item, ild)
         recursive_directories = self.__selected_cpp_steppable_directories(proj_item, ild)
         delete_files = self.__confirm_remove_resources(resource_paths, recursive_directories)
@@ -3210,7 +3215,16 @@ class CC3DProject(QObject, TweditPluginBase):
             if not self.__confirm_recursive_steppable_deletion(recursive_directories):
                 return
 
-        self.__remove_selected_resources(delete_files=delete_files)
+        removed_steppables = self.__remove_selected_resources(delete_files=delete_files)
+        if removed_steppables:
+            main_script_path = str(
+                getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", "") or
+                pdh.cc3dSimulationData.pythonScript or ""
+            ).strip()
+            self.__show_removed_steppable_registration_warning(
+                removed_steppables,
+                main_script_path,
+            )
 
     def __confirm_remove_resources(self, resource_paths, recursive_directories=None):
 
@@ -3425,6 +3439,8 @@ class CC3DProject(QObject, TweditPluginBase):
         except LookupError:
             return
 
+        removed_steppables = []
+
         def resource_items(item):
             resource_path = ild.getFullPath(item)
             if resource_path:
@@ -3451,6 +3467,22 @@ class CC3DProject(QObject, TweditPluginBase):
             parent = item_tmp.parent()
             resource_path = ild.getFullPath(item_tmp)
             resource_name = ild.getResourceName(item_tmp)
+            resource = next(
+                (candidate for candidate in pdh.cc3dSimulationData.resources.values()
+                 if os.path.normcase(os.path.abspath(candidate.path)) ==
+                 os.path.normcase(os.path.abspath(resource_path))),
+                None
+            )
+
+            if resource and resource.type in CPP_RESOURCE_TYPES[1:]:
+                library_path = os.path.splitext(
+                    os.path.relpath(resource.path, pdh.cc3dSimulationData.basePath)
+                )[0].replace(os.sep, "/")
+                removed_steppables.append(("C++", library_path))
+            elif (resource and resource.type == "Python" and
+                  resource.path not in (pdh.cc3dSimulationData.pythonScript,
+                                        getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", ""))):
+                removed_steppables.append(("Python", os.path.basename(resource.path)))
 
             if delete_files:
                 resource = next(
@@ -3492,6 +3524,37 @@ class CC3DProject(QObject, TweditPluginBase):
 
         # # mark project as dirty
         # self.markProjectDirty(proj_item)
+
+        return removed_steppables
+
+    def __show_removed_steppable_registration_warning(self, removed_steppables, main_script_path):
+        details = []
+        for resource_type, resource_name in removed_steppables:
+            if resource_type == "C++":
+                details.append('C++ library "%s"' % resource_name)
+            else:
+                details.append('Python steppable file "%s"' % resource_name)
+
+        message_box = QMessageBox(
+            QMessageBox.Warning,
+            "Steppable Registration Not Changed",
+            "The following steppable resource(s) were removed, but their registration "
+            "in the main Python script was not changed:\n\n%s\n\n"
+            "Registration file:\n%s\n\n"
+            "Please remove the corresponding registration manually." % (
+                "\n".join(details),
+                main_script_path or "<main Python script not found>",
+            ),
+            parent=self.treeWidget,
+        )
+        open_button = None
+        if main_script_path:
+            open_button = message_box.addButton("Open Main Python Script", QMessageBox.ActionRole)
+        message_box.addButton(QMessageBox.Ok)
+        message_box.exec_()
+
+        if open_button is not None and message_box.clickedButton() == open_button:
+            self.openFileInEditor(main_script_path)
 
     def __delete_resource_file(self, resource_path, project_base_path):
 
@@ -3969,10 +4032,17 @@ class CC3DProject(QObject, TweditPluginBase):
 
         try:
             self.makeDirectory(full_location)
+            if not os.path.isdir(full_location):
+                os.makedirs(full_location, exist_ok=True)
         except IOError:
             QMessageBox.warning(self.treeWidget, "COULD NOT MAKE DIRECTORY",
                                 "Write permission error. You do not have write permissions to %s directory" % (
                                     pdh.cc3dSimulationData.basePath), QMessageBox.Ok)
+            return ""
+
+        if not os.path.isdir(full_location):
+            QMessageBox.warning(self.treeWidget, "COULD NOT MAKE DIRECTORY",
+                                "Could not create %s directory." % full_location, QMessageBox.Ok)
             return ""
 
         resource_name = os.path.join(full_location, file_name)
