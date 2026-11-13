@@ -66,6 +66,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         self.initialize()
 
         self.cppTemplates = None
+        self.skipCommentsInCppSnippets = False
 
         # useful regular expressions
 
@@ -158,6 +159,11 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         if self.snippetPreviewController is not None:
             self.snippetPreviewController.hide()
 
+        self.configuration.setSetting(
+            "SkipCommentsInCppSnippets",
+            self.actions["Skip Comments In C++ Snippets"].isChecked()
+        )
+
         try:
 
             # self.__ui.disconnect(self.actions['Generate New Module...'], SIGNAL("triggered()"), self.generateNewModule)
@@ -231,6 +237,16 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
                                              statusTip="Deactivate C++ CC3D plugin", triggered=self.deactivate)
 
+        self.actions["Skip Comments In C++ Snippets"] = QAction(
+            "Skip Comments In C++ Snippets", self,
+            statusTip="Skip full-line comments when inserting C++ snippets"
+        )
+        self.actions["Skip Comments In C++ Snippets"].setCheckable(True)
+        cpp_skip_comments = self.configuration.setting("SkipCommentsInCppSnippets")
+        self.skipCommentsInCppSnippets = bool(cpp_skip_comments)
+        self.actions["Skip Comments In C++ Snippets"].setChecked(self.skipCommentsInCppSnippets)
+        self.actions["Skip Comments In C++ Snippets"].triggered.connect(self.skipCommentsInCppSnippetsChanged)
+
         self.cc3dcppMenu.addAction(self.actions["DeveloperZone..."])
         # ----------------------------
 
@@ -243,6 +259,8 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         # ----------------------------
 
         self.cc3dcppMenu.addSeparator()
+        self.cc3dcppMenu.addAction(self.actions["Skip Comments In C++ Snippets"])
+        self.cc3dcppMenu.addSeparator()
 
         self.snippetDictionary.clear()
 
@@ -253,12 +271,11 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
             'CC3DCPPHelper', 'Snippets.cpp.abi_steppables.yaml'
         )
 
-        psmp.readSnippetMenus([
-            str(snippet_file_path),
-            str(abi_steppable_snippet_file_path),
-        ])
+        psmp.readSnippetMenu(str(snippet_file_path))
+        core_snippet_menu_dict = psmp.getSnippetMenuDict().copy()
 
-        snippetMenuDict = psmp.getSnippetMenuDict()
+        psmp.readSnippetMenu(str(abi_steppable_snippet_file_path))
+        abi_steppable_menu_dict = psmp.getSnippetMenuDict().copy()
 
         core_api_menu = self.cc3dcppMenu.addMenu("Core CompuCell3D API")
         steppable_patterns_menu = self.cc3dcppMenu.addMenu("C++ Steppable Patterns")
@@ -266,32 +283,38 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
             self.snippetPreviewController.attach_menu(core_api_menu)
             self.snippetPreviewController.attach_menu(steppable_patterns_menu)
 
-        for menuName, submenuDict in iter(sorted(snippetMenuDict.items())):
+        for snippet_menu_dict, is_abi_steppable in (
+                (core_snippet_menu_dict, False),
+                (abi_steppable_menu_dict, True)):
+            for menuName, submenuDict in iter(sorted(snippet_menu_dict.items())):
 
-            print('menuName=', menuName)
+                print('menuName=', menuName)
 
-            if menuName == "C++ ABI Steppable Patterns":
-                groupMenu = steppable_patterns_menu
-            else:
-                groupMenu = core_api_menu.addMenu(menuName)
-            if self.snippetPreviewController is not None:
-                self.snippetPreviewController.attach_menu(groupMenu)
+                if is_abi_steppable:
+                    groupMenu = steppable_patterns_menu.addMenu(menuName)
+                else:
+                    groupMenu = core_api_menu.addMenu(menuName)
+                if self.snippetPreviewController is not None:
+                    self.snippetPreviewController.attach_menu(groupMenu)
 
-            for subMenuName, snippetText in iter(sorted(submenuDict.items())):
-                action = groupMenu.addAction(subMenuName)
+                for subMenuName, snippetText in iter(sorted(submenuDict.items())):
+                    action = groupMenu.addAction(subMenuName)
 
-                actionKey = menuName.strip() + ' ' + subMenuName.strip()  # for lookup int he self.snippetDictionary
+                    actionKey = menuName.strip() + ' ' + subMenuName.strip()  # for lookup int he self.snippetDictionary
 
-                self.snippetDictionary[actionKey] = snippetText
+                    self.snippetDictionary[actionKey] = snippetText
 
-                self.actions[actionKey] = action
-                action.setData(actionKey)
+                    self.actions[actionKey] = action
+                    action.setData(actionKey)
 
-                # self.__ui.connect(action, SIGNAL("triggered()"), self.snippetMapper, SLOT("map()"))
+                    # self.__ui.connect(action, SIGNAL("triggered()"), self.snippetMapper, SLOT("map()"))
 
-                action.triggered.connect(self.snippetMapper.map)
+                    action.triggered.connect(self.snippetMapper.map)
 
-                self.snippetMapper.setMapping(action, actionKey)
+                    self.snippetMapper.setMapping(action, actionKey)
+
+    def skipCommentsInCppSnippetsChanged(self, enabled):
+        self.skipCommentsInCppSnippets = enabled
 
     def configure_developer_zone_project(self):
         if not cc3d_core_conda_utils_installed:
@@ -1279,6 +1302,11 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         snippetNameStr = str(_snippetName)
 
         text = self.snippetDictionary[str(_snippetName)].snippet_text
+        if self.skipCommentsInCppSnippets:
+            text = "".join(
+                line for line in text.splitlines(True)
+                if not line.lstrip().startswith("//")
+            )
 
         editor = self.__ui.getCurrentEditor()
 

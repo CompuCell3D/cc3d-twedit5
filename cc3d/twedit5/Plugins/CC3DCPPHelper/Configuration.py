@@ -13,6 +13,7 @@ class Configuration:
         self.defaultConfigs = {}
 
         self.defaultConfigs["RecentModuleDirectory"] = ''
+        self.defaultConfigs["SkipCommentsInCppSnippets"] = False
 
         #
         # dictionary actionName->shortcut for modified keyboard shortcuts.
@@ -22,7 +23,7 @@ class Configuration:
 
     def setting(self, _key):
 
-        if _key in ["RecentModuleDirectory"]:
+        if _key in ["RecentModuleDirectory", "SkipCommentsInCppSnippets"]:
             val = self.settings.value(_key)
 
             if val:
@@ -33,7 +34,7 @@ class Configuration:
 
     def setSetting(self, _key, _value):
 
-        if _key in ["RecentModuleDirectory"]:  # string values
+        if _key in ["RecentModuleDirectory", "SkipCommentsInCppSnippets"]:
             self.settings.setValue(_key, QVariant(_value))
 
     def initSyncSettings(self):

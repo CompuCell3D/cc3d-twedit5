@@ -1,13 +1,193 @@
 version: 1
 menus:
-- name: C++ ABI Steppable Patterns
-  description: Compiled C++ steppable patterns for the CC3D kernel context API.
+- name: Context and Cells
+  description: Common operations using CC3DKernelContext and cell handles.
   snippets:
+  - name: Read MCS
+    description: Reads the current Monte Carlo step inside a lifecycle callback.
+    suggested_indent: -1
+    code: |+
+      if (ctx->mcs % 10 == 0) {
+          std::cout << "MCS=" << ctx->mcs << std::endl;
+      }
   - name: Visit All Cells
-    description: Shows how to visit all cells from a compiled C++ steppable callback.
+    description: Iterates over all cells exposed by the kernel context.
+    suggested_indent: -1
+    code: |+
+      // Cell handles are lightweight ABI wrappers; property writes update the simulation cell.
+      for (auto cell : ctx->cells) {
+          std::cerr << "cell id=" << static_cast<long>(cell.id) << std::endl;
+      }
+  - name: Visit Cells By Type
+    description: Looks up a named cell type and visits only cells of that type.
+    suggested_indent: -1
+    code: |+
+      // Requires a cell type named "Cell" in the simulation.
+      const auto cellType = ctx->cellTypes["Cell"];
+      for (auto cell : ctx->cells.byType(cellType)) {
+          // Put your code here.
+      }
+  - name: Find Cell By ID
+    description: Fetches a cell by ID and checks whether it exists.
+    suggested_indent: -1
+    code: |+
+      // The ID may come from shared data or another simulation service.
+      auto cell = ctx->cells.fetch_cell_by_id(CELL_ID);
+      if (cell) {
+          cell.targetVolume = 50.0f;
+      }
+  - name: Modify Cell Properties
+    description: Reads or modifies common cell properties through a cell handle.
     suggested_indent: -1
     code: |+
       for (auto cell : ctx->cells) {
-          // Put your code here
-          std::cerr << "cell id=" << static_cast<long>(cell.id) << std::endl;
+          if (cell.type == CELL_TYPE_ID) {
+              cell.targetVolume += 1.0f;
+              cell.lambdaVolume = 2.0f;
+          }
+      }
+  - name: Create Cell And Assign Pixels
+    description: Creates a cell and assigns a rectangular lattice region to it.
+    suggested_indent: -1
+    code: |+
+      // CELL_TYPE_ID must be a type declared by the simulation.
+      auto cell = ctx->newCell(CELL_TYPE_ID);
+      cell.targetVolume = 25.0f;
+      cell.lambdaVolume = 2.0f;
+      ctx->cellField.assign(5, 10, 5, 10, 0, 1, cell);
+
+- name: Pixels and Neighbors
+  description: Traverses lattice pixels, cell pixels, boundaries, and neighbors.
+  snippets:
+  - name: Visit Lattice Pixels
+    description: Traverses the whole lattice and checks for medium or cell occupancy.
+    suggested_indent: -1
+    code: |+
+      const auto dim = ctx->cellField.dim();
+      for (int z = 0; z < dim.z; ++z) {
+          for (int y = 0; y < dim.y; ++y) {
+              for (int x = 0; x < dim.x; ++x) {
+                  auto cell = ctx->cellField(x, y, z);
+                  if (cell) {
+                      // Process the cell at this pixel.
+                  }
+              }
+          }
+      }
+  - name: Visit Cell Pixels
+    description: Visits only the pixels belonging to each cell.
+    suggested_indent: -1
+    code: |+
+      for (auto cell : ctx->cells) {
+          for (auto pixel : ctx->pixels.forCell(cell)) {
+              std::cout << pixel.x << ',' << pixel.y << ',' << pixel.z << std::endl;
+          }
+      }
+  - name: Visit Boundary Pixels
+    description: Visits the boundary pixels of each cell.
+    suggested_indent: -1
+    code: |+
+      for (auto cell : ctx->cells) {
+          for (auto pixel : ctx->boundaryPixels.forCell(cell)) {
+              // Process a cell-interface pixel.
+          }
+      }
+  - name: Inspect Neighbor Contact
+    description: Iterates neighboring cells and reads their common surface area.
+    suggested_indent: -1
+    code: |+
+      for (auto cell : ctx->cells) {
+          for (auto neighbor : ctx->neighbors.forCell(cell)) {
+              if (neighbor.cell) {
+                  std::cout << "cell=" << cell.id
+                            << " neighbor=" << neighbor.cell.id
+                            << " contact=" << neighbor.commonSurfaceArea << std::endl;
+              }
+          }
+      }
+
+- name: Fields and Python Exchange
+  description: Accesses scalar fields, shared fields, dictionaries, and cell attributes.
+  snippets:
+  - name: Read And Write Scalar Field
+    description: Reads and updates an existing scalar field by name.
+    suggested_indent: -1
+    code: |+
+      // Requires a scalar field named "FGF" in the simulation.
+      auto field = ctx->scalarFields["FGF"];
+      if (field) {
+          const double concentration = field(10, 20, 0);
+          field(10, 20, 0) = static_cast<float>(concentration + 1.0);
+      }
+  - name: Create Shared Scalar Field
+    description: Creates a scalar field that can also be accessed from Python.
+    suggested_indent: -1
+    code: |+
+      // Use this in init() or start() when the shared field should be created once.
+      scalar_ = ctx->sharedScalarFields.createScalar(
+          "cpp_scalar", CC3D_FIELD_FLOAT32, 0);
+  - name: Exchange Shared Data With Python
+    description: Writes a value to and reads a value from the shared Python dictionary.
+    suggested_indent: -1
+    code: |+
+      // Use stable keys shared by the C++ and Python steppables.
+      auto shared = ctx->sharedData.sharedData(&ctx->dictionaryQueries);
+      shared.setDouble("cpp_to_python", static_cast<double>(ctx->mcs));
+
+      double pythonValue = 0.0;
+      if (shared.getDouble("python_to_cpp", pythonValue)) {
+          shared.setDouble("cpp_seen_python_value", pythonValue);
+      }
+  - name: Set Cell Python Attribute
+    description: Stores Python-compatible metadata on a cell.
+    suggested_indent: -1
+    code: |+
+      // The attribute can later be read by a Python steppable for the same cell.
+      auto attributes = ctx->cellAttributes.forCell(
+          cell, &ctx->dictionaryQueries);
+      attributes.setString("state", "active");
+      attributes.setDouble("score", 1.5);
+
+- name: Simulation Services
+  description: Common kernel services backed by configured simulation plugins.
+  snippets:
+  - name: Secrete In Cell
+    description: Uses a field secretor to deposit material in or around cells.
+    suggested_indent: -1
+    code: |+
+      // Requires a configured field named "ATTR".
+      auto secretor = ctx->secretion.fieldSecretor("ATTR");
+      for (auto cell : ctx->cells) {
+          secretor.secreteInsideCell(cell, 300.0f);
+          secretor.secreteInsideCellAtBoundary(cell, 300.0f);
+      }
+  - name: Chemotaxis Data
+    description: Obtains chemotaxis data for a cell and sets its lambda.
+    suggested_indent: -1
+    code: |+
+      // Requires the chemotaxis plugin and a configured field named "ATTR".
+      auto chemotaxis = ctx->chemotaxis.chemotaxis();
+      auto data = chemotaxis.add(cell, "ATTR");
+      data.setLambda(10.0f);
+  - name: Mitosis
+    description: Divides a cell and obtains the resulting parent and child handles.
+    suggested_indent: -1
+    code: |+
+      // Requires the mitosis plugin to be configured in the simulation.
+      auto mitosis = ctx->mitosis.mitosis();
+      mitosis.setParentChildPositionFlag(1);
+      mitosis.divideRandom(cell);
+
+      auto parent = mitosis.parentCell();
+      auto child = mitosis.childCell();
+      if (parent && child) {
+          mitosis.cloneAttributes(parent, child);
+      }
+  - name: Runtime Plugin Discovery
+    description: Guards optional plugin-dependent code at runtime.
+    suggested_indent: -1
+    code: |+
+      // Keep optional service usage behind a discovery check.
+      if (ctx->discovery.hasPlugin("Chemotaxis")) {
+          // It is safe to use the corresponding service here.
       }
