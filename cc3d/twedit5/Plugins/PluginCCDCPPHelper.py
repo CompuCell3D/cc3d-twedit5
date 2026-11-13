@@ -249,8 +249,14 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
         psmp = SnippetMenuParser()
 
         snippet_file_path = Path(__file__).resolve().parent.joinpath('CC3DCPPHelper', 'Snippets.cpp.yaml')
+        abi_steppable_snippet_file_path = Path(__file__).resolve().parent.joinpath(
+            'CC3DCPPHelper', 'Snippets.cpp.abi_steppables.yaml'
+        )
 
-        psmp.readSnippetMenu(str(snippet_file_path))
+        psmp.readSnippetMenus([
+            str(snippet_file_path),
+            str(abi_steppable_snippet_file_path),
+        ])
 
         snippetMenuDict = psmp.getSnippetMenuDict()
 
@@ -264,7 +270,7 @@ class CC3DCPPHelper(QObject, TweditPluginBase):
 
             print('menuName=', menuName)
 
-            if menuName == "C++ Steppable Patterns":
+            if menuName == "C++ ABI Steppable Patterns":
                 groupMenu = steppable_patterns_menu
             else:
                 groupMenu = core_api_menu.addMenu(menuName)
