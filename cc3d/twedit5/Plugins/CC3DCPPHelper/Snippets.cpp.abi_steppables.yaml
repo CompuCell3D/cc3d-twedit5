@@ -123,7 +123,8 @@ menus:
     description: Creates a scalar field that can also be accessed from Python.
     suggested_indent: -1
     code: |+
-      // Use this in init() or start() when the shared field should be created once.
+      // Add the field as a member of your steppable state before using this code.
+      // Create it once from init() or start(), then reuse it from step().
       scalar_ = ctx->sharedScalarFields.createScalar(
           "cpp_scalar", CC3D_FIELD_FLOAT32, 0);
   - name: Exchange Shared Data With Python
@@ -142,6 +143,7 @@ menus:
     description: Stores Python-compatible metadata on a cell.
     suggested_indent: -1
     code: |+
+      // Insert this inside a cell loop or callback where `cell` is a valid handle.
       // The attribute can later be read by a Python steppable for the same cell.
       auto attributes = ctx->cellAttributes.forCell(
           cell, &ctx->dictionaryQueries);
@@ -190,4 +192,190 @@ menus:
       // Keep optional service usage behind a discovery check.
       if (ctx->discovery.hasPlugin("Chemotaxis")) {
           // It is safe to use the corresponding service here.
+      }
+
+- name: Cell Manipulation
+  description: Creates, moves, merges, and deletes cells through the kernel context.
+  snippets:
+  - name: Move Cell
+    description: Moves an existing cell to a new lattice location.
+    suggested_indent: -1
+    code: |+
+      // Requires the CellManipulation plugin or service to be available.
+      auto manipulation = ctx->cellManipulation.cellManipulation();
+      auto cell = ctx->cells.fetch_cell_by_id(CELL_ID);
+      if (cell) {
+          const bool moved = manipulation.moveCell(cell.value(), 20, 20, 0);
+      }
+  - name: Merge Cells
+    description: Merges a source cell into a destination cell.
+    suggested_indent: -1
+    code: |+
+      // Requires the CellManipulation plugin or service to be available.
+      auto manipulation = ctx->cellManipulation.cellManipulation();
+      auto source = ctx->cells.fetch_cell_by_id(SOURCE_CELL_ID);
+      auto destination = ctx->cells.fetch_cell_by_id(DESTINATION_CELL_ID);
+      if (source && destination) {
+          manipulation.mergeCells(source.value(), destination.value());
+      }
+  - name: Delete Cell
+    description: Deletes a cell after looking it up by identifier.
+    suggested_indent: -1
+    code: |+
+      // Requires the CellManipulation plugin or service to be available.
+      auto manipulation = ctx->cellManipulation.cellManipulation();
+      auto cell = ctx->cells.fetch_cell_by_id(CELL_ID);
+      if (cell) {
+          manipulation.deleteCell(cell.value());
+      }
+
+- name: Constraints and Orientation
+  description: Applies common shape, growth, orientation, and polarization constraints.
+  snippets:
+  - name: Length Constraint
+    description: Reads and updates length-constraint parameters for a cell.
+    suggested_indent: -1
+    code: |+
+      // Requires the LengthConstraint plugin.
+      auto length = ctx->lengthConstraint.lengthConstraint();
+      for (auto cell : ctx->cells) {
+          const double lambda = length.lambda(cell);
+          const double target = length.target(cell);
+          length.set(cell, lambda, target, 0.0);
+      }
+  - name: Oriented Growth
+    description: Sets an elongation axis and enables oriented growth for a cell.
+    suggested_indent: -1
+    code: |+
+      // Requires the OrientedGrowth plugin.
+      auto orientedGrowth = ctx->orientedGrowth.orientedGrowth();
+      for (auto cell : ctx->cells) {
+          orientedGrowth.setElongationAxis(cell, 0.5f, 0.8660254f);
+          orientedGrowth.setConstraintWidth(cell, 2.0f);
+          orientedGrowth.setElongationEnabled(cell, true);
+      }
+  - name: Polarization And Cell Orientation
+    description: Sets a polarization vector and cell-orientation lambda.
+    suggested_indent: -1
+    code: |+
+      // Requires PolarizationVector and CellOrientation plugins.
+      auto polarization = ctx->polarizationVector.polarizationVector();
+      auto orientation = ctx->cellOrientation.cellOrientation();
+      for (auto cell : ctx->cells) {
+          polarization.set(cell, 1.0f, 0.0f, 0.0f);
+          orientation.setLambda(cell, 5.0);
+      }
+  - name: Moment Of Inertia
+    description: Reads semiaxes calculated for each cell.
+    suggested_indent: -1
+    code: |+
+      // Requires the MomentOfInertia plugin.
+      auto momentOfInertia = ctx->momentOfInertia.momentOfInertia();
+      for (auto cell : ctx->cells) {
+          const auto axes = momentOfInertia.getSemiaxes(cell);
+          std::cerr << "cell=" << cell.id
+                    << " axes=(" << axes[0] << ", " << axes[1]
+                    << ", " << axes[2] << ")\n";
+      }
+
+- name: Focal Point and Cluster Services
+  description: Works with focal point plasticity links, anchors, and cell clusters.
+  snippets:
+  - name: Create Focal Point Plasticity Link
+    description: Creates and later updates a focal point plasticity link between two cells.
+    suggested_indent: -1
+    code: |+
+      // Requires the FocalPointPlasticity plugin and two valid cell handles.
+      auto fpp = ctx->focalPointPlasticity.focalPointPlasticity();
+      fpp.create(firstCell, secondCell, 10.0, 15.0, 40.0);
+      fpp.set(firstCell, secondCell, 12.0, 18.0, 40.0);
+  - name: Create Focal Point Plasticity Anchor
+    description: Adds an anchor to a cell and changes its parameters later.
+    suggested_indent: -1
+    code: |+
+      // Requires the FocalPointPlasticity plugin and a valid cell handle.
+      auto fpp = ctx->focalPointPlasticity.focalPointPlasticity();
+      const int anchorId = fpp.createAnchor(
+          cell, 8.0, 10.0, 100.0, 25.0f, 25.0f, 0.0f);
+      fpp.setAnchor(cell, anchorId, 12.0, 12.0, 100.0);
+  - name: Set Cluster Surface Constraint
+    description: Sets target and lambda cluster surface values once per cluster.
+    suggested_indent: -1
+    code: |+
+      // Requires the ClusterSurface plugin.
+      // Add #include <set> to the source file if it is not already present.
+      auto clusterSurface = ctx->clusterSurface.clusterSurface();
+      std::set<long> updatedClusters;
+      for (auto cell : ctx->cells) {
+          if (updatedClusters.insert(cell.clusterId).second) {
+              clusterSurface.setTargetAndLambdaClusterSurface(
+                  cell, 80.0f, 2.0f);
+          }
+      }
+  - name: Update Cluster Surface Tracker
+    description: Reassigns a cell to a cluster and refreshes its cluster surface.
+    suggested_indent: -1
+    code: |+
+      // Requires the ClusterSurfaceTracker plugin.
+      auto tracker = ctx->clusterSurfaceTracker.clusterSurfaceTracker();
+      tracker.reassignClusterId(cell, CLUSTER_ID);
+      tracker.updateClusterSurface(CLUSTER_ID);
+
+- name: SBML Models
+  description: Connects compiled steppables to SBML models attached to cells.
+  snippets:
+  - name: Read And Advance SBML Model
+    description: Reads an SBML variable, updates it, and advances the model.
+    suggested_indent: -1
+    code: |+
+      // Requires the SBML solver and a model named "OSCIL" attached to the cell.
+      auto model = ctx->sbml.find(cell, "OSCIL");
+      if (model) {
+          double s1 = 0.0;
+          if (model.get("S1", &s1)) {
+              cell.targetVolume = static_cast<float>(25.0 + 10.0 * s1);
+              model.set("S1", s1);
+              model.timestep();
+          }
+      }
+- name: XML Steering
+  description: Reads and updates XML steering elements during a simulation.
+  snippets:
+  - name: Read XML Steering Value
+    description: Reads a value from an XML steering element.
+    suggested_indent: -1
+    code: |+
+      // Element IDs and attribute names must match the simulation XML.
+      auto element = ctx->xml.getElement("vol_cond");
+      const double target = element.getValueAsDouble("TargetVolume");
+  - name: Update XML Steering Value
+    description: Changes an XML steering value during a simulation.
+    suggested_indent: -1
+    code: |+
+      // Element IDs and attribute names must match the simulation XML.
+      auto element = ctx->xml.getElement("vol_cond");
+      const double target = element.getValueAsDouble("TargetVolume");
+      const bool changed = element.setValue("TargetVolume", 2.0 * target);
+
+- name: Geometry and Sampling
+  description: Performs periodic geometry calculations and efficient lattice sampling.
+  snippets:
+  - name: Periodic Distance Vector
+    description: Computes ordinary and invariant distance vectors between points.
+    suggested_indent: -1
+    code: |+
+      // Point is available from the generated kernel ABI header.
+      const CC3DGeometryPointV1 first{10.0, 10.0, 0.0};
+      const CC3DGeometryPointV1 second{90.0, 10.0, 0.0};
+      const auto vector = ctx->geometry.distanceVector(first, second);
+      const auto invariant = ctx->geometry.invariantDistanceVector(first, second);
+  - name: Sample Lattice With Steps
+    description: Iterates over regularly spaced lattice points instead of every pixel.
+    suggested_indent: -1
+    code: |+
+      for (auto point : ctx->cellField.everyPixelWithSteps(20, 20, 1)) {
+          auto cell = ctx->cellField(point.x, point.y, point.z);
+          if (cell) {
+              // Process a sampled occupied pixel.
+          }
       }
