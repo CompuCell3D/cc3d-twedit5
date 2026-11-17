@@ -289,6 +289,8 @@ class CustomTabWidget(QTabWidget):
 
         fdToClipAct = menu.addAction("File directory to clipboard")
 
+        fpToClipAct = menu.addAction("File path to clipboard")
+
         menu.addSeparator()
 
         # ---------------------------
@@ -298,6 +300,8 @@ class CustomTabWidget(QTabWidget):
         fnToClipAct.triggered.connect(self.editorWindow.fileNameToClipboard)
 
         fdToClipAct.triggered.connect(self.editorWindow.fileDirToClipboard)
+
+        fpToClipAct.triggered.connect(self.editorWindow.filePathToClipboard)
 
         # self.connect(fnToClipAct, SIGNAL("triggered()"), self.editorWindow.fileNameToClipboard)
 
@@ -6367,6 +6371,16 @@ class EditorWindow(QMainWindow):
         clipboard = QApplication.clipboard()
 
         clipboard.setText(os.path.dirname(self.getCurrentDocumentName()))
+
+    def filePathToClipboard(self):
+        """
+            slot - copies the absolute path of the current document to clipboard
+        """
+        document_name = self.getCurrentDocumentName()
+        if not document_name:
+            return
+
+        QApplication.clipboard().setText(os.path.abspath(document_name))
 
     def printCurrentDocument(self):
         """

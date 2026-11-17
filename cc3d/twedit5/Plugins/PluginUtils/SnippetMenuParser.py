@@ -66,8 +66,6 @@ class SnippetMenuParser(object):
         with open(file_name) as file_handle:
             data = yaml.safe_load(file_handle) or {}
 
-        self.initialize()
-
         menus = data.get('menus', [])
         for menu_data in menus:
             menu_name = str(menu_data.get('name', '')).strip()
@@ -150,7 +148,10 @@ class SnippetMenuParser(object):
 
         self.writeSnippet()
 
-    def readSnippetMenu(self, _fileName):
+    def readSnippetMenu(self, _fileName, merge=False):
+
+        if not merge:
+            self.initialize()
 
         with open(_fileName) as file_handle:
             first_nonempty_line = ''
@@ -163,5 +164,9 @@ class SnippetMenuParser(object):
             self._read_yaml_snippet_menu(_fileName)
             return
 
-        self.initialize()
         self._read_legacy_snippet_menu(_fileName)
+
+    def readSnippetMenus(self, file_names):
+        self.initialize()
+        for file_name in file_names:
+            self.readSnippetMenu(file_name, merge=True)

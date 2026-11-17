@@ -86,6 +86,11 @@
         </item>
         <item>
          <property name="text">
+          <string>C++ File</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
           <string>PIF File</string>
          </property>
         </item>

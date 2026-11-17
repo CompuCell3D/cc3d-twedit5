@@ -13,9 +13,11 @@ from cc3d.twedit5.logger import get_logger
 import sys
 from cc3d.twedit5.windowsUtils import *
 from cc3d.twedit5.Messaging import dbgMsg, setDebugging
+from cc3d.twedit5.twedit.utils.utils import show_exception_messagebox
 import argparse
 
 log = get_logger(__name__)
+_handling_global_gui_exception = False
 
 # this globally enables/disables debug statements
 setDebugging(0)
@@ -128,7 +130,23 @@ class Twedit(object):
 
 
 def except_hook(cls, exception, traceback):
+    global _handling_global_gui_exception
     sys.__excepthook__(cls, exception, traceback)
+
+    app = QApplication.instance()
+    if app is not None and not _handling_global_gui_exception:
+        _handling_global_gui_exception = True
+        try:
+            show_exception_messagebox(
+                title="Twedit++ Error",
+                message="An unexpected error occurred while handling a GUI callback.",
+                exception=exception,
+                parent=app.activeWindow(),
+            )
+        finally:
+            _handling_global_gui_exception = False
+        return
+
     sys.exit(1)
 
 

@@ -25,6 +25,7 @@ import re
 import os
 import shutil
 import platform
+from html import escape
 from copy import deepcopy
 from distutils.file_util import write_file
 from distutils.dir_util import mkpath
@@ -55,6 +56,7 @@ from cc3d.core.ParameterScanUtils import ParameterScanUtils
 from cc3d.core.ParameterScanEnums import PYTHON_GLOBAL
 import contextlib
 from pathlib import Path
+from cc3d.twedit5.twedit.utils.utils import render_j2_template
 
 # Start-Of-Header
 
@@ -70,6 +72,32 @@ longDescription = """This plugin provides functionality that allows users to man
 # End-Of-Header
 
 error = ''
+
+CPP_RESOURCE_TYPE = "Cpp"
+CPP_STEPPABLE_RESOURCE_TYPE = "CppSteppable"
+
+CPP_RESOURCE_TYPES = (
+    CPP_RESOURCE_TYPE,
+    CPP_STEPPABLE_RESOURCE_TYPE,
+
+)
+CPP_RESOURCE_LABEL = "C++ File"
+CPP_STEPPABLE_ACTION = "Add C++ Steppable..."
+CPP_STEPPABLE_TEMPLATE = Path(__file__).parent / "CC3DProject" / "templates" / "cpp_class_steppable.cpp.j2"
+CPP_STEPPABLE_LEGACY_TEMPLATE = Path(__file__).parent / "CC3DProject" / "templates" / "cpp_steppable.cpp.j2"
+CPP_STEPPABLE_TEMPLATE_OPTIONS = {
+    "Class-based steppable": CPP_STEPPABLE_TEMPLATE,
+    "Function-based steppable (legacy)": CPP_STEPPABLE_LEGACY_TEMPLATE,
+}
+CPP_STEPPABLE_DEFAULT_DIR = "Native"
+CPP_ICON_PATH = Path(__file__).parent / "CC3DProject" / "icons" / "c-plus-plus-128.png"
+
+
+def cpp_resource_icon():
+    icon = QIcon(':/icons/c-plus-plus-128.png')
+    if icon.isNull() and CPP_ICON_PATH.exists():
+        icon = QIcon(str(CPP_ICON_PATH))
+    return icon
 
 
 # this is bidirectional dictionary - tree-item to CC3DResource and path of the resource to item
@@ -365,6 +393,8 @@ class CC3DProjectTreeWidget(QTreeWidget):
         if self.currentItem() == projItem:
             self.addActionToContextMenu(menu, self.plugin.actions["Open XML/Python In Editor"])
 
+            self.addActionToContextMenu(menu, self.plugin.actions["Add Steppable..."])
+
             if installed_player:
                 self.addActionToContextMenu(menu, self.plugin.actions["Open in Player"])
 
@@ -428,6 +458,8 @@ class CC3DProjectTreeWidget(QTreeWidget):
         menu.addSeparator()
 
         self.addActionToContextMenu(menu, self.plugin.actions["Add Resource..."])
+
+        self.addActionToContextMenu(menu, self.plugin.actions[CPP_STEPPABLE_ACTION])
 
         # if selection.size():
 
@@ -909,6 +941,8 @@ class CC3DProject(QObject, TweditPluginBase):
 
         self.cc3dProjectMenu.addAction(self.actions["Add Resource..."])
 
+        self.cc3dProjectMenu.addAction(self.actions[CPP_STEPPABLE_ACTION])
+
         self.cc3dProjectMenu.addAction(self.actions["Remove Resources"])
 
         self.cc3dProjectMenu.addSeparator()
@@ -1167,6 +1201,14 @@ class CC3DProject(QObject, TweditPluginBase):
 
                                                             triggered=self.__addResource)
 
+        self.actions[CPP_STEPPABLE_ACTION] = QtWidgets.QAction(cpp_resource_icon(), CPP_STEPPABLE_ACTION, self,
+
+                                                               shortcut="",
+
+                                                               statusTip="Add C++ steppable source file",
+
+                                                               triggered=self.__add_cpp_steppable)
+
         self.actions["Add Serializer..."] = QtWidgets.QAction(QIcon(':/icons/add-serializer.png'), "Add Serializer ...",
 
                                                               self, shortcut="", statusTip="Add Serializer ",
@@ -1175,7 +1217,7 @@ class CC3DProject(QObject, TweditPluginBase):
 
         self.actions["Remove Resources"] = QtWidgets.QAction(QIcon(':/icons/remove.png'), "Remove Resources", self,
 
-                                                             shortcut="", statusTip="Remove Resource Files ",
+                                                             shortcut="", statusTip="Remove selected resources from the project",
 
                                                              triggered=self.__removeResources)
 
@@ -2236,7 +2278,7 @@ class CC3DProject(QObject, TweditPluginBase):
 
             projItem = self.treeWidget.getProjectParent(self.treeWidget.currentItem())
 
-            self.markProjectDirty(projItem)
+            self.__save_cc3d_project()
 
     def __convertXMLToPython(self):
 
@@ -2351,7 +2393,8 @@ class CC3DProject(QObject, TweditPluginBase):
         editor = self.__ui.getCurrentEditor()
         return editor
 
-    def insert_steppable_template(self, main_python_script_editor, steppable_script_editor):
+    def insert_steppable_template(self, main_python_script_editor, steppable_script_editor,
+                                  generator_dialog=None):
         """
         Inserts template steppable code into editors - main python and steppable editors
         :param main_python_script_editor:
@@ -2365,11 +2408,11 @@ class CC3DProject(QObject, TweditPluginBase):
 
         basename_for_import, ext = os.path.splitext(os.path.basename(steppable_script))
 
-        sgd = SteppableGeneratorDialog(tw)
+        sgd = generator_dialog or SteppableGeneratorDialog(tw)
 
         sgd.mainScriptLB.setText(main_python_script_path)
 
-        if not sgd.exec_():
+        if generator_dialog is None and not sgd.exec_():
             return
 
         steppeble_name = str(sgd.steppebleNameLE.text())
@@ -2470,10 +2513,27 @@ class CC3DProject(QObject, TweditPluginBase):
                                 "Please edit python main script position properly steppable registration code ")
 
         main_python_script_editor.insertAt(steppable_registration_code, entry_line, 0)
+        self.__highlight_inserted_text(
+            main_python_script_editor,
+            entry_line,
+            steppable_registration_code,
+        )
+        if main_python_script_path:
+            self.open_file_in_editor(main_python_script_path)
 
         main_python_script_editor.ensureLineVisible(max_line_idx + 10)
         # steppableScriptEditorWindow
         print("ENTRY LINE FOR REGISTRATION OF STEPPABLE IS ", entry_line)
+
+    @staticmethod
+    def __highlight_inserted_text(editor, start_line, inserted_text):
+        inserted_lines = inserted_text.splitlines()
+        if not inserted_lines:
+            return
+
+        end_line = start_line + len(inserted_lines) - 1
+        editor.setSelection(start_line, 0, end_line, len(inserted_lines[-1]))
+        editor.ensureLineVisible(start_line)
 
     def add_steppable_cc3d_python(self):
         """
@@ -2527,6 +2587,81 @@ class CC3DProject(QObject, TweditPluginBase):
         self.insert_steppable_template(main_python_script_editor=main_python_script_editor,
                                        steppable_script_editor=steppable_script_editor)
 
+    def __add_python_steppable_resource(self, proj_item, pdh):
+        main_script_path = str(getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", "") or
+                               pdh.cc3dSimulationData.pythonScript or "").strip()
+        generator_dialog = SteppableGeneratorDialog(self.treeWidget)
+        generator_dialog.enable_new_file_mode("Simulation")
+        generator_dialog.mainScriptLB.setText(main_script_path)
+
+        while generator_dialog.exec_() == QtWidgets.QDialog.Accepted:
+            location = generator_dialog.generated_folder()
+            if location in (".", "..") or os.path.basename(location) != location:
+                QMessageBox.warning(
+                    generator_dialog, "Invalid Folder", "Please specify a single folder name.", QMessageBox.Ok
+                )
+                continue
+
+            steppable_path = os.path.join(
+                pdh.cc3dSimulationData.basePath,
+                location,
+                generator_dialog.generated_file_name(),
+            )
+            if os.path.exists(steppable_path):
+                QMessageBox.warning(
+                    generator_dialog,
+                    "Steppable Already Exists",
+                    "The file %s already exists. Please choose a different name." % steppable_path,
+                    QMessageBox.Ok,
+                )
+                generator_dialog.steppebleNameLE.setFocus()
+                generator_dialog.steppebleNameLE.selectAll()
+                continue
+
+            try:
+                self.makeDirectory(os.path.dirname(steppable_path))
+                with open(steppable_path, "w", encoding="utf-8"):
+                    pass
+            except IOError:
+                QMessageBox.warning(
+                    generator_dialog,
+                    "Could Not Create Steppable",
+                    "Could not create %s." % steppable_path,
+                    QMessageBox.Ok,
+                )
+                continue
+
+            pdh.cc3dSimulationData.addNewResource(steppable_path, "Python")
+            self.insertNewTreeItem(steppable_path, "Python")
+            self.__save_cc3d_project()
+
+            if not main_script_path:
+                QMessageBox.warning(
+                    self.treeWidget,
+                    "Could Not Locate Main Python Script",
+                    "The Python steppable was created, but no main Python script was found.",
+                    QMessageBox.Ok,
+                )
+                return
+
+            main_editor = self.open_file_in_editor(main_script_path)
+            steppable_editor = self.open_file_in_editor(steppable_path)
+            if not main_editor or not steppable_editor:
+                QMessageBox.warning(
+                    self.treeWidget,
+                    "Could Not Open Steppable",
+                    "The Python steppable was created, but one of the scripts could not be opened.",
+                    QMessageBox.Ok,
+                )
+                return
+
+            self.insert_steppable_template(
+                main_editor,
+                steppable_editor,
+                generator_dialog=generator_dialog,
+            )
+            return
+
     def add_steppable(self):
         """
         Inserts template steppable code into Steppable script and also registers newly created steppable in the main
@@ -2545,6 +2680,10 @@ class CC3DProject(QObject, TweditPluginBase):
         try:
             pdh = self.projectDataHandlers[qt_obj_hash(proj_item)]
         except LookupError:
+            return
+
+        if cur_item == proj_item:
+            self.__add_python_steppable_resource(proj_item, pdh)
             return
 
         main_python_script_path = pdh.cc3dSimulationData.pythonScriptResource.path
@@ -2751,15 +2890,8 @@ class CC3DProject(QObject, TweditPluginBase):
 
             print("copy=", resource.copy)
 
-            # set dirtyFlag to True
-
-            try:
-
-                self.treeWidget.projects[qt_obj_hash(proj_item)].dirtyFlag = dirtyFlagLocal
-
-            except LookupError as e:
-
-                pass
+            if dirtyFlagLocal:
+                self.__save_cc3d_project()
 
 
 
@@ -2815,14 +2947,14 @@ class CC3DProject(QObject, TweditPluginBase):
 
         for path, resource in pdh.cc3dSimulationData.resources.items():
 
-            if resource.type == "Python":
+            if resource.type in ["Python", *CPP_RESOURCE_TYPES]:
 
                 self.openFileInEditor(path)
 
-                pythonItem = tw.getItemByText(projItem, "Python")
+                resource_item = tw.getItemByText(projItem, resource.type)
 
-                if pythonItem:
-                    pythonItem.setExpanded(True)
+                if resource_item:
+                    resource_item.setExpanded(True)
 
         return
 
@@ -3062,12 +3194,239 @@ class CC3DProject(QObject, TweditPluginBase):
         if not proj_item:
             return
 
-        ret = QMessageBox.warning(tw, "Delete Selected Items?",
-                                  "Are you sure you want to delete selected items?<br>This cannot be undone.<br> "
-                                  "Proceed?",
-                                  QMessageBox.Yes | QMessageBox.No)
+        try:
+            ild = self.treeWidget.projects[qt_obj_hash(proj_item)]
+        except LookupError:
+            return
 
-        if ret == QMessageBox.No:
+        try:
+            pdh = self.projectDataHandlers[qt_obj_hash(proj_item)]
+        except LookupError:
+            return
+
+        resource_paths = self.__selected_resource_paths(proj_item, ild)
+        recursive_directories = self.__selected_cpp_steppable_directories(proj_item, ild)
+        delete_files = self.__confirm_remove_resources(resource_paths, recursive_directories)
+
+        if delete_files is None:
+            return
+
+        if delete_files and recursive_directories:
+            if not self.__confirm_recursive_steppable_deletion(recursive_directories):
+                return
+
+        removed_steppables = self.__remove_selected_resources(delete_files=delete_files)
+        if removed_steppables:
+            main_script_path = str(
+                getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", "") or
+                pdh.cc3dSimulationData.pythonScript or ""
+            ).strip()
+            self.__show_removed_steppable_registration_warning(
+                removed_steppables,
+                main_script_path,
+            )
+
+    def __confirm_remove_resources(self, resource_paths, recursive_directories=None):
+
+        recursive_directories = recursive_directories or []
+
+        dialog = QtWidgets.QDialog(self.treeWidget)
+        dialog.setWindowTitle("Remove Selected Items?")
+        dialog.setMinimumWidth(460)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+        layout.setContentsMargins(18, 18, 18, 14)
+        layout.setSpacing(12)
+
+        prompt_label = QtWidgets.QLabel(
+            "Remove selected items from the project?"
+        )
+        prompt_label.setWordWrap(True)
+        prompt_label.setStyleSheet("font-size: 13px; font-weight: bold;")
+        layout.addWidget(prompt_label)
+
+        detail_label = QtWidgets.QLabel("Files will remain on disk unless deletion is selected.")
+        detail_label.setWordWrap(True)
+        layout.addWidget(detail_label)
+
+        resource_names = [os.path.basename(resource_path) for resource_path in resource_paths if resource_path]
+        resource_summary = QtWidgets.QLabel(self.__resource_selection_summary(resource_names))
+        resource_summary.setWordWrap(True)
+        resource_summary.setMinimumHeight(36)
+        resource_summary.setStyleSheet("""
+            QLabel {
+                background-color: #f5f5f5;
+                border: 1px solid #d0d0d0;
+                padding: 8px;
+            }
+        """)
+        layout.addWidget(resource_summary)
+
+        delete_checkbox = QtWidgets.QCheckBox("Delete resource from disk.")
+        layout.addWidget(delete_checkbox)
+
+        recursive_warning = None
+        if recursive_directories:
+            recursive_warning = QtWidgets.QLabel(
+                "Deleting from disk will recursively remove the steppable folder(s), "
+                "including nested source folders, DLLs, and compilation artifacts."
+            )
+            recursive_warning.setWordWrap(True)
+            recursive_warning.setStyleSheet("color: #b00020; font-weight: bold;")
+            recursive_warning.setVisible(False)
+            layout.addWidget(recursive_warning)
+
+        warning_label = QtWidgets.QLabel()
+        warning_label.setWordWrap(True)
+        warning_label.setMinimumHeight(38)
+        warning_label.setStyleSheet("color: #b00020; font-weight: bold;")
+        warning_label.setVisible(False)
+        layout.addWidget(warning_label)
+
+        if len(resource_names) == 1:
+            warning_text = "Warning: %s will be deleted from disk." % resource_names[0]
+        elif len(resource_names) > 1:
+            warning_text = "Warning: %s resources will be deleted from disk." % len(resource_names)
+        else:
+            warning_text = "Warning: selected resource files will be deleted from disk."
+
+        def update_warning(checked):
+            warning_label.setText(warning_text)
+            warning_label.setVisible(checked)
+            if recursive_warning is not None:
+                recursive_warning.setVisible(checked)
+
+        delete_checkbox.toggled.connect(update_warning)
+
+        buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return None
+
+        return delete_checkbox.isChecked()
+
+    def __confirm_recursive_steppable_deletion(self, directories):
+
+        dialog = QtWidgets.QDialog(self.treeWidget)
+        dialog.setWindowTitle("Delete Entire Steppable Folder?")
+        dialog.setMinimumSize(560, 360)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+        layout.setContentsMargins(18, 18, 18, 14)
+        layout.setSpacing(12)
+
+        title = QtWidgets.QLabel("The following C++ steppable folder(s) will be deleted recursively:")
+        title.setStyleSheet("font-size: 14px; font-weight: bold;")
+        title.setWordWrap(True)
+        layout.addWidget(title)
+
+        folder_list = "".join("<li>%s</li>" % escape(directory) for directory in directories)
+        details = QtWidgets.QTextEdit(dialog)
+        details.setReadOnly(True)
+        details.setAcceptRichText(False)
+        details.setHtml(
+            "<p><b>Folders:</b></p>"
+            "<ul>%s</ul>"
+            "<p><b>Warning:</b> this includes nested source folders, DLLs, "
+            "and compilation artifacts such as <code>.cc3d-build</code>.</p>" % folder_list
+        )
+        details.setStyleSheet("""
+            QTextEdit {
+                background-color: #f7f7f7;
+                border: 1px solid #c8c8c8;
+                padding: 6px;
+            }
+        """)
+        layout.addWidget(details, 1)
+
+        buttons = QtWidgets.QDialogButtonBox(parent=dialog)
+        delete_button = buttons.addButton("Delete Folder(s)", QtWidgets.QDialogButtonBox.DestructiveRole)
+        cancel_button = buttons.addButton(QtWidgets.QDialogButtonBox.Cancel)
+        delete_button.clicked.connect(dialog.accept)
+        cancel_button.clicked.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        return dialog.exec_() == QtWidgets.QDialog.Accepted
+
+    @staticmethod
+    def __resource_selection_summary(resource_names):
+
+        if len(resource_names) == 1:
+            return "Selected resource: %s" % resource_names[0]
+
+        if len(resource_names) > 1:
+            preview = ", ".join(resource_names[:3])
+            if len(resource_names) > 3:
+                preview += ", ..."
+            return "Selected resources: %s" % preview
+
+        return "Selected resources will be removed."
+
+    def __selected_resource_paths(self, proj_item, ild):
+
+        def resource_paths_for_item(item):
+            resource_path = ild.getFullPath(item)
+            if resource_path:
+                return [resource_path]
+
+            paths = []
+            for index in range(item.childCount()):
+                paths.extend(resource_paths_for_item(item.child(index)))
+            return paths
+
+        resource_paths = []
+        for selected_item in self.treeWidget.selectedItems():
+            if selected_item != proj_item:
+                resource_paths.extend(resource_paths_for_item(selected_item))
+
+        return resource_paths
+
+    def __selected_cpp_steppable_directories(self, proj_item, ild):
+
+        pdh = self.projectDataHandlers.get(qt_obj_hash(proj_item))
+        if pdh is None:
+            return []
+
+        simulation_data = pdh.cc3dSimulationData
+        directories = []
+
+        def resource_items(item):
+            resource_path = ild.getFullPath(item)
+            if resource_path:
+                return [resource_path]
+
+            paths = []
+            for index in range(item.childCount()):
+                paths.extend(resource_items(item.child(index)))
+            return paths
+
+        for selected_item in self.treeWidget.selectedItems():
+            if selected_item == proj_item:
+                continue
+
+            for resource_path in resource_items(selected_item):
+                resource = next(
+                    (candidate for candidate in simulation_data.resources.values()
+                     if os.path.normcase(os.path.abspath(candidate.path)) ==
+                     os.path.normcase(os.path.abspath(resource_path))),
+                    None
+                )
+                if resource and resource.type in CPP_RESOURCE_TYPES[1:]:
+                    directory = os.path.abspath(os.path.dirname(resource.path))
+                    if directory not in directories:
+                        directories.append(directory)
+
+        return directories
+
+    def __remove_selected_resources(self, delete_files=False):
+
+        tw = self.treeWidget
+        proj_item = tw.getProjectParent(tw.currentItem())
+
+        if not proj_item:
             return
 
         try:
@@ -3080,67 +3439,209 @@ class CC3DProject(QObject, TweditPluginBase):
         except LookupError:
             return
 
-        selection = self.treeWidget.selectedItems()
+        removed_steppables = []
 
-        # divide the selection into type level items (e.g. items like Main Python Script, Python ,PIF File etc.)
-        # and leaf items (i.e files)
+        def resource_items(item):
+            resource_path = ild.getFullPath(item)
+            if resource_path:
+                return [item]
 
-        type_items = []
+            descendants = []
+            for index in range(item.childCount()):
+                descendants.extend(resource_items(item.child(index)))
+            return descendants
 
-        leaf_items = []
+        selected_resource_items = []
+        seen_paths = set()
+        for selected_item in self.treeWidget.selectedItems():
+            if selected_item == proj_item:
+                continue
+            for resource_item in resource_items(selected_item):
+                resource_path = ild.getFullPath(resource_item)
+                normalized_path = os.path.normcase(os.path.abspath(resource_path))
+                if normalized_path not in seen_paths:
+                    seen_paths.add(normalized_path)
+                    selected_resource_items.append(resource_item)
 
-        for item_tmp in selection:
-
-            if proj_item == item_tmp.parent():
-                type_items.append(item_tmp)
-            elif item_tmp != proj_item:
-                leaf_items.append(item_tmp)
-
-        # first process leaf items - remove them from the project
-        for item_tmp in leaf_items:
+        for item_tmp in selected_resource_items:
             parent = item_tmp.parent()
-            pdh.cc3dSimulationData.removeResource(ild.getFullPath(item_tmp))
+            resource_path = ild.getFullPath(item_tmp)
+            resource_name = ild.getResourceName(item_tmp)
+            resource = next(
+                (candidate for candidate in pdh.cc3dSimulationData.resources.values()
+                 if os.path.normcase(os.path.abspath(candidate.path)) ==
+                 os.path.normcase(os.path.abspath(resource_path))),
+                None
+            )
 
-            if ild.getResourceName(item_tmp) == 'CC3DSerializerResource':
+            if resource and resource.type in CPP_RESOURCE_TYPES[1:]:
+                library_path = os.path.splitext(
+                    os.path.relpath(resource.path, pdh.cc3dSimulationData.basePath)
+                )[0].replace(os.sep, "/")
+                removed_steppables.append(("C++", library_path))
+            elif (resource and resource.type == "Python" and
+                  resource.path not in (pdh.cc3dSimulationData.pythonScript,
+                                        getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", ""))):
+                removed_steppables.append(("Python", os.path.basename(resource.path)))
+
+            if delete_files:
+                resource = next(
+                    (candidate for candidate in pdh.cc3dSimulationData.resources.values()
+                     if os.path.normcase(os.path.abspath(candidate.path)) ==
+                     os.path.normcase(os.path.abspath(resource_path))),
+                    None
+                )
+                if resource and resource.type in CPP_RESOURCE_TYPES[1:]:
+                    self.__delete_resource_directory(
+                        os.path.dirname(resource.path), pdh.cc3dSimulationData.basePath
+                    )
+                else:
+                    self.__delete_resource_file(resource_path, pdh.cc3dSimulationData.basePath)
+
+            pdh.cc3dSimulationData.removeResource(resource_path)
+
+            if resource_name == 'CC3DSerializerResource':
                 pdh.cc3dSimulationData.removeSerializerResource()
 
             ild.removeItem(item_tmp)
-
             parent.removeChild(item_tmp)
 
-            if not parent.childCount() and parent not in type_items:
+            # Remove empty folder/type branches, but retain the project node.
+            while parent is not None and parent != proj_item and not parent.childCount():
+                grandparent = parent.parent()
                 ild.removeItem(parent)
-
-                proj_item.removeChild(parent)
-
-        # process type_items
-        for item_tmp in type_items:
-            children_list = []
-
-            for i in range(item_tmp.childCount()):
-                children_list.append(item_tmp.child(i))
-
-            for child_item in children_list:
-                # pdh.cc3dSimulationData.removeResource(ild.getFullPath(item_tmp))
-                pdh.cc3dSimulationData.removeResource(ild.getFullPath(child_item))
-                ild.removeItem(child_item)
-                item_tmp.removeChild(child_item)
-
-            if ild.getResourceName(item_tmp) == 'CC3DSerializerResource':
-                pdh.cc3dSimulationData.removeSerializerResource()
-
-            elif ild.getResourceName(item_tmp) == 'CC3DParameterScanResource':
-                pdh.cc3dSimulationData.removeParameterScanResource()
-
-            ild.removeItem(item_tmp)
-
-            proj_item.removeChild(item_tmp)
+                if grandparent is None:
+                    break
+                grandparent.removeChild(parent)
+                parent = grandparent
 
         # save project
+        # The selected item may have been detached from the tree.  Make the
+        # project item current so __save_cc3d_project can still find its data
+        # handler and serialize the updated resource list.
+        tw.setCurrentItem(proj_item)
         self.__save_cc3d_project()
 
         # # mark project as dirty
         # self.markProjectDirty(proj_item)
+
+        return removed_steppables
+
+    def __show_removed_steppable_registration_warning(self, removed_steppables, main_script_path):
+        details = []
+        for resource_type, resource_name in removed_steppables:
+            if resource_type == "C++":
+                details.append('C++ library "%s"' % resource_name)
+            else:
+                details.append('Python steppable file "%s"' % resource_name)
+
+        message_box = QMessageBox(
+            QMessageBox.Warning,
+            "Steppable Registration Not Changed",
+            "The following steppable resource(s) were removed, but their registration "
+            "in the main Python script was not changed:\n\n%s\n\n"
+            "Registration file:\n%s\n\n"
+            "Please remove the corresponding registration manually." % (
+                "\n".join(details),
+                main_script_path or "<main Python script not found>",
+            ),
+            parent=self.treeWidget,
+        )
+        open_button = None
+        if main_script_path:
+            open_button = message_box.addButton("Open Main Python Script", QMessageBox.ActionRole)
+        message_box.addButton(QMessageBox.Ok)
+        message_box.exec_()
+
+        if open_button is not None and message_box.clickedButton() == open_button:
+            self.openFileInEditor(main_script_path)
+
+    def __delete_resource_file(self, resource_path, project_base_path):
+
+        if not resource_path:
+            return
+
+        resource_path = os.path.abspath(resource_path)
+        project_base_path = os.path.abspath(project_base_path)
+
+        try:
+            common_path = os.path.commonpath([resource_path, project_base_path])
+        except ValueError:
+            common_path = ""
+
+        if common_path != project_base_path:
+            QMessageBox.warning(self.treeWidget, "Cannot Delete File",
+                                "File %s is outside the project directory." % resource_path, QMessageBox.Ok)
+            return
+
+        if not os.path.isfile(resource_path):
+            return
+
+        try:
+            os.remove(resource_path)
+            self.__remove_empty_resource_directory(os.path.dirname(resource_path), project_base_path)
+        except OSError:
+            QMessageBox.warning(self.treeWidget, "Cannot Delete File",
+                                "Could not delete %s ." % resource_path, QMessageBox.Ok)
+
+    def __delete_resource_directory(self, directory_path, project_base_path):
+
+        if not directory_path:
+            return
+
+        directory_path = os.path.abspath(directory_path)
+        project_base_path = os.path.abspath(project_base_path)
+
+        try:
+            common_path = os.path.commonpath([directory_path, project_base_path])
+        except ValueError:
+            common_path = ""
+
+        if common_path != project_base_path or directory_path == project_base_path:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Cannot Delete Folder",
+                "The steppable folder is outside the project directory or is the project directory.",
+                QMessageBox.Ok
+            )
+            return
+
+        if not os.path.isdir(directory_path):
+            return
+
+        try:
+            shutil.rmtree(directory_path)
+        except OSError:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Cannot Delete Folder",
+                "Could not delete %s ." % directory_path,
+                QMessageBox.Ok
+            )
+
+    def __remove_empty_resource_directory(self, directory_path, project_base_path):
+
+        if not directory_path:
+            return
+
+        directory_path = os.path.abspath(directory_path)
+        project_base_path = os.path.abspath(project_base_path)
+
+        if directory_path == project_base_path:
+            return
+
+        try:
+            common_path = os.path.commonpath([directory_path, project_base_path])
+        except ValueError:
+            return
+
+        if common_path != project_base_path:
+            return
+
+        try:
+            os.rmdir(directory_path)
+        except OSError:
+            pass
 
     def checkFileExtension(self, _extension="", _expectedExtensions=[]):
 
@@ -3183,6 +3684,8 @@ class CC3DProject(QObject, TweditPluginBase):
                     file_type = "PIFFile"
                 elif file_type == "Python File":
                     file_type = "Python"
+                elif file_type == CPP_RESOURCE_LABEL:
+                    file_type = CPP_RESOURCE_TYPE
                 elif file_type == "Concentration File":
                     file_type = "ScalarField"
                 # check file extensions
@@ -3230,6 +3733,23 @@ class CC3DProject(QObject, TweditPluginBase):
                         if suggested_extension != "":
                             ret = QMessageBox.warning(self.treeWidget, "Possible Extension Mismatch",
                                                       "PIF File typically has extension <b>.piff</b> .<br> "
+                                                      "Your file has extension <b>%s</b> ."
+                                                      " <br> Do you want to continue?" % extension,
+                                                      QMessageBox.Yes | QMessageBox.No)
+
+                            if ret == QMessageBox.No:
+                                return
+
+                if file_type in CPP_RESOURCE_TYPES:
+
+                    if extension == "":
+                        name = name + '.cpp'
+
+                    else:
+                        suggested_extension = self.checkFileExtension(extension, ['.cpp', '.cxx', '.cc'])
+                        if suggested_extension != "":
+                            ret = QMessageBox.warning(self.treeWidget, "Possible Extension Mismatch",
+                                                      "C++ source files typically have extension <b>.cpp</b> .<br> "
                                                       "Your file has extension <b>%s</b> ."
                                                       " <br> Do you want to continue?" % extension,
                                                       QMessageBox.Yes | QMessageBox.No)
@@ -3290,7 +3810,16 @@ class CC3DProject(QObject, TweditPluginBase):
                 # file does not exist
                 try:
                     resource_name = os.path.join(full_location, name)
-                    write_file(os.path.join(full_location, name), "")
+                    if file_type in CPP_RESOURCE_TYPES:
+                        render_j2_template(
+                            source_template=CPP_STEPPABLE_LEGACY_TEMPLATE,
+                            target_path=resource_name,
+                            substitutions={
+                                "STEPPABLE_CLASS_NAME": self.__cpp_steppable_class_name(name),
+                            },
+                        )
+                    else:
+                        write_file(os.path.join(full_location, name), "")
 
                 except IOError:
                     print("COULD NOT CREATE FILE")
@@ -3310,6 +3839,251 @@ class CC3DProject(QObject, TweditPluginBase):
 
             # save project
             self.__save_cc3d_project()
+
+    def __add_cpp_steppable(self):
+
+        tw = self.treeWidget
+        proj_item = tw.getProjectParent(tw.currentItem())
+
+        if not proj_item:
+            return
+
+        try:
+            pdh = self.projectDataHandlers[qt_obj_hash(proj_item)]
+        except LookupError:
+            return
+
+        dialog = QtWidgets.QDialog(tw)
+        dialog.setWindowTitle("Add C++ Steppable")
+        dialog.setMinimumWidth(460)
+        layout = QtWidgets.QFormLayout(dialog)
+
+        steppable_name_edit = QtWidgets.QLineEdit(dialog)
+        folder_edit = QtWidgets.QLineEdit(CPP_STEPPABLE_DEFAULT_DIR, dialog)
+        folder_edit.setToolTip("Conventionally starts with Native_, but any folder name is allowed.")
+        template_combo = QtWidgets.QComboBox(dialog)
+        template_combo.addItems(list(CPP_STEPPABLE_TEMPLATE_OPTIONS.keys()))
+        layout.addRow("Steppable source name:", steppable_name_edit)
+        layout.addRow("Subfolder:", folder_edit)
+        layout.addRow("Template:", template_combo)
+
+        hint = QtWidgets.QLabel(
+            "Each subfolder may contain only one C++ steppable source file. "
+            "The Native_ prefix is recommended."
+        )
+        hint.setWordWrap(True)
+        layout.addRow(hint)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
+            parent=dialog
+        )
+
+        def accept_dialog():
+            location = str(folder_edit.text()).strip()
+            if not location:
+                QMessageBox.warning(dialog, "Invalid subfolder", "Please specify a subfolder name.", QMessageBox.Ok)
+                folder_edit.setFocus()
+                return
+
+            if (location in (".", "..") or os.path.basename(location) != location
+                    or location in (os.path.sep, os.path.altsep)):
+                QMessageBox.warning(
+                    dialog, "Invalid subfolder", "Please specify a single subfolder name.", QMessageBox.Ok
+                )
+                folder_edit.setFocus()
+                return
+
+            folder_path = os.path.join(pdh.cc3dSimulationData.basePath, location)
+            if os.path.isdir(folder_path):
+                existing_cpp_files = [
+                    entry for entry in os.listdir(folder_path)
+                    if os.path.isfile(os.path.join(folder_path, entry))
+                    and os.path.splitext(entry)[1].lower() == ".cpp"
+                ]
+                if existing_cpp_files:
+                    QMessageBox.warning(
+                        dialog,
+                        "C++ steppable folder is already in use",
+                        "Folder %s already contains a C++ steppable source file (%s). "
+                        "Choose a different subfolder." % (folder_path, existing_cpp_files[0]),
+                        QMessageBox.Ok
+                    )
+                    folder_edit.setFocus()
+                    return
+
+            dialog.accept()
+
+        buttons.accepted.connect(accept_dialog)
+        buttons.rejected.connect(dialog.reject)
+        layout.addRow(buttons)
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+
+        steppable_name = str(steppable_name_edit.text()).strip()
+        location = str(folder_edit.text()).strip()
+
+        if not steppable_name or not location:
+            return
+
+        # A subfolder is deliberately limited to one directory component.
+        # This prevents accidentally creating files outside the project folder.
+        if location in (".", "..") or os.path.basename(location) != location or location in (os.path.sep, os.path.altsep):
+            QMessageBox.warning(tw, "Invalid subfolder", "Please specify a single subfolder name.", QMessageBox.Ok)
+            return
+
+        steppable_name = os.path.basename(steppable_name)
+        base_name, extension = os.path.splitext(steppable_name)
+
+        if not base_name:
+            return
+
+        if extension == "":
+            steppable_name = steppable_name + ".cpp"
+
+        resource_name = self.create_cpp_steppable_resource(
+            pdh=pdh,
+            file_name=steppable_name,
+            location=location,
+            template_path=CPP_STEPPABLE_TEMPLATE_OPTIONS[template_combo.currentText()]
+        )
+
+        if not resource_name:
+            return
+
+        pdh.cc3dSimulationData.addNewResource(resource_name, CPP_STEPPABLE_RESOURCE_TYPE)
+        self.insertNewTreeItem(resource_name, CPP_STEPPABLE_RESOURCE_TYPE, folder_name=location)
+        self.__register_cpp_steppable_in_main_script(
+            pdh=pdh,
+            location=location,
+            file_name=steppable_name,
+        )
+        self.__save_cc3d_project()
+        self.openFileInEditor(resource_name)
+        self.open_file_in_editor(
+            str(getattr(pdh.cc3dSimulationData.pythonScriptResource, "path", "") or
+                pdh.cc3dSimulationData.pythonScript or "").strip()
+        )
+
+    def __register_cpp_steppable_in_main_script(self, pdh, location, file_name):
+        simulation_data = pdh.cc3dSimulationData
+        main_script_path = str(getattr(simulation_data.pythonScriptResource, "path", "") or
+                               simulation_data.pythonScript or "").strip()
+
+        if not main_script_path:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Could Not Register C++ Steppable",
+                "The C++ steppable was created, but this project has no main Python script.",
+                QMessageBox.Ok
+            )
+            return
+
+        main_script_editor = self.open_file_in_editor(main_script_path)
+        if not main_script_editor:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Could Not Register C++ Steppable",
+                "The C++ steppable was created, but the main Python script could not be opened.",
+                QMessageBox.Ok
+            )
+            return
+
+        entry_line, indentation_level = self.find_entry_point_for_steppable_registration(main_script_editor)
+        if entry_line == -1:
+            QMessageBox.warning(
+                self.treeWidget,
+                "Could Not Register C++ Steppable",
+                "The C++ steppable was created, but the insertion point before "
+                "CompuCellSetup.run() could not be found in the main Python script.",
+                QMessageBox.Ok
+            )
+            return
+
+        library_name = os.path.splitext(os.path.basename(file_name))[0]
+        library_path = "/".join(part for part in (location.replace("\\", "/"), library_name) if part)
+        registration = (
+            "CompuCellSetup.register_compiled_steppable(\n"
+            "    library_path=\"%s\",\n"
+            "    frequency=1,\n"
+            ")\n\n" % library_path
+        )
+
+        main_script_editor.insertAt(registration, entry_line, 0)
+        self.__highlight_inserted_text(main_script_editor, entry_line, registration)
+        self.__ui.saveFile(main_script_path, _editor=main_script_editor)
+
+    @staticmethod
+    def __cpp_steppable_class_name(file_name):
+        base_name = os.path.splitext(os.path.basename(file_name))[0]
+        words = re.findall(r"[A-Za-z0-9]+", base_name)
+        class_name = "".join(word[:1].upper() + word[1:] for word in words)
+        if not class_name or not class_name[0].isalpha():
+            class_name = "Steppable" + class_name
+        if not class_name.lower().endswith("steppable"):
+            class_name += "Steppable"
+        return class_name
+
+    def create_cpp_steppable_resource(self, pdh, file_name, location=CPP_STEPPABLE_DEFAULT_DIR,
+                                      template_path=CPP_STEPPABLE_TEMPLATE):
+
+        full_location = os.path.join(pdh.cc3dSimulationData.basePath, location)
+
+        try:
+            self.makeDirectory(full_location)
+            if not os.path.isdir(full_location):
+                os.makedirs(full_location, exist_ok=True)
+        except IOError:
+            QMessageBox.warning(self.treeWidget, "COULD NOT MAKE DIRECTORY",
+                                "Write permission error. You do not have write permissions to %s directory" % (
+                                    pdh.cc3dSimulationData.basePath), QMessageBox.Ok)
+            return ""
+
+        if not os.path.isdir(full_location):
+            QMessageBox.warning(self.treeWidget, "COULD NOT MAKE DIRECTORY",
+                                "Could not create %s directory." % full_location, QMessageBox.Ok)
+            return ""
+
+        resource_name = os.path.join(full_location, file_name)
+
+        if os.path.exists(resource_name):
+            QMessageBox.warning(self.treeWidget, "File already exists",
+                                "File %s already exists." % resource_name, QMessageBox.Ok)
+            return ""
+
+        existing_cpp_files = [
+            entry for entry in os.listdir(full_location)
+            if os.path.isfile(os.path.join(full_location, entry))
+            and os.path.splitext(entry)[1].lower() == ".cpp"
+            and os.path.abspath(os.path.join(full_location, entry)) != os.path.abspath(resource_name)
+        ]
+        if existing_cpp_files:
+            QMessageBox.warning(
+                self.treeWidget,
+                "C++ steppable folder is already in use",
+                "Folder %s already contains a C++ steppable source file (%s). "
+                "Choose a different subfolder." % (full_location, existing_cpp_files[0]),
+                QMessageBox.Ok
+            )
+            return ""
+
+        try:
+            render_j2_template(
+                source_template=template_path,
+                target_path=resource_name,
+                substitutions={
+                    "STEPPABLE_CLASS_NAME": self.__cpp_steppable_class_name(file_name),
+                },
+            )
+
+        except IOError:
+            QMessageBox.warning(self.treeWidget, "COULD NOT CREATE FILE",
+                                "Write permission error. You do not have write permissions to %s directory" % (
+                                    full_location), QMessageBox.Ok)
+            return ""
+
+        return resource_name
 
     def __addSerializerResource(self):
 
@@ -3349,13 +4123,11 @@ class CC3DProject(QObject, TweditPluginBase):
 
             se.modifySerializerResource(pdh.cc3dSimulationData.serializerResource)
 
-            projItem = self.treeWidget.getProjectParent(self.treeWidget.currentItem())
-
-            self.markProjectDirty(projItem)
-
             # insert new file into the tree
 
             self.insertNewGenericResourceTreeItem(pdh.cc3dSimulationData.serializerResource)
+
+            self.__save_cc3d_project()
 
     def insertNewGenericResourceTreeItem(self, _resource):
 
@@ -3438,7 +4210,43 @@ class CC3DProject(QObject, TweditPluginBase):
 
                 pass
 
-    def insertNewTreeItem(self, resourceName, fileType):
+    def __insert_cpp_steppable_tree_item(self, projItem, ild, resource, folder_name=None):
+        """Insert one C++ steppable as CppSteppables/folder/source.cpp."""
+        root_item = None
+        for index in range(projItem.childCount()):
+            candidate = projItem.child(index)
+            if str(candidate.text(0)) == CPP_STEPPABLE_RESOURCE_TYPE:
+                root_item = candidate
+                break
+
+        if root_item is None:
+            root_item = QTreeWidgetItem(projItem)
+            root_item.setText(0, CPP_STEPPABLE_RESOURCE_TYPE)
+            root_item.setIcon(0, cpp_resource_icon())
+
+        if folder_name is None:
+            folder_name = os.path.basename(os.path.dirname(resource.path))
+        folder_item = None
+        for index in range(root_item.childCount()):
+            candidate = root_item.child(index)
+            if str(candidate.text(0)) == folder_name:
+                folder_item = candidate
+                break
+
+        if folder_item is None:
+            folder_item = QTreeWidgetItem(root_item)
+            folder_item.setText(0, folder_name)
+            folder_item.setIcon(0, cpp_resource_icon())
+
+        for index in range(folder_item.childCount()):
+            if str(ild.getFullPath(folder_item.child(index))) == str(resource.path):
+                return
+
+        source_item = QTreeWidgetItem(folder_item)
+        source_item.setText(0, os.path.basename(resource.path))
+        ild.insertNewItem(source_item, resource)
+
+    def insertNewTreeItem(self, resourceName, fileType, folder_name=None):
 
         # first find the node where to insert new item
 
@@ -3475,6 +4283,14 @@ class CC3DProject(QObject, TweditPluginBase):
 
             print("COULD NOT FIND PROJECT DATA")
 
+            return
+
+        if fileType == CPP_STEPPABLE_RESOURCE_TYPE:
+            try:
+                resource = pd.resources[resourceName]
+            except LookupError:
+                resource = pd.resources[os.path.abspath(resourceName)]
+            self.__insert_cpp_steppable_tree_item(projItem, ild, resource, folder_name=folder_name)
             return
 
         if fileType == "PythonScript":
@@ -3612,6 +4428,9 @@ class CC3DProject(QObject, TweditPluginBase):
 
             if typeItem:
 
+                if fileType in CPP_RESOURCE_TYPES:
+                    typeItem.setIcon(0, cpp_resource_icon())
+
                 # check if new path  exists in this branch
 
                 for i in range(typeItem.childCount()):
@@ -3638,6 +4457,9 @@ class CC3DProject(QObject, TweditPluginBase):
                 item = QTreeWidgetItem(projItem)
 
                 item.setText(0, fileType)
+
+                if fileType in CPP_RESOURCE_TYPES:
+                    item.setIcon(0, cpp_resource_icon())
 
                 item1 = QTreeWidgetItem(item)
 
@@ -4119,6 +4941,10 @@ class CC3DProject(QObject, TweditPluginBase):
         # Resources
         for resource_key, resource in pd.resources.items():
 
+            if resource.type in (CPP_STEPPABLE_RESOURCE_TYPE):
+                self.__insert_cpp_steppable_tree_item(projItem, ild, resource)
+                continue
+
             if resource.type in list(resource_types.keys()):
 
                 parent_item = resource_types[resource.type]
@@ -4135,6 +4961,8 @@ class CC3DProject(QObject, TweditPluginBase):
 
                 if resource.type == "Python":
                     new_resource_item.setIcon(0, QIcon(':/icons/python-icon.png'))
+                elif resource.type in CPP_RESOURCE_TYPES:
+                    new_resource_item.setIcon(0, cpp_resource_icon())
 
                 # inserting parent element for given resource type to dictionary
 
